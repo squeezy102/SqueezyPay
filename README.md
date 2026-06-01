@@ -99,33 +99,56 @@ npm install
 Backend:
 ```
 cd backend
+python -m venv venv
+# On Windows: .\venv\Scripts\Activate.ps1
+# On Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ### 4. Run the app
 
-Backend (from `/backend`):
+**Start the backend first** (from `/backend`):
 ```
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
+# Activate virtual environment
+# Windows: .\venv\Scripts\Activate.ps1
+# Mac/Linux: source venv/bin/activate
 
-Frontend (from `/frontend`, development):
+python main.py
 ```
-npm start
+Backend runs on `http://localhost:8000`
+
+**In a new terminal, start the frontend** (from `/frontend`):
 ```
+npm run dev
+```
+Frontend runs on `http://localhost:5173`
 
-The app will be accessible at `http://localhost:3000` on the host machine
-and at `http://<your-local-ip>:3000` from any other device on the home network.
+The app will be accessible at:
+- **Local machine:** `http://localhost:5173`
+- **Other devices on home network:** `http://<your-pc-local-ip>:5173`
+  - Find your PC's IP: `ipconfig` (Windows) or `ifconfig` (Mac/Linux)
 
-> **Note:** Setup instructions will be expanded as the project is built out.
-> The above reflects the intended final structure.
+### 5. Seed the database (Phase 1+)
+
+If it's a fresh database, seed with initial bill data:
+```
+cd backend
+python seed.py
+```
 
 ---
 
 ## Accessing From Other Devices
 
-Once the backend is running on your PC, any device on your home network can
+Once both frontend and backend are running on your PC, any device on your home network can
 access SqueezyPay by navigating to your PC's local IP address in a browser.
+
+**On iPhone:** Navigate to the app URL in Safari, tap Share → "Add to Home Screen" to install as an app.
+**On Android:** Navigate to the app URL in Chrome, tap menu → "Install app" to install.
+
+## Development
+
+See `docs/ai-assistant/CONTEXT.md` for detailed development notes, current phase status, and architecture decisions.
 
 To find your PC's local IP on Windows: `Win + R` → type `cmd` → run `ipconfig`
 Look for "IPv4 Address" under your active network adapter.

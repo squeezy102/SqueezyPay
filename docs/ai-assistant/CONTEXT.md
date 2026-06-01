@@ -14,24 +14,47 @@ Running notes for AI assistant continuity across sessions.
 
 ## Current App State
 
-Phase 0 (POC) is complete and tested. The static React frontend with bill dashboard is live on the dev server and installable as a PWA on iPhone and Android.
+**Phase 0 (POC):** Complete. Static React frontend with bill dashboard, verified working on desktop and iPhone.
+All 7 biller payment URLs tested and functional.
 
-All biller payment URLs have been verified and are working. Phase 0 is ready for demo to household members.
+**Phase 1 (Real Foundation):** In progress - 30% complete.
+- FastAPI backend scaffold: DONE
+- SQLite database with ORM models: DONE
+- Bills API endpoint: DONE
+- Database seeded with hardcoded bills: DONE
+- Frontend connected to backend API: DONE
+- Next: Credential vault encryption, payment history logging, bill management UI
 
-Active work: Phase 1 begins next - backend and database implementation.
+Both frontend (Vite dev server on 5173) and backend (FastAPI on 8000) are running and communicating.
 
 ---
 
 ## What Has Been Built
 
-- React frontend with Vite + Tailwind CSS
-- Bill dashboard component with card layout
-- Hardcoded bill data (7 household billers)
-- Bill status tracking (overdue, due soon, upcoming)
-- One-click navigation to biller payment URLs
-- PWA manifest for home screen install on iPhone and Android
-- Dev server accessible from home network via local IP
-- Fully tested on desktop (localhost) and iPhone (via local IP)
+**Frontend (React + Vite + Tailwind):**
+- Bill dashboard component with responsive card grid layout
+- Bill card component with status badges (overdue, due soon, upcoming)
+- One-click "Pay Bill" buttons linking to biller payment portals
+- PWA manifest for home screen installation (iPhone, Android)
+- Utility functions for date calculations and bill sorting
+- API integration layer (frontend/src/utils/api.js)
+- Tested on desktop and iPhone
+
+**Backend (FastAPI + SQLite):**
+- SQLAlchemy ORM models for bills, payments, credentials, payment methods, categories, income
+- SQLite database with auto-initialization
+- Bill service layer with CRUD operations
+- REST API routes (/api/bills/) for bill management
+- CORS middleware for frontend integration
+- Health check endpoint (/health)
+- Database seed script with 7 hardcoded bills
+- Running on localhost:8000
+
+**Infrastructure:**
+- Frontend dev server on localhost:5173 (network-accessible via 192.168.1.221:5173)
+- Backend API on localhost:8000
+- SQLite database file (squeezypay.db) in backend directory
+- Python virtual environment for backend (backend/venv)
 
 ---
 
@@ -106,23 +129,62 @@ early in Phase 2
 
 ---
 
-## Active Work / Known Issues
+## Running the App (Development)
 
-- **Phase 1 task:** User has additional household billers beyond the 7 hardcoded in Phase 0.
-  Once bill management UI is built (REQ-002), add these to the database.
+**Terminal 1 - Backend:**
+```
+cd backend
+source venv/Scripts/activate  # Windows: .\venv\Scripts\Activate.ps1
+python main.py
+```
+Backend runs on `http://localhost:8000`
+API docs available at `http://localhost:8000/docs`
 
-- **Phase 1 architecture:** Credential vault (REQ-004) will enable the friction removal fallback patterns:
-  - Level 1: Automated payment (requires biller API)
-  - Level 2: Seamless pre-authenticated login (requires OAuth or credential vaulting)
-  - Level 3: One-click navigation to payment page
-  - Level 4: Home page + surfaced stored credentials for manual login
+**Terminal 2 - Frontend:**
+```
+cd frontend
+npm run dev
+```
+Frontend runs on `http://localhost:5173` (network: `http://192.168.1.221:5173`)
 
-- **Example Credit Union:** Does not have a direct payment portal. Users manage payments via the ECU app
-  or by visiting a branch. Link goes to home page as a reference.
+Both must be running for the app to work. Backend should start first.
 
-- **Example Finance Co / Example Medical Co:** Example Medical Co is owned by Example Finance Co. Both use the Example Finance Co portal
-  (myexample.com), but the direct payment URL (payments.myexample.com) requires login context.
-  Links go to home pages for now.
+---
+
+## Active Work / Known Issues / Next Steps
+
+**Phase 1 Progress (30% complete):**
+- ✅ Backend scaffold and FastAPI app
+- ✅ SQLite database with ORM models
+- ✅ Bills API endpoint
+- ✅ Frontend connected to backend API
+- ⏳ Credential vault (encrypted storage for usernames/passwords)
+- ⏳ Payment history logging API
+- ⏳ Bill management UI (add/edit/deactivate bills)
+- ⏳ Due date alerts on dashboard
+- ⏳ Income tracking API and UI
+- ⏳ Settings screen
+
+**Known Issues:**
+- None currently - app is stable and functional
+
+**User Notes:**
+- User has additional household billers beyond the 7 seeded in database.
+  Once bill management UI is built (REQ-002), add these via the app UI.
+- Local DNS naming (squeezypay.local) is a Phase 1+ task (ROADMAP.md).
+  Currently accessible via IP address (192.168.1.221:5173).
+
+**Architecture Decisions:**
+- Friction removal hierarchy for bill payment (DECISIONS.md) - always prioritize:
+  1. Automated payment via API (ideal)
+  2. Seamless pre-authenticated login (fallback 1)
+  3. One-click navigation to payment page (fallback 2)
+  4. Home page + stored credentials (last resort)
+- Credential vault (Phase 1) will enable fallbacks 1 and 4.
+
+**Biller Notes:**
+- Example Credit Union: No direct payment portal. Users manage via app or branch.
+- Example Finance Co / Example Medical Co: Example Medical Co is owned by Example Finance Co. Links go to home pages (payment portal requires login context).
 
 ---
 
