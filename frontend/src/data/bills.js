@@ -8,6 +8,7 @@ export const bills = [
     dayOfMonth: 1,
     url: "https://www.example.com",
     recurring: true,
+    note: "Replace with your actual biller details",
   },
   {
     id: 2,
@@ -36,8 +37,9 @@ export const bills = [
     amount: null,
     amountLabel: "Varies",
     dayOfMonth: 28,
-    url: "https://www.example.com/pay/",
+    url: "https://www.example.com/",
     recurring: true,
+    note: "Example Medical Co is part of Example Finance Co",
   },
   {
     id: 5,
@@ -46,7 +48,7 @@ export const bills = [
     amount: null,
     amountLabel: "Varies",
     dayOfMonth: 10,
-    url: "https://payments.myexample.com/",
+    url: "https://www.example.com/",
     recurring: true,
   },
   {
@@ -66,7 +68,7 @@ export const bills = [
     amount: null,
     amountLabel: "Varies",
     dayOfMonth: 5,
-    url: "https://www.example.com/student-loans/manage-your-private-student-loan/",
+    url: "https://www.example.com/login/",
     recurring: true,
   },
 ];

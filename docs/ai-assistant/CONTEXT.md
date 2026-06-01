@@ -16,6 +16,8 @@ Running notes for AI assistant continuity across sessions.
 
 Phase 0 (POC) is complete and tested. The static React frontend with bill dashboard is live on the dev server and installable as a PWA on iPhone and Android.
 
+All biller payment URLs have been verified and are working. Phase 0 is ready for demo to household members.
+
 Active work: Phase 1 begins next - backend and database implementation.
 
 ---
@@ -108,6 +110,19 @@ early in Phase 2
 
 - **Phase 1 task:** User has additional household billers beyond the 7 hardcoded in Phase 0.
   Once bill management UI is built (REQ-002), add these to the database.
+
+- **Phase 1 architecture:** Credential vault (REQ-004) will enable the friction removal fallback patterns:
+  - Level 1: Automated payment (requires biller API)
+  - Level 2: Seamless pre-authenticated login (requires OAuth or credential vaulting)
+  - Level 3: One-click navigation to payment page
+  - Level 4: Home page + surfaced stored credentials for manual login
+
+- **Example Credit Union:** Does not have a direct payment portal. Users manage payments via the ECU app
+  or by visiting a branch. Link goes to home page as a reference.
+
+- **Example Finance Co / Example Medical Co:** Example Medical Co is owned by Example Finance Co. Both use the Example Finance Co portal
+  (myexample.com), but the direct payment URL (payments.myexample.com) requires login context.
+  Links go to home pages for now.
 
 ---
 
