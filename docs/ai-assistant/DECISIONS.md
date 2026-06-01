@@ -127,7 +127,13 @@ Plaid flow:
 
 | Decision | Why |
 |---|---|
-| One-click to biller payment page | The primary job of the app is to remove friction from bill paying. Navigating to a biller's site in one click is the minimum viable version of that. |
+| Friction removal hierarchy for bill payment | The primary job of the app is to remove friction. There are four levels, in priority order:
+1. **Ideal:** Automated payment - user clicks "pay full" or "pay custom amount" and the app handles everything (requires biller API).
+2. **Fallback 1:** Seamless login - app navigates user directly to account portal with pre-filled credentials, skipping the login screen (requires biller OAuth or credential vaulting support).
+3. **Fallback 2:** One-click navigation - app opens the biller's payment page URL, user logs in manually (current Phase 0 approach).
+4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces the stored credentials (username/password) so the user can log in themselves without hunting through notebooks.
+
+The credential vault (REQ-004) enables fallbacks 1 and 4 by securely storing and retrieving biller credentials. For billers with no API support, fallback 2 or 4 is the best we can do. |
 | PWA for mobile | A home screen icon that opens the app directly is the closest thing to a native app without an App Store submission. Essential for the "pay bills from your phone" use case. |
 | Blame graph by card, not by person | Cards are objective facts in the transaction data. Assigning blame by person requires a mapping that could cause friction. Card-level data is accurate and still tells the story. Users can draw their own conclusions about whose card is whose. |
 | Automatic Plaid categorization | Plaid returns merchant category codes with every transaction. Using these as the default category saves enormous manual effort and makes the blame graph useful from day one. Users can override categories. |

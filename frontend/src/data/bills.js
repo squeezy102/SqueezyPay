@@ -56,7 +56,7 @@ export const bills = [
     amount: null,
     amountLabel: "Varies",
     dayOfMonth: 5,
-    url: "https://example.com/",
+    url: "https://example.com/welcome",
     recurring: true,
   },
   {
