@@ -61,6 +61,8 @@ Running notes for AI assistant continuity across sessions.
 - `scripts/generate_key.py` — one-time Fernet key generation with setup instructions
 - `scripts/launch-admin.ps1` — starts admin server, waits for ready, opens browser
 - `scripts/create-shortcut.ps1` — creates "SqueezyPay Admin" desktop shortcut
+- `scripts/autostart.ps1` — starts admin server silently on login (no browser, no window)
+- `scripts/register-autostart.ps1` — registers the auto-start as a Windows scheduled task (run once as Administrator)
 
 **Desktop Shortcut:**
 - "SqueezyPay Admin" on the desktop
@@ -81,10 +83,8 @@ Running notes for AI assistant continuity across sessions.
 
 ## Next Session Priorities
 
-1. **Commit health check log suppression** — `admin/main.py` has an uncommitted fix that filters successful `/api/status` polls from the uvicorn log. Commit this first thing.
-2. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
-3. **Payment history logging API** — next Phase 1 item after admin dashboard
-4. **Bill management UI** — add/edit/deactivate bills from the frontend
+1. **Payment history logging API** — next Phase 1 item (REQ-003)
+2. **Bill management UI** — add/edit/deactivate bills from the frontend (REQ-002)
 
 ---
 

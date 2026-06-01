@@ -119,7 +119,7 @@ spending insights, and a polished experience.
 | ~~Dark mode~~ | - | ~~STRETCH GOAL~~ DONE |
 | Export data to CSV | - | STRETCH GOAL |
 | ~~Local admin dashboard (service management)~~ | - | ~~STRETCH GOAL~~ PULLED FORWARD - BASIC VERSION DONE |
-| Auto-start on Windows login | - | REQUIRED (next session) |
+| ~~Auto-start on Windows login~~ | - | ~~REQUIRED (next session)~~ DONE |
 | Admin dashboard - metrics and graphs | - | GOOD NEXT STEP |
 | Admin dashboard - CPU/memory monitoring | - | NICE TO HAVE |
 
