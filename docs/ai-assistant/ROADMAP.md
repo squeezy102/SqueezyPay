@@ -1,0 +1,154 @@
+# SqueezyPay - Roadmap
+
+Priority labels used throughout this document:
+
+- **REQUIRED** - app is not useful without this
+- **GOOD START** - makes the POC worth showing
+- **GOOD NEXT STEP** - natural follow-on after the core is working
+- **NICE TO HAVE** - meaningfully improves the app but not urgent
+- **STRETCH GOAL** - worth building eventually; not in the near-term plan
+
+---
+
+## Phase 0 - POC (1-2 coding sessions)
+
+**Goal:** Something real enough to show. Wife can open it on her phone, see
+the household bills, and navigate to a biller's payment page in one click.
+No backend required. No database. No encryption. Just a working frontend
+with real data.
+
+| Feature | Requirement | Priority |
+|---|---|---|
+| Static bill dashboard with real bills and due dates | REQ-001 | REQUIRED |
+| One-click navigation to biller payment pages | REQ-001 | REQUIRED |
+| Accessible from any device on home network | REQ-014 | REQUIRED |
+| Clean, usable UI - not an embarrassment | - | REQUIRED |
+| PWA manifest so it's installable on her phone | REQ-014 | GOOD START |
+
+**What Phase 0 is NOT:**
+- No backend server
+- No database
+- No encryption
+- No Plaid
+- No login
+- Bills are hardcoded for the demo
+
+**Done when:** Wife installs it on her phone and pays at least one bill
+through it tonight.
+
+---
+
+## Phase 1 - Real Foundation
+
+**Goal:** Replace the hardcoded POC with a real backend and database.
+The app now stores and serves real data. Credentials and payment methods
+are encrypted. Payment history is logged.
+
+| Feature | Requirement | Priority |
+|---|---|---|
+| FastAPI backend + SQLite database | - | REQUIRED |
+| Bill management (add, edit, deactivate) | REQ-002 | REQUIRED |
+| Payment history log with confirmation numbers | REQ-003 | REQUIRED |
+| Secure credential vault (encrypted) | REQ-004 | REQUIRED |
+| Payment method storage (encrypted) | REQ-004 | REQUIRED |
+| Due date alerts on dashboard | REQ-013 | GOOD START |
+| Income tracking | REQ-010 | GOOD START |
+| Transaction categories | REQ-009 | REQUIRED |
+| Settings screen (basic) | REQ-015 | GOOD NEXT STEP |
+
+**Done when:** All household bills are in the database, credentials are
+in the vault, and payment history is being logged with confirmation numbers.
+
+---
+
+## Phase 2 - Bank Integration and Spending Visibility
+
+**Goal:** Connect Example Credit Union via Plaid. The blame graph becomes real.
+Spending data flows automatically.
+
+| Feature | Requirement | Priority |
+|---|---|---|
+| Plaid OAuth connection flow | REQ-006 | REQUIRED |
+| ECU account balances displayed | REQ-006 | REQUIRED |
+| Transaction history per account | REQ-006 | REQUIRED |
+| Automatic Plaid category mapping | REQ-009 | GOOD START |
+| Blame graph - by card | REQ-007 | REQUIRED |
+| Blame graph - by category | REQ-007 | REQUIRED |
+| Blame graph - drill down to transactions | REQ-007 | GOOD NEXT STEP |
+| Transaction search and filter | REQ-006 | GOOD NEXT STEP |
+| Manual category override per transaction | REQ-009 | NICE TO HAVE |
+| Merchant category override rules | REQ-009 | NICE TO HAVE |
+
+**Done when:** The blame graph is live with real ECU transaction data
+and the household can have an honest spending conversation backed by numbers.
+
+---
+
+## Phase 3 - Budget and Projections
+
+**Goal:** Add forward-looking financial planning. The app goes from
+"what did we spend" to "what are we going to spend and can we afford it."
+
+| Feature | Requirement | Priority |
+|---|---|---|
+| Spending projections (30/60/90 day) | REQ-005 | GOOD NEXT STEP |
+| Budget targets per category | REQ-008 | GOOD NEXT STEP |
+| Budget vs. actual progress bars | REQ-008 | GOOD NEXT STEP |
+| Over-budget visual indicators | REQ-008 | NICE TO HAVE |
+| Net worth snapshot | REQ-011 | NICE TO HAVE |
+| Historical net worth line chart | REQ-011 | NICE TO HAVE |
+
+**Done when:** The household has a monthly budget set per category and
+can see at a glance how they're tracking against it.
+
+---
+
+## Phase 4 - Analytics and Polish
+
+**Goal:** Make the data useful over time. Year-over-year trends, deeper
+spending insights, and a polished experience.
+
+| Feature | Requirement | Priority |
+|---|---|---|
+| Year-over-year spending comparison | REQ-012 | NICE TO HAVE |
+| Savings goals | - | NICE TO HAVE |
+| Shared vs. personal expense tagging | - | NICE TO HAVE |
+| User accounts / household member profiles | - | STRETCH GOAL |
+| External asset / liability tracking | REQ-011 | STRETCH GOAL |
+| External push notifications (bill reminders) | REQ-013 | STRETCH GOAL |
+| Dark mode | - | STRETCH GOAL |
+| Export data to CSV | - | STRETCH GOAL |
+
+---
+
+## Implementation Concerns
+
+Foresights and potential complications to keep in mind before reaching
+the relevant phase. Remove an entry once it has been resolved or designed around.
+
+- **Phase 1 - Encryption key management:** The Fernet key must be generated
+once and stored as an environment variable. If the key is lost, all encrypted
+data is unrecoverable. Claude Code must generate a clear setup step that walks
+through key generation and storage. Consider a one-time setup script.
+
+- **Phase 2 - Plaid free tier limits:** Plaid's free developer tier has
+transaction history limits and rate limits. Confirm these are acceptable for
+household use before building the integration. As of 2025 the free tier
+supports personal development use - verify this hasn't changed.
+
+- **Phase 2 - Example Credit Union Plaid support:** Confirm Example Credit Union is on Plaid's
+supported institutions list before building the integration. This should be
+verified before Phase 2 begins, not during.
+
+- **Phase 2 - Plaid OAuth on local network:** Plaid's OAuth redirect URL must
+be a reachable address. On a local network this may require configuring the
+redirect to the host PC's local IP. Test this early in Phase 2.
+
+- **Phase 3 - Projection accuracy:** Projections are only as good as the data.
+Variable bills (utilities) will always be estimates. Make sure the UI communicates
+this clearly - projections are approximations, not guarantees.
+
+- **Phase 4 - User accounts:** Adding user accounts after the fact is a significant
+architectural change if the data model wasn't designed for it. When building
+Phase 1, ensure bill and transaction records have an optional `created_by` field
+even if it isn't used yet. This prevents a painful migration later.
