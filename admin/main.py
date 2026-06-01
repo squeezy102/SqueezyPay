@@ -3,12 +3,23 @@ import sys
 import os
 import json
 import time
+import logging
 import psutil
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 from contextlib import asynccontextmanager
+
+
+class _SuppressHealthPolling(logging.Filter):
+    """Drop successful GET /api/status lines from uvicorn access log."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return not ("/api/status" in msg and '" 200' in msg)
+
+
+logging.getLogger("uvicorn.access").addFilter(_SuppressHealthPolling())
 
 ROOT = Path(__file__).parent.parent
 BACKEND_DIR = ROOT / "backend"
