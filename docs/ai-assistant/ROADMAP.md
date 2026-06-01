@@ -118,6 +118,15 @@ spending insights, and a polished experience.
 | External push notifications (bill reminders) | REQ-013 | STRETCH GOAL |
 | Dark mode | - | STRETCH GOAL |
 | Export data to CSV | - | STRETCH GOAL |
+| Local admin dashboard (service management) | - | STRETCH GOAL |
+
+**Admin Dashboard** - A local developer dashboard for managing services running on the host PC:
+- Start/stop frontend dev server, backend API, and other services
+- Real-time service status, uptime, and health checks
+- View logs from each service
+- Monitor resource usage (CPU, memory)
+- Quick access to useful links (API docs, app URLs, database browser)
+- This is a QoL feature for the PC owner - not a user-facing feature
 
 ---
 
