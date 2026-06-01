@@ -81,9 +81,10 @@ Running notes for AI assistant continuity across sessions.
 
 ## Next Session Priorities
 
-1. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
-2. **Payment history logging API** — next Phase 1 item after admin dashboard
-3. **Bill management UI** — add/edit/deactivate bills from the frontend
+1. **Commit health check log suppression** — `admin/main.py` has an uncommitted fix that filters successful `/api/status` polls from the uvicorn log. Commit this first thing.
+2. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
+3. **Payment history logging API** — next Phase 1 item after admin dashboard
+4. **Bill management UI** — add/edit/deactivate bills from the frontend
 
 ---
 
