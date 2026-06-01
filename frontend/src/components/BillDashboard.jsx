@@ -1,9 +1,15 @@
-import { useState } from "react";
-import { bills } from "../data/bills";
+import { useState, useEffect } from "react";
 import { sortBillsByDueDate, getBillStatus } from "../utils/billUtils";
+import { getBills } from "../utils/api";
 import BillCard from "./BillCard";
 
 export default function BillDashboard() {
+  const [bills, setBills] = useState([]);
+
+  useEffect(() => {
+    getBills().then(setBills);
+  }, []);
+
   const sorted = sortBillsByDueDate(bills);
   const overdue = sorted.filter((b) => getBillStatus(b.dayOfMonth) === "overdue");
   const dueSoon = sorted.filter((b) => getBillStatus(b.dayOfMonth) === "due-soon");
