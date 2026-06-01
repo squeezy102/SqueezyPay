@@ -33,3 +33,11 @@ export function formatDueDate(dayOfMonth) {
 export function sortBillsByDueDate(bills) {
   return [...bills].sort((a, b) => getDaysUntilDue(a.dayOfMonth) - getDaysUntilDue(b.dayOfMonth));
 }
+
+// Returns bills that are overdue or due within windowDays. Default 7.
+export function filterActionableBills(bills, windowDays = 7) {
+  return bills.filter((b) => {
+    const days = getDaysUntilDue(b.dayOfMonth);
+    return days < 0 || days <= windowDays;
+  });
+}

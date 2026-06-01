@@ -138,7 +138,7 @@ These govern every UI decision. Non-negotiable.
 | Wife test | Every screen must be usable by a non-technical person with zero explanation. If it needs a label, add the label. If it needs a tooltip, add the tooltip. Assume nothing. |
 | One-click to action | The most common task (paying a bill) must never require more than two screens. The dashboard is the launchpad. |
 | Dark mode | The app supports light and dark mode. Dark mode is toggled by the user and the preference is persisted in localStorage. Default is system preference. |
-| Mobile first | Design for phone first. The app is primarily used on mobile (wife's iPhone, husband's phone). Desktop is secondary. |
+| Desktop first, iOS parity | Design for desktop first. Maintain as much parity with iOS as possible. Android is out of scope. Features that only work on desktop (browser extension, etc.) are acceptable but must be clearly scoped as desktop-only. |
 | No jargon | Labels, buttons, and messages use plain English. No technical terms visible to end users. |
 | Forgiving UI | Destructive actions (delete, deactivate) require a confirmation step. No accidental data loss. |
 
@@ -184,12 +184,15 @@ Plaid flow:
 | Decision | Why |
 |---|---|
 | Friction removal hierarchy for bill payment | The primary job of the app is to remove friction. There are four levels, in priority order:
-1. **Ideal:** Automated payment - user clicks "pay full" or "pay custom amount" and the app handles everything (requires biller API).
-2. **Fallback 1:** Seamless login - app navigates user directly to account portal with pre-filled credentials, skipping the login screen (requires biller OAuth or credential vaulting support).
-3. **Fallback 2:** One-click navigation - app opens the biller's payment page URL, user logs in manually (current Phase 0 approach).
-4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces the stored credentials (username/password) so the user can log in themselves without hunting through notebooks.
+1. **Ideal:** Automated payment - user clicks "pay" and the app handles everything (requires biller API - Phase 1+ skip).
+2. **Fallback 1:** Auto-login - app opens biller login page and injects credentials automatically (requires desktop browser extension - planned, not yet built).
+3. **Fallback 2:** Assisted login - app opens the biller's payment page URL and displays stored credentials (username + password) with copy buttons so the user can paste manually. This is the current implemented behavior.
+4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces credentials. Used when no payment URL is stored.
 
-The credential vault (REQ-004) enables fallbacks 1 and 4 by securely storing and retrieving biller credentials. For billers with no API support, fallback 2 or 4 is the best we can do. |
+**Current credential UX (Phase 1):** The payment workflow modal shows a "Show Credentials" toggle. When expanded, username and password are each shown in their own field with a copy button. User copies one, switches tab, pastes, comes back, copies the other. Acknowledged as poor UX - a second-pass design discussion is explicitly wanted before this is considered final.
+
+**Mobile (iOS) credential limitation:** iOS clipboard holds one item at a time. There is no path to auto-fill credentials from a PWA into another Safari tab. The copy-paste flow requires two round trips between tabs. This is an open known issue with no good solution at the PWA layer. A native iOS app with Credential Provider Extension could solve it but that is out of scope. |
+| Platform targets | Desktop (Windows PC/laptop) first. iOS (iPhone/iPad) second. Android explicitly out of scope - no household members use Android. Browser extension features are desktop-only and should be clearly marked as such. PWA features should work on both desktop and iOS. |
 | PWA for mobile | A home screen icon that opens the app directly is the closest thing to a native app without an App Store submission. Essential for the "pay bills from your phone" use case. |
 | Blame graph by card, not by person | Cards are objective facts in the transaction data. Assigning blame by person requires a mapping that could cause friction. Card-level data is accurate and still tells the story. Users can draw their own conclusions about whose card is whose. |
 | Automatic Plaid categorization | Plaid returns merchant category codes with every transaction. Using these as the default category saves enormous manual effort and makes the blame graph useful from day one. Users can override categories. |

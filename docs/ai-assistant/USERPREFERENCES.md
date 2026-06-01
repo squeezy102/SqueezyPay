@@ -16,6 +16,18 @@ not a developer
 
 ---
 
+## Permission Prompts
+
+Never ask for confirmation before making code changes, running CLI commands, git
+commands, Python, PowerShell, or any other operation. Just do it.
+
+The only exceptions - always prompt before:
+- Installing or uninstalling packages or dependencies (npm, pip, etc.)
+- Large sweeping changes that could break multiple areas of the app
+- Destructive operations: deleting files, dropping data, force-push, hard reset
+
+---
+
 ## Communication Style
 
 - One instruction at a time - give one step, wait for confirmation, then give

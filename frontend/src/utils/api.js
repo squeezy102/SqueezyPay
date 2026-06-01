@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE = `http://${window.location.hostname}:8000`;
 
 function formatAmount(amount) {
   if (amount == null) return "Amount varies";
@@ -11,12 +11,96 @@ function mapBill(raw) {
     name:        raw.name,
     category:    raw.category,
     dayOfMonth:  raw.day_of_month,
-    amountLabel: formatAmount(raw.expected_amount),
+    expectedAmount: raw.expected_amount,
+    amountLabel:    formatAmount(raw.expected_amount),
     url:         raw.url,
     recurring:   raw.recurring,
     active:      raw.active,
     notes:       raw.notes,
   };
+}
+
+function mapPayment(raw) {
+  return {
+    id:                 raw.id,
+    billId:             raw.bill_id,
+    billName:           raw.bill_name,
+    paymentDate:        raw.payment_date,
+    amountPaid:         raw.amount_paid,
+    paymentMethod:      raw.payment_method,
+    confirmationNumber: raw.confirmation_number,
+    notes:              raw.notes,
+    createdAt:          raw.created_at,
+  };
+}
+
+export async function getPaymentsByBill(billId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/payment-history/bill/${billId}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    return data.map(mapPayment);
+  } catch (error) {
+    console.error("Failed to fetch payment history:", error);
+    return [];
+  }
+}
+
+export async function getAllPayments() {
+  try {
+    const response = await fetch(`${API_BASE}/api/payment-history/`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    return data.map(mapPayment);
+  } catch (error) {
+    console.error("Failed to fetch all payments:", error);
+    return [];
+  }
+}
+
+export async function logPayment(payload) {
+  try {
+    const response = await fetch(`${API_BASE}/api/payment-history/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bill_id:             payload.billId,
+        payment_date:        payload.paymentDate,
+        amount_paid:         payload.amountPaid,
+        payment_method:      payload.paymentMethod ?? null,
+        confirmation_number: payload.confirmationNumber ?? null,
+        notes:               payload.notes ?? null,
+      }),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapPayment(await response.json());
+  } catch (error) {
+    console.error("Failed to log payment:", error);
+    return null;
+  }
+}
+
+export async function getCredentialByBill(billId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/credentials/by-bill/${billId}`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to fetch credential:", error);
+    return null;
+  }
+}
+
+export async function getPaymentMethods() {
+  try {
+    const response = await fetch(`${API_BASE}/api/payment-methods/`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to fetch payment methods:", error);
+    return [];
+  }
 }
 
 export async function getBills() {

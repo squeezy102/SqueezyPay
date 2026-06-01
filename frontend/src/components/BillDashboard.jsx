@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { sortBillsByDueDate, getBillStatus } from "../utils/billUtils";
+import { sortBillsByDueDate, getBillStatus, filterActionableBills } from "../utils/billUtils";
 import { getBills } from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
 import { statusTokens } from "../theme/tokens";
@@ -35,9 +35,11 @@ export default function BillDashboard() {
     getBills().then(setBills);
   }, []);
 
-  const sorted = sortBillsByDueDate(bills);
-  const overdue = sorted.filter((b) => getBillStatus(b.dayOfMonth) === "overdue");
-  const dueSoon = sorted.filter((b) => getBillStatus(b.dayOfMonth) === "due-soon");
+  const sorted     = sortBillsByDueDate(bills);
+  const actionable = filterActionableBills(sorted);
+  const hidden     = sorted.length - actionable.length;
+  const overdue    = actionable.filter((b) => getBillStatus(b.dayOfMonth) === "overdue");
+  const dueSoon    = actionable.filter((b) => getBillStatus(b.dayOfMonth) === "due-soon");
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -65,10 +67,15 @@ export default function BillDashboard() {
 
       <main className="max-w-2xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {sorted.map((bill) => (
+          {actionable.map((bill) => (
             <BillCard key={bill.id} bill={bill} />
           ))}
         </div>
+        {hidden > 0 && (
+          <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-4">
+            {hidden} upcoming {hidden === 1 ? "bill" : "bills"} not due within 7 days
+          </p>
+        )}
       </main>
     </div>
   );

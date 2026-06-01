@@ -5,6 +5,7 @@ from database.db import init_db
 from api.bills import router as bills_router
 from api.credentials import router as credentials_router
 from api.payment_methods import router as payment_methods_router
+from api.payment_history import router as payment_history_router
 
 configure_logging()
 logger = get_logger("squeezypay.main")
@@ -22,6 +23,7 @@ app.add_middleware(
 app.include_router(bills_router)
 app.include_router(credentials_router)
 app.include_router(payment_methods_router)
+app.include_router(payment_history_router)
 
 
 @app.on_event("startup")
