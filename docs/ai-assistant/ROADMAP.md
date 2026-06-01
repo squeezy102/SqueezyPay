@@ -152,3 +152,8 @@ this clearly - projections are approximations, not guarantees.
 architectural change if the data model wasn't designed for it. When building
 Phase 1, ensure bill and transaction records have an optional `created_by` field
 even if it isn't used yet. This prevents a painful migration later.
+
+- **Phase 1+ - Local DNS naming:** Users should not have to remember an IP address
+to access the app. Implement local DNS (e.g., `squeezypay.local` or `squeezypay`
+via .local mDNS or router DNS config). This is a UX priority for household use
+but is not blocking Phase 1 - can be added once the backend is stable.

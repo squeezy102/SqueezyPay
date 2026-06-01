@@ -14,27 +14,34 @@ Running notes for AI assistant continuity across sessions.
 
 ## Current App State
 
-Phase 0 (POC) is not yet started. The repository has been scaffolded with
-documentation only. No application code exists yet.
+Phase 0 (POC) is complete and tested. The static React frontend with bill dashboard is live on the dev server and installable as a PWA on iPhone and Android.
 
-The first coding session will build the Phase 0 POC - a static frontend
-bill dashboard with no backend. See ROADMAP.md for Phase 0 scope.
+Active work: Phase 1 begins next - backend and database implementation.
 
 ---
 
 ## What Has Been Built
 
-Nothing yet. This is a fresh repository.
+- React frontend with Vite + Tailwind CSS
+- Bill dashboard component with card layout
+- Hardcoded bill data (7 household billers)
+- Bill status tracking (overdue, due soon, upcoming)
+- One-click navigation to biller payment URLs
+- PWA manifest for home screen install on iPhone and Android
+- Dev server accessible from home network via local IP
+- Fully tested on desktop (localhost) and iPhone (via local IP)
 
 ---
 
-## What Has NOT Been Built (Phase 0 targets)
+## What Has NOT Been Built (Phase 1 targets)
 
-- Static React frontend
-- Bill dashboard with hardcoded bill data
-- One-click biller navigation
-- PWA manifest for mobile install
-- Local network hosting
+- FastAPI backend
+- SQLite database
+- Encryption for credentials and payment methods
+- Credential vault
+- Payment history logging
+- Bill management (add, edit, deactivate)
+- Settings screen
 
 ---
 
@@ -43,7 +50,9 @@ Nothing yet. This is a fresh repository.
 ```
 squeezypay/
 - README.md                     Public-facing onboarding doc
+- LICENSE                       MIT license
 - .gitignore
+- .env.example                  Example environment variables (no secrets)
 - docs/
   - ai-assistant/
     - CONTEXT.md                This file
@@ -51,31 +60,25 @@ squeezypay/
     - ROADMAP.md                Build phases with priority labels
     - DECISIONS.md              Vision, philosophy, architecture decision log
     - USERPREFERENCES.md        Working style and AI collaboration guidelines
-```
-
-Application code will be added starting in the first coding session.
-Expected structure once Phase 0 is underway:
-
-```
-squeezypay/
-- frontend/                     React app (Phase 0+)
-  - public/
-    - manifest.json             PWA manifest
-    - icons/                    App icons for home screen install
+- frontend/                     React app (Phase 0 - complete)
   - src/
     - components/
-      - BillDashboard/
-      - BillCard/
-    - App.jsx
-    - index.jsx
+      - BillDashboard.jsx       Dashboard component
+      - BillCard.jsx            Individual bill card
+    - data/
+      - bills.js                Hardcoded bill data
+    - utils/
+      - billUtils.js            Date and status calculations
+    - App.jsx                   Root component
+    - main.jsx                  Entry point
+    - index.css                 Tailwind imports
+  - public/
+    - manifest.json             PWA manifest
+  - vite.config.js
+  - index.html
+  - package.json
 - backend/                      FastAPI app (Phase 1+)
-  - api/                        Route handlers
-  - models/                     SQLAlchemy models
-  - services/                   Business logic
-  - repositories/               Database access layer
-  - database/                   SQLite setup and migrations
-  - main.py                     FastAPI app entry point
-- .env.example                  Example environment variable file (no secrets)
+  - (to be created)
 ```
 
 ---
@@ -103,7 +106,8 @@ early in Phase 2
 
 ## Active Work / Known Issues
 
-None yet - no code has been written.
+- **Phase 1 task:** User has additional household billers beyond the 7 hardcoded in Phase 0.
+  Once bill management UI is built (REQ-002), add these to the database.
 
 ---
 

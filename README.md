@@ -13,19 +13,18 @@ every credential, every payment record, every transaction - all in one place,
 accessible from any browser on your home network.
 
 > [!CAUTION]
-> ## KEEP THE DOCUMENTATION CURRENT
+> ## DOCUMENTATION IS THE TIER 1 DELIVERABLE
 >
-> The `docs/ai-assistant/` directory is the backbone of this project. It is how
-> the AI assistant maintains continuity across sessions and how decisions get
-> preserved instead of repeated.
+> **Documentation > Code.** Always.
 >
-> **Letting the documentation fall out of date is the fastest way to break the
-> project.**
+> The `docs/ai-assistant/` directory is the backbone of this project. It preserves
+> decisions, maintains continuity across sessions, and prevents repeated mistakes.
+> Without current documentation, the codebase becomes unmaintainable and fragile.
 >
-> - Your AI coding tool will handle most updates automatically - but you are
->   still responsible for making sure it happens
-> - At the end of every session, ask your AI tool: *"Is there anything we built
->   today that hasn't been documented yet?"*
+> - Every session must keep docs current - no exceptions
+> - At the end of every session, ask: *"Is there anything we built today that
+>   hasn't been documented yet?"*
+> - If documentation is out of date, the project is broken - even if the code works
 
 ---
 
