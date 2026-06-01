@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SqueezyPay Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #273549;
+      --border: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --indigo: #6366f1;
+      --indigo-hover: #4f46e5;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    header p  { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .card-title { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.stopped { background: var(--red); }
+
+    .status-label { font-size: 1rem; font-weight: 600; }
+    .status-sub   { font-size: 0.75rem; color: var(--text-muted); }
+
+    .btn-row { display: flex; gap: 8px; }
+
+    button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-start { background: var(--indigo); color: #fff; }
+    .btn-start:hover:not(:disabled) { background: var(--indigo-hover); }
+    .btn-stop  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-stop:hover:not(:disabled) { background: var(--border); }
+    .btn-link  { background: transparent; color: var(--indigo); padding: 0; font-size: 0.75rem; text-decoration: underline; }
+    .btn-link:hover { color: #818cf8; }
+
+    /* Log panel */
+    .log-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .log-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .log-header h2 { font-size: 0.875rem; font-weight: 600; }
+
+    .log-controls { display: flex; gap: 8px; align-items: center; }
+
+    .log-filter {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.75rem;
+    }
+
+    #log-body {
+      height: 400px;
+      overflow-y: auto;
+      padding: 12px 0;
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 0.75rem;
+    }
+
+    .log-line {
+      display: grid;
+      grid-template-columns: 160px 60px 180px 1fr;
+      gap: 8px;
+      padding: 2px 20px;
+      line-height: 1.6;
+    }
+    .log-line:hover { background: var(--surface2); }
+
+    .log-ts      { color: var(--text-muted); white-space: nowrap; }
+    .log-level   { font-weight: 700; }
+    .log-service { color: #7dd3fc; }
+    .log-msg     { color: var(--text); }
+
+    .level-INFO    { color: var(--green); }
+    .level-WARNING { color: var(--amber); }
+    .level-ERROR   { color: var(--red); }
+
+    .empty-log { padding: 32px 20px; text-align: center; color: var(--text-muted); font-size: 0.875rem; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 18px;
+      font-size: 0.875rem; font-weight: 500;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      max-width: 320px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>SqueezyPay Admin</h1>
+    <p>Developer Dashboard</p>
+  </div>
+  <button class="btn-stop" onclick="refreshStatus()" style="font-size:0.75rem;">Refresh</button>
+</header>
+
+<div class="grid" id="service-grid">
+  <!-- Populated by JS -->
+</div>
+
+<div class="log-panel">
+  <div class="log-header">
+    <h2>Application Log</h2>
+    <div class="log-controls">
+      <select class="log-filter" id="level-filter" onchange="applyFilter()">
+        <option value="">All levels</option>
+        <option value="INFO">INFO</option>
+        <option value="WARNING">WARNING</option>
+        <option value="ERROR">ERROR</option>
+      </select>
+      <button class="btn-stop" onclick="clearLog()" style="font-size:0.75rem; padding:4px 10px;">Clear</button>
+      <button class="btn-stop" id="scroll-btn" onclick="toggleAutoScroll()" style="font-size:0.75rem; padding:4px 10px;">Auto-scroll: ON</button>
+    </div>
+  </div>
+  <div id="log-body"><div class="empty-log">Loading logs...</div></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = 'http://localhost:9000/api';
+  let autoScroll = true;
+  let allLogLines = [];
+  let activeFilter = '';
+
+  // --- Status ---
+
+  async function refreshStatus() {
+    try {
+      const res = await fetch(`${API}/status`);
+      const data = await res.json();
+      renderServices(data);
+    } catch {
+      renderOffline();
+    }
+  }
+
+  function renderServices(data) {
+    const grid = document.getElementById('service-grid');
+    grid.innerHTML = Object.entries(data).map(([name, info]) => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${name}</span>
+          <span class="status-sub">port ${info.port}</span>
+        </div>
+        <div class="status-row">
+          <span class="dot ${info.running ? 'running' : 'stopped'}"></span>
+          <div>
+            <div class="status-label">${info.running ? 'Running' : 'Stopped'}</div>
+            ${info.running ? `<div class="status-sub">${info.url}</div>` : ''}
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-start" onclick="startService('${name}')" ${info.running ? 'disabled' : ''}>Start</button>
+          <button class="btn-stop"  onclick="stopService('${name}')"  ${!info.running ? 'disabled' : ''}>Stop</button>
+          ${info.running ? `<button class="btn-link" onclick="window.open('${info.url}')">Open →</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderOffline() {
+    document.getElementById('service-grid').innerHTML = `
+      <div class="card" style="grid-column:1/-1">
+        <p style="color:var(--text-muted); font-size:0.875rem;">Could not reach admin server. Is it running?</p>
+      </div>`;
+  }
+
+  async function startService(name) {
+    const res = await fetch(`${API}/start/${name}`, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message);
+    setTimeout(refreshStatus, 1500);
+  }
+
+  async function stopService(name) {
+    const res = await fetch(`${API}/stop/${name}`, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message);
+    setTimeout(refreshStatus, 800);
+  }
+
+  // --- Logs ---
+
+  async function loadRecentLogs() {
+    try {
+      const res = await fetch(`${API}/logs/recent?lines=200`);
+      const lines = await res.json();
+      allLogLines = lines;
+      renderLog();
+      startLogStream();
+    } catch {
+      document.getElementById('log-body').innerHTML = '<div class="empty-log">Could not load logs.</div>';
+    }
+  }
+
+  function startLogStream() {
+    const es = new EventSource(`${API}/logs`);
+    es.onmessage = (e) => {
+      try {
+        const entry = JSON.parse(e.data);
+        allLogLines.push(entry);
+        if (allLogLines.length > 2000) allLogLines.shift();
+        if (!activeFilter || entry.level === activeFilter) {
+          appendLogLine(entry);
+        }
+      } catch {}
+    };
+  }
+
+  function renderLog() {
+    const body = document.getElementById('log-body');
+    const filtered = activeFilter ? allLogLines.filter(l => l.level === activeFilter) : allLogLines;
+    if (filtered.length === 0) {
+      body.innerHTML = '<div class="empty-log">No log entries yet. Start the backend to begin logging.</div>';
+      return;
+    }
+    body.innerHTML = filtered.map(formatLogLine).join('');
+    if (autoScroll) body.scrollTop = body.scrollHeight;
+  }
+
+  function appendLogLine(entry) {
+    const body = document.getElementById('log-body');
+    const empty = body.querySelector('.empty-log');
+    if (empty) body.innerHTML = '';
+    body.insertAdjacentHTML('beforeend', formatLogLine(entry));
+    if (autoScroll) body.scrollTop = body.scrollHeight;
+  }
+
+  function formatLogLine(entry) {
+    const ts = entry.timestamp ? entry.timestamp.replace('T', ' ').slice(0, 19) : '';
+    const level = entry.level || 'INFO';
+    const service = (entry.service || '').replace('squeezypay.', '');
+    const msg = entry.message || '';
+    return `<div class="log-line">
+      <span class="log-ts">${ts}</span>
+      <span class="log-level level-${level}">${level}</span>
+      <span class="log-service">${service}</span>
+      <span class="log-msg">${escHtml(msg)}</span>
+    </div>`;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function applyFilter() {
+    activeFilter = document.getElementById('level-filter').value;
+    renderLog();
+  }
+
+  function clearLog() {
+    allLogLines = [];
+    renderLog();
+  }
+
+  function toggleAutoScroll() {
+    autoScroll = !autoScroll;
+    document.getElementById('scroll-btn').textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+  }
+
+  // --- Toast ---
+
+  let toastTimer;
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // --- Init ---
+
+  refreshStatus();
+  loadRecentLogs();
+  setInterval(refreshStatus, 5000);
+</script>
+</body>
+</html>

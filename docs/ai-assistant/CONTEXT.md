@@ -6,67 +6,84 @@ Running notes for AI assistant continuity across sessions.
 
 ## Repository State
 
-- **Active branch:** `dev`
-- **Last commit:** Initial commit - repo scaffold and ai-assistant documentation
-- **Uncommitted changes:** None
+- **Active branch:** `master`
+- **Last commit:** (see git log)
+- **Uncommitted changes:** Yes - full session work pending commit
 
 ---
 
 ## Current App State
 
-**Phase 0 (POC):** Complete. Static React frontend with bill dashboard, verified working on desktop and iPhone.
-All 7 biller payment URLs tested and functional.
+**Phase 0 (POC):** Complete.
 
-**Phase 1 (Real Foundation):** In progress - 30% complete.
-- FastAPI backend scaffold: DONE
-- SQLite database with ORM models: DONE
-- Bills API endpoint: DONE
-- Database seeded with hardcoded bills: DONE
-- Frontend connected to backend API: DONE
-- Next: Credential vault encryption, payment history logging, bill management UI
+**Phase 1 (Real Foundation):** In progress - ~70% complete.
 
-Both frontend (Vite dev server on 5173) and backend (FastAPI on 8000) are running and communicating.
+**Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
 ---
 
 ## What Has Been Built
 
-**Frontend (React + Vite + Tailwind):**
-- Bill dashboard component with responsive card grid layout
-- Bill card component with status badges (overdue, due soon, upcoming)
-- One-click "Pay Bill" buttons linking to biller payment portals
-- PWA manifest for home screen installation (iPhone, Android)
-- Utility functions for date calculations and bill sorting
-- API integration layer (frontend/src/utils/api.js)
-- Tested on desktop and iPhone
+**Frontend (React + Vite + Tailwind v4):**
+- Bill dashboard with responsive card grid, status badges (overdue, due soon, upcoming)
+- Bill card component — dark mode aware, uses design token system
+- Dark mode toggle (moon/sun icon in header) — defaults to system preference, persists in localStorage
+- Design token system (`src/theme/tokens.js`) — all colors and visual decisions in one place
+- API integration layer (`src/utils/api.js`) — handles snake_case → camelCase mapping from backend
+- PWA manifest for home screen install (iPhone, Android)
+- Removed deprecated `apple-mobile-web-app-capable` meta tag
+- ThemeContext (`src/context/ThemeContext.jsx`) — React context for dark mode state
 
 **Backend (FastAPI + SQLite):**
-- SQLAlchemy ORM models for bills, payments, credentials, payment methods, categories, income
-- SQLite database with auto-initialization
-- Bill service layer with CRUD operations
-- REST API routes (/api/bills/) for bill management
-- CORS middleware for frontend integration
-- Health check endpoint (/health)
-- Database seed script with 7 hardcoded bills
-- Running on localhost:8000
+- SQLAlchemy ORM models: Bill, PaymentHistory, Credential, PaymentMethod, TransactionCategory, Income
+- All models follow snake_case convention; `PaymentMethod.payment_type` (not `type` — avoids Python builtin shadow)
+- Service layer with explicit `_to_dict()` on all services — controls exactly what fields the API exposes
+- Bills API: `/api/bills/` — full CRUD, returns dicts (not raw ORM objects)
+- Credentials API: `/api/credentials/` and `/api/credentials/by-bill/{bill_id}`
+- Payment Methods API: `/api/payment-methods/`
+- Encryption service (`services/encryption_service.py`) — Fernet, lazy-init, reads `SQUEEZYPAY_ENCRYPTION_KEY` env var
+- Structured logging (`core/logging_config.py`) — console (plain text) + rotating JSON file at `backend/logs/squeezypay.log`
+- All services have named loggers (`squeezypay.services.*`)
+- Health check endpoint: `/health`
+- Database seed script: 7 household bills
 
-**Infrastructure:**
-- Frontend dev server on localhost:5173 (network-accessible via 192.168.1.221:5173)
-- Backend API on localhost:8000
-- SQLite database file (squeezypay.db) in backend directory
-- Python virtual environment for backend (backend/venv)
+**Admin Dashboard (FastAPI on port 9000):**
+- Lives in `admin/` directory
+- Serves `dashboard.html` at `/`
+- `/api/status` — reports whether backend (8000) and frontend (5173) are running
+- `/api/start/{service}` and `/api/stop/{service}` — starts/stops backend and frontend processes
+- `/api/logs/recent` — returns last N lines of `squeezypay.log` as parsed JSON
+- `/api/logs` — Server-Sent Events stream for live log tailing
+- Dashboard UI: service cards with status dots, start/stop buttons, live log viewer with level filter
+- **Vision:** This grows into a full operations console — logs, metrics, health checks, graphs, diagnostics. Keep it browser-based (pinned tab). Do NOT convert to tray app or native app.
+
+**Scripts:**
+- `scripts/generate_key.py` — one-time Fernet key generation with setup instructions
+- `scripts/launch-admin.ps1` — starts admin server, waits for ready, opens browser
+- `scripts/create-shortcut.ps1` — creates "SqueezyPay Admin" desktop shortcut
+
+**Desktop Shortcut:**
+- "SqueezyPay Admin" on the desktop
+- Double-click → launcher window opens → admin server starts → browser opens at `http://localhost:9000`
+- From the dashboard, use Start buttons to bring up backend and frontend
 
 ---
 
-## What Has NOT Been Built (Phase 1 targets)
+## What Has NOT Been Built (Phase 1 remaining)
 
-- FastAPI backend
-- SQLite database
-- Encryption for credentials and payment methods
-- Credential vault
-- Payment history logging
-- Bill management (add, edit, deactivate)
-- Settings screen
+- Payment history logging API and UI (REQ-003)
+- Bill management UI — add, edit, deactivate bills (REQ-002)
+- Due date alerts on dashboard (REQ-013)
+- Income tracking API and UI (REQ-010)
+- Settings screen (REQ-015)
+
+---
+
+## Next Session Priorities
+
+1. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
+2. **Payment history logging API** — next Phase 1 item after admin dashboard
+3. **Bill management UI** — add/edit/deactivate bills from the frontend
 
 ---
 
@@ -74,124 +91,121 @@ Both frontend (Vite dev server on 5173) and backend (FastAPI on 8000) are runnin
 
 ```
 squeezypay/
-- README.md                     Public-facing onboarding doc
-- LICENSE                       MIT license
-- .gitignore
-- .env.example                  Example environment variables (no secrets)
-- docs/
-  - ai-assistant/
-    - CONTEXT.md                This file
-    - REQUIREMENTS.md           Full feature requirements (REQ-001 through REQ-015)
-    - ROADMAP.md                Build phases with priority labels
-    - DECISIONS.md              Vision, philosophy, architecture decision log
-    - USERPREFERENCES.md        Working style and AI collaboration guidelines
-- frontend/                     React app (Phase 0 - complete)
-  - src/
-    - components/
-      - BillDashboard.jsx       Dashboard component
-      - BillCard.jsx            Individual bill card
-    - data/
-      - bills.js                Hardcoded bill data
-    - utils/
-      - billUtils.js            Date and status calculations
-    - App.jsx                   Root component
-    - main.jsx                  Entry point
-    - index.css                 Tailwind imports
-  - public/
-    - manifest.json             PWA manifest
-  - vite.config.js
-  - index.html
-  - package.json
-- backend/                      FastAPI app (Phase 1+)
-  - (to be created)
+├── README.md
+├── LICENSE
+├── .gitignore
+├── .env.example
+├── docs/ai-assistant/
+│   ├── CONTEXT.md          This file
+│   ├── REQUIREMENTS.md     REQ-001 through REQ-015
+│   ├── ROADMAP.md          Build phases and priorities
+│   ├── DECISIONS.md        Architecture and design decisions
+│   ├── USERPREFERENCES.md  Working style guidelines
+│   └── TESTCASES.md        Manual test cases (growing list)
+├── scripts/
+│   ├── generate_key.py     One-time encryption key setup
+│   ├── launch-admin.ps1    Admin dashboard launcher
+│   └── create-shortcut.ps1 Desktop shortcut creator
+├── admin/
+│   ├── main.py             Admin FastAPI app (port 9000)
+│   ├── dashboard.html      Admin dashboard UI
+│   └── requirements.txt    Admin dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── BillDashboard.jsx
+│   │   │   └── BillCard.jsx
+│   │   ├── context/
+│   │   │   └── ThemeContext.jsx
+│   │   ├── theme/
+│   │   │   └── tokens.js       Design tokens (all colors live here)
+│   │   ├── utils/
+│   │   │   ├── api.js          API calls + snake_case→camelCase mapping
+│   │   │   └── billUtils.js    Date/status calculations
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── public/manifest.json
+│   ├── vite.config.js
+│   └── package.json
+└── backend/
+    ├── main.py
+    ├── seed.py
+    ├── core/
+    │   └── logging_config.py
+    ├── database/
+    │   └── db.py
+    ├── models/
+    │   └── models.py
+    ├── repositories/
+    │   ├── credential_repository.py
+    │   └── payment_method_repository.py
+    ├── services/
+    │   ├── bill_service.py
+    │   ├── credential_service.py
+    │   ├── encryption_service.py
+    │   └── payment_method_service.py
+    └── api/
+        ├── bills.py
+        ├── credentials.py
+        └── payment_methods.py
 ```
 
 ---
 
 ## Key Technical Notes
 
-- Stack: Python (FastAPI) + SQLite + React
-- Encryption: Fernet (cryptography library) for credentials and payment methods
-- Bank integration: Plaid API (free developer tier) for Example Credit Union data
-- Hosting: Runs on host Windows PC, accessible on home network via local IP
-- Mobile: PWA for "Add to Home Screen" on iPhone and Android
-- No external access - app is bound to local network only
+- **Naming conventions:** Python = snake_case (vars/functions), PascalCase (classes), UPPER_SNAKE_CASE (constants). JS = camelCase (vars/functions), PascalCase (components/files).
+- **API response pattern:** All service `_to_dict()` methods control what fields are exposed. Never return raw ORM objects from routes.
+- **snake_case ↔ camelCase:** Backend speaks snake_case (Python convention). Frontend speaks camelCase (JS convention). `api.js` is the translator — mapping happens once on the way in.
+- **Encryption key:** `SQUEEZYPAY_ENCRYPTION_KEY` Windows user environment variable. Set once, never touched again. Lose it = lose all vault data.
+- **Admin dashboard vision:** Full ops console (logs, metrics, health, graphs). Browser-based pinned tab — do not convert to tray app or native desktop app.
+- **Design tokens:** All frontend colors in `src/theme/tokens.js`. Never hardcode colors in components.
+- **Logging:** JSON logs at `backend/logs/squeezypay.log`. Admin dashboard reads this file. Never log passwords, keys, or credential data.
+
+---
+
+## Running the App
+
+**Preferred: Desktop shortcut**
+Double-click "SqueezyPay Admin" → use Start buttons in dashboard
+
+**Manual fallback:**
+```powershell
+# Terminal 1 - Backend
+cd c:\SqueezyPay\backend
+.\venv\Scripts\Activate.ps1
+python main.py
+
+# Terminal 2 - Frontend
+cd c:\SqueezyPay\frontend
+npm run dev
+
+# Terminal 3 - Admin dashboard
+cd c:\SqueezyPay\backend
+.\venv\Scripts\Activate.ps1
+cd ..\admin
+python -m uvicorn main:app --host 0.0.0.0 --port 9000
+```
+
+URLs:
+- App: `http://localhost:5173` (network: `http://192.168.1.221:5173`)
+- Backend API: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
+- Admin dashboard: `http://localhost:9000`
 
 ---
 
 ## Decisions Still Open
 
-- Plaid free tier limits and Example Credit Union support should be verified before
-Phase 2 begins - see ROADMAP.md implementation concerns
-- Plaid OAuth redirect URL behavior on a local network needs to be tested
-early in Phase 2
-- Host PC startup behavior (auto-start server on boot) - not yet designed
-
----
-
-## Running the App (Development)
-
-**Terminal 1 - Backend:**
-```
-cd backend
-source venv/Scripts/activate  # Windows: .\venv\Scripts\Activate.ps1
-python main.py
-```
-Backend runs on `http://localhost:8000`
-API docs available at `http://localhost:8000/docs`
-
-**Terminal 2 - Frontend:**
-```
-cd frontend
-npm run dev
-```
-Frontend runs on `http://localhost:5173` (network: `http://192.168.1.221:5173`)
-
-Both must be running for the app to work. Backend should start first.
-
----
-
-## Active Work / Known Issues / Next Steps
-
-**Phase 1 Progress (30% complete):**
-- ✅ Backend scaffold and FastAPI app
-- ✅ SQLite database with ORM models
-- ✅ Bills API endpoint
-- ✅ Frontend connected to backend API
-- ⏳ Credential vault (encrypted storage for usernames/passwords)
-- ⏳ Payment history logging API
-- ⏳ Bill management UI (add/edit/deactivate bills)
-- ⏳ Due date alerts on dashboard
-- ⏳ Income tracking API and UI
-- ⏳ Settings screen
-
-**Known Issues:**
-- None currently - app is stable and functional
-
-**User Notes:**
-- User has additional household billers beyond the 7 seeded in database.
-  Once bill management UI is built (REQ-002), add these via the app UI.
-- Local DNS naming (squeezypay.local) is a Phase 1+ task (ROADMAP.md).
-  Currently accessible via IP address (192.168.1.221:5173).
-
-**Architecture Decisions:**
-- Friction removal hierarchy for bill payment (DECISIONS.md) - always prioritize:
-  1. Automated payment via API (ideal)
-  2. Seamless pre-authenticated login (fallback 1)
-  3. One-click navigation to payment page (fallback 2)
-  4. Home page + stored credentials (last resort)
-- Credential vault (Phase 1) will enable fallbacks 1 and 4.
-
-**Biller Notes:**
-- Example Credit Union: No direct payment portal. Users manage via app or branch.
-- Example Finance Co / Example Medical Co: Example Medical Co is owned by Example Finance Co. Links go to home pages (payment portal requires login context).
+- **Auto-start on Windows login** — not yet implemented. Priority for next session.
+- **Plaid free tier / Example Credit Union support** — verify before Phase 2 begins
+- **Plaid OAuth on local network** — test redirect URL behavior early in Phase 2
+- **Local DNS** (`squeezypay.local`) — Phase 1+ quality of life, not blocking
 
 ---
 
 ## Biller Reference
-
-Known household billers and their payment URLs. To be moved into the
-database in Phase 1. Listed here for POC hardcoding reference.
 
 | Biller | Category | URL |
 |---|---|---|
@@ -203,6 +217,3 @@ database in Phase 1. Listed here for POC hardcoding reference.
 | Example Finance Co | Loans / Debt | https://www.example.com/pay |
 | Example Student Loan Co | Education | https://example.com/payment |
 | Example Student Loan Co 2 | Education | https://www.example.com/manage-loans/make-a-payment/ |
-
-> **Note:** Verify all payment URLs before the POC demo. Billers occasionally
-> change their URL structure.

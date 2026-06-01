@@ -88,6 +88,62 @@ architectural decision should leave room for that growth without requiring a rew
 
 ---
 
+## Design Pattern Standards
+
+All backend code follows these patterns consistently. New code must conform.
+
+| Pattern | Where Applied | Rule |
+|---|---|---|
+| Service layer | All business logic | Services receive a `db` session via constructor injection. No raw DB access outside services. |
+| Repository pattern | All database access | Repositories are the only layer that touches SQLAlchemy models directly. Services call repositories, never the ORM directly. |
+| Dependency injection | FastAPI routes | Database sessions are injected via `Depends(get_db)`. Services are instantiated inside route handlers with the injected session. |
+| Singleton | Shared stateful objects | `EncryptionService` is a module-level singleton (lazy-initialized). One instance for the lifetime of the process. |
+| Separation of concerns | All layers | Routes validate input and call services. Services contain logic and call repositories. Repositories do CRUD. Nothing bleeds across layers. |
+
+**Frontend patterns:**
+- One component tree per major feature (bills, vault, transactions, etc.)
+- Shared state lives in React Context, not prop-drilled through component trees
+- API calls are isolated in `src/utils/api.js` - no `fetch()` calls inside components
+
+---
+
+## Logging Strategy
+
+Structured logging is built in from day one to support the future admin dashboard (Phase 4).
+
+**Backend:**
+- All logging goes through `core/logging_config.py`
+- Each service module gets its own named logger: `get_logger("squeezypay.services.bills")`
+- Console output: plain text (human-readable during development)
+- File output: JSON (machine-readable, for admin dashboard consumption)
+- Log file: `backend/logs/squeezypay.log` — rotating, 5MB max, 5 backups kept
+- Log meaningful events: creates, updates, deletes, warnings for not-found cases
+- Do NOT log sensitive data: never log passwords, encryption keys, or full credential records
+
+**Log levels:**
+- `INFO` — normal operations (bill retrieved, credential created, server started)
+- `WARNING` — unexpected but non-fatal states (record not found on update/delete)
+- `ERROR` — failures that need attention (encryption errors, DB errors)
+
+**Future admin dashboard** will read `squeezypay.log` and display a live log viewer. The JSON format (timestamp, level, service, message) is the contract.
+
+---
+
+## UX Principles
+
+These govern every UI decision. Non-negotiable.
+
+| Principle | Rule |
+|---|---|
+| Wife test | Every screen must be usable by a non-technical person with zero explanation. If it needs a label, add the label. If it needs a tooltip, add the tooltip. Assume nothing. |
+| One-click to action | The most common task (paying a bill) must never require more than two screens. The dashboard is the launchpad. |
+| Dark mode | The app supports light and dark mode. Dark mode is toggled by the user and the preference is persisted in localStorage. Default is system preference. |
+| Mobile first | Design for phone first. The app is primarily used on mobile (wife's iPhone, husband's phone). Desktop is secondary. |
+| No jargon | Labels, buttons, and messages use plain English. No technical terms visible to end users. |
+| Forgiving UI | Destructive actions (delete, deactivate) require a confirmation step. No accidental data loss. |
+
+---
+
 ## Data Flow
 
 ```

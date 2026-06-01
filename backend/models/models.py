@@ -51,7 +51,7 @@ class PaymentMethod(Base):
 
     id = Column(Integer, primary_key=True)
     nickname = Column(String(255), nullable=False)
-    type = Column(String(50), nullable=False)
+    payment_type = Column(String(50), nullable=False)
     last_four = Column(String(4), nullable=False)
     expiration_date = Column(String(10), nullable=True)
     notes = Column(Text, nullable=True)

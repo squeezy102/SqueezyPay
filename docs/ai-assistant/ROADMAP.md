@@ -116,17 +116,29 @@ spending insights, and a polished experience.
 | User accounts / household member profiles | - | STRETCH GOAL |
 | External asset / liability tracking | REQ-011 | STRETCH GOAL |
 | External push notifications (bill reminders) | REQ-013 | STRETCH GOAL |
-| Dark mode | - | STRETCH GOAL |
+| ~~Dark mode~~ | - | ~~STRETCH GOAL~~ DONE |
 | Export data to CSV | - | STRETCH GOAL |
-| Local admin dashboard (service management) | - | STRETCH GOAL |
+| ~~Local admin dashboard (service management)~~ | - | ~~STRETCH GOAL~~ PULLED FORWARD - BASIC VERSION DONE |
+| Auto-start on Windows login | - | REQUIRED (next session) |
+| Admin dashboard - metrics and graphs | - | GOOD NEXT STEP |
+| Admin dashboard - CPU/memory monitoring | - | NICE TO HAVE |
 
-**Admin Dashboard** - A local developer dashboard for managing services running on the host PC:
-- Start/stop frontend dev server, backend API, and other services
-- Real-time service status, uptime, and health checks
-- View logs from each service
-- Monitor resource usage (CPU, memory)
-- Quick access to useful links (API docs, app URLs, database browser)
-- This is a QoL feature for the PC owner - not a user-facing feature
+**Admin Dashboard** - A browser-based operations console (pinned tab at localhost:9000).
+Vision: one-stop shop for monitoring, debugging, troubleshooting, logging, diagnostics, and graphs.
+This is a developer/owner tool — not user-facing. Grows over time.
+
+Current state (basic):
+- Service status cards (backend, frontend) with start/stop buttons
+- Live log viewer with level filtering
+- Desktop shortcut launcher
+
+Planned additions (in order):
+- Auto-start on Windows login (next session - high priority)
+- Uptime tracking per service
+- CPU and memory usage graphs
+- Request rate and error rate metrics
+- Database stats (row counts, DB file size)
+- Quick links (API docs, app, database browser)
 
 ---
 
