@@ -83,19 +83,29 @@ Running notes for AI assistant continuity across sessions.
 
 **Scripts:**
 - `scripts/generate_key.py` - one-time Fernet key generation
-- `scripts/launch-admin.ps1` - starts admin server, opens browser
-- `scripts/create-shortcut.ps1` - creates desktop shortcut
-- `scripts/autostart.ps1` - starts admin server silently on login
-- `scripts/register-autostart.ps1` - registers auto-start as Windows scheduled task (run once as Administrator)
+- `scripts/tray.py` - system tray icon; manages all three services; icon color = green/yellow/red aggregate state
+- `scripts/launch-tray.ps1` - desktop shortcut target; installs deps, launches tray hidden
+- `scripts/launch-admin.ps1` - legacy admin-only launcher (kept for fallback)
+- `scripts/create-shortcut.ps1` - creates desktop shortcut (now targets launch-tray.ps1)
+- `scripts/autostart.ps1` - legacy; superseded by launch-tray.ps1 for autostart
+- `scripts/register-autostart.ps1` - registers tray auto-start as Windows scheduled task (run once as Administrator)
 
 **Desktop Shortcut:**
-- "SqueezyPay Admin" on the desktop
-- Double-click → admin server starts → browser opens at `http://localhost:9000`
-- Use Start buttons in dashboard to bring up backend and frontend
+- "SqueezyPay" on the desktop
+- Double-click → tray icon appears in system tray, admin server starts automatically
+- Right-click tray icon → Start All / Stop All / Open Dashboard / Open App / individual service toggles
+- Icon is green (all up), yellow (partial), red (all down)
 
 ---
 
 ## What Was Built This Session
+
+**System tray icon:**
+- `scripts/tray.py` — pystray + Pillow tray icon; owns the admin server process directly; delegates backend/frontend to the admin API; polls every 4s and updates icon color (green/yellow/red) and menu state in real time
+- `scripts/launch-tray.ps1` — desktop shortcut target; installs deps, launches tray with no console window
+- `scripts/create-shortcut.ps1` — updated to target tray launcher; shortcut renamed to "SqueezyPay"
+- `scripts/register-autostart.ps1` — updated to launch tray on login
+- `admin/requirements.txt` — added pystray, Pillow, requests
 
 **Codebase audit and cleanup:**
 - Service/repository layer standardized - `CredentialRepository`, `PaymentMethodRepository`, `CredentialService`, `PaymentMethodService` converted from instance-based to static methods. Entire backend now uses one consistent pattern.
@@ -137,8 +147,7 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **System tray icon** - Windows tray icon for start/stop/status of all three services (backend, frontend, admin). Replaces the need to keep the admin dashboard open. User changed their mind on browser-only approach - the admin server itself needs a management point that doesn't depend on the admin server being up. Stack: `pystray` + `Pillow`. See DECISIONS.md for updated rationale.
-2. **TypeScript migration (frontend)** - highest priority engineering foundation. Migrate before the codebase grows further.
+1. **TypeScript migration (frontend)** - highest priority engineering foundation. Migrate before the codebase grows further.
 3. **GitHub Actions CI gate** - automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master.
 4. **React Query + React Hook Form** - add before more API call patterns and forms accumulate.
 5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
