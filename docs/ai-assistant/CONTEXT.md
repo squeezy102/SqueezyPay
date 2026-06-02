@@ -6,9 +6,9 @@ Running notes for AI assistant continuity across sessions.
 
 ## Repository State
 
-- **Active branch:** `master` (owner works off `dev` or directly on master - no branch overhead for solo work)
+- **Active branch:** `dev`
 - **Last commit:** (see git log)
-- **Uncommitted changes:** Yes - full session's work is uncommitted (Alembic setup, auth backend + frontend, doc generalization). Commit before starting next session.
+- **Uncommitted changes:** None — all work committed.
 
 ---
 
@@ -99,6 +99,10 @@ Running notes for AI assistant continuity across sessions.
 ---
 
 ## What Was Built This Session
+
+**Single-instance tray enforcement:**
+- `tray.py` acquires Windows named mutex `Global\SqueezyPayTray` at startup; second launch detects it and exits silently before doing anything
+- `launch-tray.ps1` also checks for a running `tray.py` process before launching to avoid even a brief double-icon flash
 
 **TypeScript migration (frontend):**
 - Full migration from `.jsx`/`.js` to `.tsx`/`.ts` — zero old source files remain
