@@ -81,10 +81,11 @@ Running notes for AI assistant continuity across sessions.
 
 ## Next Session Priorities
 
-1. **Commit health check log suppression** — `admin/main.py` has an uncommitted fix that filters successful `/api/status` polls from the uvicorn log. Commit this first thing.
+1. **Write health check log suppression** — the uvicorn access log is noisy with successful `/api/status` polls from the dashboard's status poller. Add a custom logging filter in `admin/main.py` that suppresses these from the access log.
 2. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
 3. **Payment history logging API** — next Phase 1 item after admin dashboard
 4. **Bill management UI** — add/edit/deactivate bills from the frontend
+5. **Replace seed data** — `backend/seed.py` contains family-specific bills. Replace with a small set of generic example bills appropriate for a public project, or remove seed data entirely and let users populate their own.
 
 ---
 
