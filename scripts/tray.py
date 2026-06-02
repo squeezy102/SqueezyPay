@@ -282,11 +282,21 @@ def _on_quit(icon, item):
     icon.stop()
 
 
+def _status_tooltip(status: dict) -> str:
+    lines = ["SqueezyPay"]
+    for svc in ("admin", "backend", "frontend"):
+        up = status.get(svc, {}).get("running", False)
+        dot = "●" if up else "○"
+        lines.append(f"  {dot} {svc.capitalize()}")
+    return "\n".join(lines)
+
+
 def _refresh_icon(icon: pystray.Icon):
     global _last_status
     _last_status = _get_status()
-    icon.icon = _make_icon(_status_color(_last_status))
-    icon.menu = _build_menu(_last_status)
+    icon.icon  = _make_icon(_status_color(_last_status))
+    icon.menu  = _build_menu(_last_status)
+    icon.title = _status_tooltip(_last_status)
 
 
 # ---------------------------------------------------------------------------
@@ -320,7 +330,7 @@ def main():
     _tray = pystray.Icon(
         name="SqueezyPay",
         icon=icon_image,
-        title="SqueezyPay",
+        title=_status_tooltip(status),
         menu=menu,
     )
 
