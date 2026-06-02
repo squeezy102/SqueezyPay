@@ -135,10 +135,10 @@ These govern every UI decision. Non-negotiable.
 
 | Principle | Rule |
 |---|---|
-| Wife test | Every screen must be usable by a non-technical person with zero explanation. If it needs a label, add the label. If it needs a tooltip, add the tooltip. Assume nothing. |
+| Household usability test | Every screen must be usable by a non-technical household member with zero explanation. If it needs a label, add the label. If it needs a tooltip, add the tooltip. Assume nothing. |
 | One-click to action | The most common task (paying a bill) must never require more than two screens. The dashboard is the launchpad. |
 | Dark mode | The app supports light and dark mode. Dark mode is toggled by the user and the preference is persisted in localStorage. Default is system preference. |
-| Mobile first | Design for phone first. The app is primarily used on mobile (wife's iPhone, husband's phone). Desktop is secondary. |
+| Mobile first | Design for phone first. The app is primarily used on mobile devices by household members. Desktop is secondary. |
 | No jargon | Labels, buttons, and messages use plain English. No technical terms visible to end users. |
 | Forgiving UI | Destructive actions (delete, deactivate) require a confirmation step. No accidental data loss. |
 

@@ -190,7 +190,7 @@ python -m uvicorn main:app --host 0.0.0.0 --port 9000
 ```
 
 URLs:
-- App: `http://localhost:5173` (network: `http://192.168.1.221:5173`)
+- App: `http://localhost:5173` (network: `http://<your-pc-ip>:5173`)
 - Backend API: `http://localhost:8000`
 - API docs: `http://localhost:8000/docs`
 - Admin dashboard: `http://localhost:9000`
@@ -203,18 +203,3 @@ URLs:
 - **Plaid free tier / Example Credit Union support** — verify before Phase 2 begins
 - **Plaid OAuth on local network** — test redirect URL behavior early in Phase 2
 - **Local DNS** (`squeezypay.local`) — Phase 1+ quality of life, not blocking
-
----
-
-## Biller Reference
-
-| Biller | Category | URL |
-|---|---|---|
-| Example Credit Union | Loans / Debt | https://www.example.com |
-| Example Internet Co | Internet / Phone | https://www.example.com/buy/broadband/pay-bill.html |
-| Example Electric Co | Utilities | https://www.example.com/account/pay-bill |
-| City of East Alton | Utilities | (verify URL) |
-| Example Medical Co | Healthcare / Medical | https://www.example.com/pay/ |
-| Example Finance Co | Loans / Debt | https://www.example.com/pay |
-| Example Student Loan Co | Education | https://example.com/payment |
-| Example Student Loan Co 2 | Education | https://www.example.com/manage-loans/make-a-payment/ |

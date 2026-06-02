@@ -123,4 +123,4 @@ Mark each with current status when running: ✅ Pass | ❌ Fail | ⏳ Not yet te
 - TC-012: Credential vault — store and retrieve biller credentials
 - TC-013: Payment method vault — store and retrieve payment method
 - TC-014: PWA installs on iPhone home screen
-- TC-015: App accessible from wife's phone via local IP
+- TC-015: App accessible from another device on the home network via local IP

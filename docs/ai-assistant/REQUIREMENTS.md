@@ -383,3 +383,25 @@ Application configuration accessible from a settings screen.
 - Category management (add, rename)
 - Large payment alert threshold
 - Default transaction history window (default 90 days)
+- Passphrase change (see REQ-016)
+
+---
+
+## REQ-016: Authentication
+
+A single household passphrase that gates access to the app. Designed for scenarios where the app may be reachable beyond a strictly private network.
+
+### Behavior
+
+- On first launch with no passphrase configured, the app prompts the user to set one
+- All routes require an active session - unauthenticated requests redirect to the login screen
+- The session persists until the browser is closed or the user explicitly logs out
+- One passphrase for the household - no per-user accounts
+- Passphrase is stored as a bcrypt hash - never in plaintext
+- Passphrase can be changed from the settings screen (REQ-015)
+
+### Security Notes
+
+- Single-factor gate appropriate for home network use - not enterprise-grade auth
+- Does not replace network-level access controls
+- Protects against accidental exposure if the host machine becomes reachable beyond the home network

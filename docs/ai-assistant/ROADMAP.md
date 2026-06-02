@@ -33,8 +33,7 @@ with real data.
 - No login
 - Bills are hardcoded for the demo
 
-**Done when:** Wife installs it on her phone and pays at least one bill
-through it tonight.
+**Done when:** A household member installs it on their phone and navigates to a biller's payment page.
 
 ---
 
@@ -51,6 +50,7 @@ are encrypted. Payment history is logged.
 | Payment history log with confirmation numbers | REQ-003 | REQUIRED |
 | Secure credential vault (encrypted) | REQ-004 | REQUIRED |
 | Payment method storage (encrypted) | REQ-004 | REQUIRED |
+| Authentication (household passphrase) | REQ-016 | REQUIRED |
 | Due date alerts on dashboard | REQ-013 | GOOD START |
 | Income tracking | REQ-010 | GOOD START |
 | Transaction categories | REQ-009 | REQUIRED |
@@ -118,6 +118,7 @@ spending insights, and a polished experience.
 | External push notifications (bill reminders) | REQ-013 | STRETCH GOAL |
 | ~~Dark mode~~ | - | ~~STRETCH GOAL~~ DONE |
 | Export data to CSV | - | STRETCH GOAL |
+| Streamlined setup / installer script | - | GOOD NEXT STEP |
 | ~~Local admin dashboard (service management)~~ | - | ~~STRETCH GOAL~~ PULLED FORWARD - BASIC VERSION DONE |
 | Auto-start on Windows login | - | REQUIRED (next session) |
 | Admin dashboard - metrics and graphs | - | GOOD NEXT STEP |
