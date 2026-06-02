@@ -115,7 +115,7 @@ spending insights, and a polished experience.
 | Shared vs. personal expense tagging | - | NICE TO HAVE |
 | User accounts / household member profiles | - | STRETCH GOAL |
 | External asset / liability tracking | REQ-011 | STRETCH GOAL |
-| External push notifications (bill reminders) | REQ-013 | STRETCH GOAL |
+| External push notifications (bill reminders) | REQ-013 | STRETCH GOAL - wife specifically requested |
 | ~~Dark mode~~ | - | ~~STRETCH GOAL~~ DONE |
 | Export data to CSV | - | STRETCH GOAL |
 | ~~Local admin dashboard (service management)~~ | - | ~~STRETCH GOAL~~ PULLED FORWARD - BASIC VERSION DONE |
