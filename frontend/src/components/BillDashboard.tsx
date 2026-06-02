@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { sortBillsByDueDate, getBillStatus, filterActionableBills } from "../utils/billUtils";
 import { getBills, getSettings } from "../utils/api";
 import { alertBannerTokens } from "../theme/tokens";
@@ -57,16 +58,21 @@ function ChevronIcon({ open }: { open: boolean }) {
 }
 
 export default function BillDashboard() {
-  const [bills, setBills]         = useState<Bill[]>([]);
-  const [showAll, setShowAll]     = useState(false);
-  const [thresholds, setThresholds] = useState<AppSettings>({ dueSoonDays: 7, largePaymentThreshold: 500 });
+  const [showAll, setShowAll] = useState(false);
 
-  useEffect(() => {
-    getBills().then(setBills);
-    getSettings().then((s) => { if (s) setThresholds(s); });
-  }, []);
+  const { data: bills } = useQuery<Bill[]>({
+    queryKey: ["bills"],
+    queryFn: getBills,
+  });
 
-  const sorted     = sortBillsByDueDate(bills);
+  const { data: settings } = useQuery<AppSettings | null>({
+    queryKey: ["settings"],
+    queryFn: getSettings,
+  });
+
+  const thresholds: AppSettings = settings ?? { dueSoonDays: 7, largePaymentThreshold: 500 };
+
+  const sorted     = sortBillsByDueDate(bills ?? []);
   const actionable = filterActionableBills(sorted, thresholds.dueSoonDays);
   const upcoming   = sorted.filter((b) => !actionable.includes(b));
 

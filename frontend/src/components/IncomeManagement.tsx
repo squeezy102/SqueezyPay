@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getIncome, deactivateIncome, reactivateIncome, getMonthlyTotal } from "../utils/api";
 import type { Income, IncomeFrequency } from "../types";
 import IncomeFormModal from "./IncomeFormModal";
@@ -24,42 +25,49 @@ function formatDate(dateStr: string | null): string {
 }
 
 export default function IncomeManagement() {
-  const [sources, setSources]           = useState<Income[]>([]);
-  const [monthlyTotal, setMonthlyTotal] = useState<number | null>(null);
+  const queryClient = useQueryClient();
   const [showInactive, setShowInactive] = useState(false);
   // undefined = closed, null = add new, Income = edit existing
   const [modalIncome, setModalIncome]   = useState<Income | null | undefined>(undefined);
   const [error, setError]               = useState<string | null>(null);
 
-  const loadTotal = useCallback(async () => {
-    const total = await getMonthlyTotal();
-    setMonthlyTotal(total);
-  }, []);
+  const incomeQuery = useQuery({
+    queryKey: ["income", { includeInactive: showInactive }],
+    queryFn:  () => getIncome(showInactive),
+  });
 
-  const load = useCallback(async () => {
-    const data = await getIncome(showInactive);
-    data.sort((a, b) => a.sourceName.localeCompare(b.sourceName));
-    setSources(data);
-    await loadTotal();
-  }, [showInactive, loadTotal]);
+  const mtQuery = useQuery({
+    queryKey: ["income", "monthly-total"],
+    queryFn:  getMonthlyTotal,
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const sources: Income[] = [...(incomeQuery.data ?? [])].sort((a, b) =>
+    a.sourceName.localeCompare(b.sourceName)
+  );
 
-  async function handleSave() {
+  const monthlyTotal = mtQuery.data ?? null;
+
+  const toggleMutation = useMutation({
+    mutationFn: async (source: Income): Promise<Income | null | void> =>
+      source.active ? deactivateIncome(source.id) : reactivateIncome(source.id),
+    onSuccess: (result, source) => {
+      if (!source.active && !result) {
+        setError("Reactivate failed — check backend logs.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["income"] });
+    },
+  });
+
+  function handleSave() {
     setModalIncome(undefined);
     setError(null);
-    await load();
+    queryClient.invalidateQueries({ queryKey: ["income"] });
   }
 
-  async function handleToggleActive(source: Income) {
+  function handleToggleActive(source: Income) {
     setError(null);
-    if (source.active) {
-      await deactivateIncome(source.id);
-    } else {
-      const result = await reactivateIncome(source.id);
-      if (!result) { setError("Reactivate failed — check backend logs."); return; }
-    }
-    await load();
+    toggleMutation.mutate(source);
   }
 
   const active   = sources.filter((s) => s.active);

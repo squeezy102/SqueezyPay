@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getBillStatus, getDaysUntilDue, formatDueDate } from "../utils/billUtils";
 import { statusTokens, actionTokens, cardClass } from "../theme/tokens";
 import type { Bill, BillStatus } from "../types";
@@ -34,10 +35,11 @@ interface Props {
 }
 
 export default function BillCard({ bill, dueSoonDays = 7 }: Props) {
-  const status    = getBillStatus(bill.dayOfMonth, dueSoonDays);
-  const daysUntil = getDaysUntilDue(bill.dayOfMonth);
-  const dueDate   = formatDueDate(bill.dayOfMonth);
+  const status      = getBillStatus(bill.dayOfMonth, dueSoonDays);
+  const daysUntil   = getDaysUntilDue(bill.dayOfMonth);
+  const dueDate     = formatDueDate(bill.dayOfMonth);
   const [showModal, setShowModal] = useState(false);
+  const queryClient = useQueryClient();
 
   function handlePayClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -74,7 +76,10 @@ export default function BillCard({ bill, dueSoonDays = 7 }: Props) {
         <LogPaymentModal
           bill={bill}
           onClose={() => setShowModal(false)}
-          onLogged={() => setShowModal(false)}
+          onLogged={() => {
+            queryClient.invalidateQueries({ queryKey: ["bills"] });
+            setShowModal(false);
+          }}
         />
       )}
     </>

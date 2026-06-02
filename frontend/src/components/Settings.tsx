@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, updateSettings, getCategories, createCategory, updateCategory } from "../utils/api";
 import type { Category } from "../types";
 
@@ -12,42 +13,63 @@ function PencilIcon() {
 
 // ── Alert Thresholds section ──────────────────────────────────────────────────
 function AlertThresholdsCard() {
+  const queryClient = useQueryClient();
   const [dueSoonDays, setDueSoonDays]            = useState("");
   const [largePaymentThreshold, setLargePayment] = useState("");
-  const [loading, setLoading]                    = useState(true);
   const [saving, setSaving]                      = useState(false);
   const [saved, setSaved]                        = useState(false);
   const [error, setError]                        = useState<string | null>(null);
   const savedTimerRef                            = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialized                              = useRef(false);
+
+  const settingsQuery = useQuery({
+    queryKey: ["settings"],
+    queryFn:  getSettings,
+  });
 
   useEffect(() => {
-    getSettings().then((data) => {
-      if (data) {
-        setDueSoonDays(String(data.dueSoonDays));
-        setLargePayment(String(data.largePaymentThreshold));
-      }
-      setLoading(false);
-    });
+    if (settingsQuery.data && !initialized.current) {
+      setDueSoonDays(String(settingsQuery.data.dueSoonDays));
+      setLargePayment(String(settingsQuery.data.largePaymentThreshold));
+      initialized.current = true;
+    }
+  }, [settingsQuery.data]);
+
+  useEffect(() => {
     return () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); };
   }, []);
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: { dueSoonDays: number; largePaymentThreshold: number }) =>
+      updateSettings(payload),
+    onSuccess: (result) => {
+      setSaving(false);
+      if (!result) {
+        setError("Save failed — check backend logs.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      setSaved(true);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
+    },
+    onError: () => {
+      setSaving(false);
+      setError("Save failed — check backend logs.");
+    },
+  });
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaving(true);
-    const result = await updateSettings({
+    saveMutation.mutate({
       dueSoonDays:           Number(dueSoonDays),
       largePaymentThreshold: Number(largePaymentThreshold),
     });
-    setSaving(false);
-    if (!result) {
-      setError("Save failed — check backend logs.");
-      return;
-    }
-    setSaved(true);
-    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
   }
+
+  const loading = settingsQuery.isLoading;
 
   return (
     <section className="rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
@@ -287,22 +309,24 @@ function AddCategoryForm({ onSaved, onCancel }: AddCategoryFormProps) {
 
 // ── Transaction Categories section ────────────────────────────────────────────
 function CategoriesCard() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [adding, setAdding]         = useState(false);
+  const queryClient = useQueryClient();
+  const [adding, setAdding] = useState(false);
 
-  const load = useCallback(async () => {
-    const data = await getCategories();
-    data.sort((a, b) => a.name.localeCompare(b.name));
-    setCategories(data);
-    setLoading(false);
-  }, []);
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn:  async () => {
+      const data = await getCategories();
+      data.sort((a, b) => a.name.localeCompare(b.name));
+      return data;
+    },
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const categories = categoriesQuery.data ?? [];
+  const loading    = categoriesQuery.isLoading;
 
   function handleSaved() {
     setAdding(false);
-    load();
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
   }
 
   return (
@@ -343,7 +367,11 @@ function CategoriesCard() {
             </li>
           ) : (
             categories.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} onSaved={load} />
+              <CategoryRow
+                key={cat.id}
+                category={cat}
+                onSaved={() => queryClient.invalidateQueries({ queryKey: ["categories"] })}
+              />
             ))
           )}
         </ul>

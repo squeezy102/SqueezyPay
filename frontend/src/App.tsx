@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Sidebar, MobileTopBar } from "./components/NavBar";
@@ -47,6 +48,7 @@ export default function App() {
           <AppShell />
         </AuthGate>
       </AuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </ThemeProvider>
   );
 }

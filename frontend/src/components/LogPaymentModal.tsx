@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logPayment, getCredentialByBill, getPaymentMethods } from "../utils/api";
 import type { Bill, Payment, Credential, PaymentMethod } from "../types";
 import MoneyInput from "./MoneyInput";
@@ -57,10 +58,22 @@ interface Props {
 
 export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   const today = new Date().toISOString().split("T")[0];
+  const queryClient = useQueryClient();
 
-  const [credential, setCredential]         = useState<Credential | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [showCreds, setShowCreds]           = useState(false);
+  const credQuery = useQuery<Credential | null>({
+    queryKey: ["credentials", "bill", bill.id],
+    queryFn: () => getCredentialByBill(bill.id),
+  });
+
+  const pmQuery = useQuery<PaymentMethod[]>({
+    queryKey: ["paymentMethods"],
+    queryFn: getPaymentMethods,
+  });
+
+  const credential     = credQuery.data ?? null;
+  const paymentMethods = pmQuery.data ?? [];
+
+  const [showCreds, setShowCreds] = useState(false);
   const [form, setForm] = useState<FormState>({
     paymentDate:        today,
     amountPaid:         bill.expectedAmount ?? 0,
@@ -72,10 +85,13 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   const [success, setSuccess] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
-  useEffect(() => {
-    getCredentialByBill(bill.id).then(setCredential);
-    getPaymentMethods().then(setPaymentMethods);
-  }, [bill.id]);
+  const logMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof logPayment>[0]) => logPayment(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
+    },
+  });
 
   function set<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -93,7 +109,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
       return;
     }
     setSaving(true);
-    const result = await logPayment({
+    const result = await logMutation.mutateAsync({
       billId:             bill.id,
       paymentDate:        form.paymentDate,
       amountPaid:         form.amountPaid,

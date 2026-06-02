@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { createIncome, updateIncome } from "../utils/api";
 import type { Income, IncomeFrequency } from "../types";
 
@@ -40,12 +41,11 @@ interface Props {
 }
 
 export default function IncomeFormModal({ income, onSave, onClose }: Props) {
+  const queryClient = useQueryClient();
   const isEdit = !!income;
 
-  const [form, setForm]         = useState<FormState>(EMPTY_FORM);
-  const [errors, setErrors]     = useState<FormErrors>({});
-  const [saving, setSaving]     = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [form, setForm]     = useState<FormState>(EMPTY_FORM);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (income) {
@@ -57,6 +57,18 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
       });
     }
   }, [income]);
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: { sourceName: string; amount: number; frequency: IncomeFrequency; nextExpectedDate: string }) =>
+      isEdit && income
+        ? updateIncome(income.id, payload)
+        : createIncome(payload),
+    onSuccess: (result) => {
+      if (!result) return;
+      queryClient.invalidateQueries({ queryKey: ["income"] });
+      onSave();
+    },
+  });
 
   function set<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -73,34 +85,26 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
     return e;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    setSaving(true);
-    setApiError(null);
-
-    const payload = {
+    saveMutation.mutate({
       sourceName:       form.sourceName.trim(),
       amount:           Number(form.amount),
       frequency:        form.frequency,
       nextExpectedDate: form.nextExpectedDate,
-    };
-
-    const result = isEdit && income
-      ? await updateIncome(income.id, payload)
-      : await createIncome(payload);
-
-    setSaving(false);
-
-    if (!result) {
-      setApiError("Save failed — check backend logs.");
-      return;
-    }
-
-    onSave();
+    });
   }
+
+  const apiError = saveMutation.isError
+    ? "Save failed — check backend logs."
+    : saveMutation.data === null
+      ? "Save failed — check backend logs."
+      : null;
+
+  const saving = saveMutation.isPending;
 
   return (
     <div

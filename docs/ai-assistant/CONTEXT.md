@@ -100,6 +100,32 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
+**React Query (TanStack Query v5):**
+- `@tanstack/react-query@5.101.0` + `@tanstack/react-query-devtools@5.101.0` installed in `frontend/`
+- `QueryClientProvider` added in `main.tsx` (staleTime: 30s, retry: 1)
+- `ReactQueryDevtools` added in `App.tsx` (initialIsOpen: false — floating button in dev)
+- All `useEffect`/`useState` API call patterns replaced with `useQuery`/`useMutation` across every component:
+  - `BillDashboard` — `useQuery(["bills"])` + `useQuery(["settings"])`
+  - `BillCard` — `useQueryClient` to invalidate `["bills"]` on payment logged
+  - `BillManagement` — `useQuery(["bills", "all"])`, mutations for save/toggle with invalidation
+  - `PaymentHistory` — `useQuery(["payments"])`
+  - `LogPaymentModal` — `useQuery(["credentials", "bill", billId])`, `useQuery(["paymentMethods"])`, mutation for logPayment invalidates `["payments"]` + `["bills"]`
+  - `IncomeManagement` — `useQuery(["income", { includeInactive }])`, `useQuery(["income", "monthly-total"])`, mutation for toggle
+  - `IncomeFormModal` — mutation for create/update, invalidates `["income"]`
+  - `Settings` (AlertThresholdsCard) — `useQuery(["settings"])`, mutation for updateSettings
+  - `Settings` (CategoriesCard) — `useQuery(["categories"])`, invalidation on add/edit
+- Query key taxonomy (canonical - use these everywhere):
+  - `["bills"]` — active bills
+  - `["bills", "all"]` — all bills including inactive
+  - `["settings"]` — app settings
+  - `["payments"]` — all payment history
+  - `["payments", "bill", billId]` — payments for a specific bill
+  - `["income", { includeInactive: boolean }]` — income sources
+  - `["income", "monthly-total"]` — computed monthly income total
+  - `["categories"]` — transaction categories
+  - `["credentials", "bill", billId]` — credential for a bill
+  - `["paymentMethods"]` — payment methods vault
+
 **CI gate (GitHub Actions):**
 - `.github/workflows/ci.yml` — runs on push to dev and PR to master
 - Backend job: `pytest --cov --cov-fail-under=80` (currently 87% coverage, 55 tests passing)
@@ -190,8 +216,7 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **React Query (TanStack Query)** - add before more API call patterns accumulate. Install, wrap app in QueryClientProvider, migrate all `useEffect`/fetch calls to `useQuery`/`useMutation`.
-2. **React Hook Form** - add before more forms are written. Migrate BillFormModal, IncomeFormModal, LogPaymentModal, Settings.
+1. **React Hook Form** - add before more forms are written. Migrate BillFormModal, IncomeFormModal, LogPaymentModal, Settings.
 3. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
 5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
 6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.

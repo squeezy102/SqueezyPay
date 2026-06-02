@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAllBills, createBill, updateBill, deactivateBill, reactivateBill } from "../utils/api";
 import { categoryTokens, defaultCategoryToken } from "../theme/tokens";
 import type { Bill } from "../types";
@@ -15,39 +16,52 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 export default function BillManagement() {
-  const [bills, setBills]         = useState<Bill[]>([]);
+  const queryClient = useQueryClient();
   // undefined = closed, null = add new, Bill = edit existing
   const [modalBill, setModalBill] = useState<Bill | null | undefined>(undefined);
   const [error, setError]         = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    const data = await getAllBills();
-    data.sort((a, b) => a.dayOfMonth - b.dayOfMonth);
-    setBills(data);
-  }, []);
+  const billsQuery = useQuery({
+    queryKey: ["bills", "all"],
+    queryFn: async () => {
+      const data = await getAllBills();
+      data.sort((a, b) => a.dayOfMonth - b.dayOfMonth);
+      return data;
+    },
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const saveMutation = useMutation({
+    mutationFn: async (payload: BillPayload) => {
+      if (modalBill) {
+        return updateBill(modalBill.id, payload);
+      }
+      return createBill(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (bill: Bill) =>
+      bill.active ? deactivateBill(bill.id) : reactivateBill(bill.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
+    },
+  });
 
   async function handleSave(payload: BillPayload) {
     setError(null);
-    let result: Bill | null;
-    if (modalBill) {
-      result = await updateBill(modalBill.id, payload);
-    } else {
-      result = await createBill(payload);
-    }
+    const result = await saveMutation.mutateAsync(payload);
     if (!result) { setError("Save failed - check backend logs."); return; }
     setModalBill(undefined);
-    await load();
   }
 
-  async function handleToggleActive(bill: Bill) {
-    const result = bill.active
-      ? await deactivateBill(bill.id)
-      : await reactivateBill(bill.id);
-    if (result) await load();
+  function handleToggleActive(bill: Bill) {
+    toggleMutation.mutate(bill);
   }
 
+  const bills    = billsQuery.data ?? [];
   const active   = bills.filter((b) => b.active);
   const inactive = bills.filter((b) => !b.active);
 

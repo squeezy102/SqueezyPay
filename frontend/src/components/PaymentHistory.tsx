@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getAllPayments } from "../utils/api";
 import type { Payment } from "../types";
 
@@ -53,15 +54,10 @@ function cellValue(p: Payment, key: SortKey): React.ReactNode {
 }
 
 export default function PaymentHistory() {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const query   = useQuery({ queryKey: ["payments"], queryFn: getAllPayments });
   const [search, setSearch]     = useState("");
   const [sortKey, setSortKey]   = useState<SortKey>("paymentDate");
   const [sortDir, setSortDir]   = useState<SortDir>("desc");
-
-  useEffect(() => {
-    getAllPayments().then((data) => { setPayments(data); setLoading(false); });
-  }, []);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -71,6 +67,8 @@ export default function PaymentHistory() {
       setSortDir("asc");
     }
   }
+
+  const payments = query.data ?? [];
 
   const filtered = payments.filter((p) => {
     if (!search) return true;
@@ -122,7 +120,7 @@ export default function PaymentHistory() {
 
         {/* Table */}
         <div className="rounded-xl border border-violet-100 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
-          {loading ? (
+          {query.isLoading ? (
             <p className="text-center text-sm text-slate-400 py-16">Loading...</p>
           ) : sorted.length === 0 ? (
             <p className="text-center text-sm text-slate-400 py-16">
