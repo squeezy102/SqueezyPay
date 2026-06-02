@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Sidebar, MobileTopBar } from "./components/NavBar";
 import BillDashboard from "./components/BillDashboard";
 import BillManagement from "./components/BillManagement";
 import PaymentHistory from "./components/PaymentHistory";
 import IncomeManagement from "./components/IncomeManagement";
 import Settings from "./components/Settings";
+import LoginScreen from "./components/LoginScreen";
+import SetupScreen from "./components/SetupScreen";
 
 function AppShell() {
   const [activeTab, setActiveTab] = useState("home");
@@ -27,10 +30,22 @@ function AppShell() {
   );
 }
 
+function AuthGate({ children }) {
+  const { isAuthenticated, isConfigured, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-violet-50 dark:bg-slate-950" />;
+  if (!isConfigured) return <SetupScreen />;
+  if (!isAuthenticated) return <LoginScreen />;
+  return children;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
-      <AppShell />
+      <AuthProvider>
+        <AuthGate>
+          <AppShell />
+        </AuthGate>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

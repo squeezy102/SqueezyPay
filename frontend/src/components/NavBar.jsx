@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+
+function LogoutIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+    </svg>
+  );
+}
 
 const tabs = [
   {
@@ -130,8 +139,24 @@ export function Sidebar({ active, onChange }) {
         <span className="text-xs text-violet-300 dark:text-slate-500">Theme</span>
         <DarkModeToggle />
       </div>
+      <SidebarLogoutButton />
       <AdminLink />
     </aside>
+  );
+}
+
+function SidebarLogoutButton() {
+  const { logout } = useAuth();
+  return (
+    <div className="px-3 py-2 border-t border-violet-800 dark:border-slate-700">
+      <button
+        onClick={logout}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-violet-300 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white dark:hover:text-slate-200 transition-colors text-left"
+      >
+        <LogoutIcon />
+        Sign Out
+      </button>
+    </div>
   );
 }
 
@@ -173,6 +198,21 @@ function AdminLink() {
           Admin dashboard →
         </a>
       )}
+    </div>
+  );
+}
+
+function MobileLogoutButton({ onClose }) {
+  const { logout } = useAuth();
+  return (
+    <div className="border-t border-violet-800 dark:border-slate-700 mt-1 pt-1">
+      <button
+        onClick={() => { onClose(); logout(); }}
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-violet-300 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white transition-colors text-left"
+      >
+        <LogoutIcon />
+        Sign Out
+      </button>
     </div>
   );
 }
@@ -229,6 +269,7 @@ export function MobileTopBar({ active, onChange }) {
               </button>
             );
           })}
+          <MobileLogoutButton onClose={() => setMenuOpen(false)} />
         </div>
       )}
     </>

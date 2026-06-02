@@ -86,7 +86,7 @@ Encrypted storage for biller login credentials and household payment methods.
 
 ### Payment Method Records
 
-- Nickname (e.g. "ECU Visa", "Joint Checking")
+- Nickname (e.g. "Visa ending in 1234", "Joint Checking")
 - Type (credit card, debit card, bank account)
 - Last 4 digits
 - Expiration date (cards only)
@@ -140,9 +140,9 @@ Forward-looking cash flow view based on known recurring bills and income.
 
 ---
 
-## REQ-006: Example Credit Union Account Integration (Plaid)
+## REQ-006: Bank Account Integration (Plaid)
 
-Automatic transaction and balance data pulled from Example Credit Union
+Automatic transaction and balance data pulled from your financial institution's
 accounts via the Plaid API.
 
 ### Supported Account Types
@@ -162,9 +162,9 @@ user-assigned category override
 
 ### Behavior
 
-- Plaid connection is established once via OAuth flow - user logs into ECU
-through Plaid's secure interface
-- ECU credentials are never stored in SqueezyPay
+- Plaid connection is established once via OAuth flow - user logs into their
+financial institution through Plaid's secure interface
+- Financial institution credentials are never stored in SqueezyPay
 - Transaction data is refreshed on demand ("Refresh" button) or automatically
 at app startup
 - Transactions are stored locally in SQLite after each refresh - app functions
@@ -174,7 +174,7 @@ user can override per transaction or set a rule to always override a merchant
 
 ### Accounts View
 
-- Each ECU account displayed as a card showing balance and account type
+- Each linked account displayed as a card showing balance and account type
 - Clicking an account opens its transaction history
 - Transactions are searchable and filterable by date, amount, and category
 
@@ -187,7 +187,7 @@ Designed to support honest household spending conversations.
 
 ### Data Sources
 
-- Plaid transaction data (ECU accounts - REQ-006)
+- Plaid transaction data (linked accounts - REQ-006)
 - Manually logged payments (REQ-003)
 
 ### Views
@@ -297,7 +297,7 @@ Household income entries used to contextualize spending and power projections.
 - Monthly income total is displayed on the dashboard and budget view
 - Income is not pulled from Plaid - it is entered manually and maintained
 by the user
-- Multiple income sources supported (both spouses, side income, etc.)
+- Multiple income sources supported (multiple household members, side income, etc.)
 
 ---
 
@@ -307,19 +307,19 @@ A single-screen summary of household financial position.
 
 ### Data Sources
 
-- ECU account balances (from Plaid - REQ-006)
+- Bank account balances (from Plaid - REQ-006)
 - Manually entered external assets (optional)
 - Manually entered external liabilities (optional)
 
 ### Layout
 
-- Assets column: ECU balances + any manually entered assets
-- Liabilities column: ECU loan balances + any manually entered liabilities
+- Assets column: bank balances + any manually entered assets
+- Liabilities column: bank loan balances + any manually entered liabilities
 - Net worth = assets minus liabilities, displayed prominently
 
 ### Behavior
 
-- ECU data refreshes with the same Plaid refresh cycle as REQ-006
+- Bank account data refreshes with the same Plaid refresh cycle as REQ-006
 - Manual assets/liabilities are user-maintained
 - Historical net worth is tracked over time and displayed as a simple line chart
 (one data point per month)

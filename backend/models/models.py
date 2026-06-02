@@ -89,3 +89,12 @@ class Income(Base):
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+class AuthConfig(Base):
+    __tablename__ = "auth_config"
+
+    id = Column(Integer, primary_key=True)
+    passphrase_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)

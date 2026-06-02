@@ -1,5 +1,55 @@
 const API_BASE = `http://${window.location.hostname}:8000`;
 
+function authHeaders() {
+  const token = sessionStorage.getItem("squeezypay_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function handle401(response) {
+  if (response.status === 401) {
+    sessionStorage.removeItem("squeezypay_token");
+    window.dispatchEvent(new Event("squeezypay:unauthorized"));
+  }
+  return response;
+}
+
+// ── Auth API ──────────────────────────────────────────────────────────────────
+
+export async function getAuthStatus() {
+  const response = await fetch(`${API_BASE}/api/auth/status`);
+  return response.json(); // { configured: bool }
+}
+
+export async function setupAuth(passphrase) {
+  const response = await fetch(`${API_BASE}/api/auth/setup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ passphrase }),
+  });
+  if (!response.ok) throw new Error(`Setup failed: ${response.status}`);
+  return response.json(); // { access_token, token_type }
+}
+
+export async function loginAuth(passphrase) {
+  const response = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ passphrase }),
+  });
+  if (response.status === 401) throw new Error("Incorrect passphrase");
+  if (!response.ok) throw new Error(`Login failed: ${response.status}`);
+  return response.json(); // { access_token, token_type }
+}
+
+export async function logoutAuth() {
+  await fetch(`${API_BASE}/api/auth/logout`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function formatAmount(amount) {
   if (amount == null) return "Amount varies";
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
@@ -36,7 +86,7 @@ function mapPayment(raw) {
 
 export async function getPaymentsByBill(billId) {
   try {
-    const response = await fetch(`${API_BASE}/api/payment-history/bill/${billId}`);
+    const response = handle401(await fetch(`${API_BASE}/api/payment-history/bill/${billId}`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return data.map(mapPayment);
@@ -48,7 +98,7 @@ export async function getPaymentsByBill(billId) {
 
 export async function getAllPayments() {
   try {
-    const response = await fetch(`${API_BASE}/api/payment-history/`);
+    const response = handle401(await fetch(`${API_BASE}/api/payment-history/`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return data.map(mapPayment);
@@ -60,9 +110,9 @@ export async function getAllPayments() {
 
 export async function logPayment(payload) {
   try {
-    const response = await fetch(`${API_BASE}/api/payment-history/`, {
+    const response = handle401(await fetch(`${API_BASE}/api/payment-history/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         bill_id:             payload.billId,
         payment_date:        payload.paymentDate,
@@ -71,7 +121,7 @@ export async function logPayment(payload) {
         confirmation_number: payload.confirmationNumber ?? null,
         notes:               payload.notes ?? null,
       }),
-    });
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapPayment(await response.json());
   } catch (error) {
@@ -82,7 +132,7 @@ export async function logPayment(payload) {
 
 export async function getCredentialByBill(billId) {
   try {
-    const response = await fetch(`${API_BASE}/api/credentials/by-bill/${billId}`);
+    const response = handle401(await fetch(`${API_BASE}/api/credentials/by-bill/${billId}`, { headers: { ...authHeaders() } }));
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return await response.json();
@@ -94,7 +144,7 @@ export async function getCredentialByBill(billId) {
 
 export async function getPaymentMethods() {
   try {
-    const response = await fetch(`${API_BASE}/api/payment-methods/`);
+    const response = handle401(await fetch(`${API_BASE}/api/payment-methods/`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return await response.json();
   } catch (error) {
@@ -105,7 +155,7 @@ export async function getPaymentMethods() {
 
 export async function getBills() {
   try {
-    const response = await fetch(`${API_BASE}/api/bills/`);
+    const response = handle401(await fetch(`${API_BASE}/api/bills/`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return data.map(mapBill);
@@ -117,7 +167,7 @@ export async function getBills() {
 
 export async function getAllBills() {
   try {
-    const response = await fetch(`${API_BASE}/api/bills/?include_inactive=true`);
+    const response = handle401(await fetch(`${API_BASE}/api/bills/?include_inactive=true`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return data.map(mapBill);
@@ -129,9 +179,9 @@ export async function getAllBills() {
 
 export async function createBill(payload) {
   try {
-    const response = await fetch(`${API_BASE}/api/bills/`, {
+    const response = handle401(await fetch(`${API_BASE}/api/bills/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         name:            payload.name,
         category:        payload.category,
@@ -141,7 +191,7 @@ export async function createBill(payload) {
         recurring:       payload.recurring,
         notes:           payload.notes ?? null,
       }),
-    });
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json());
   } catch (error) {
@@ -152,9 +202,9 @@ export async function createBill(payload) {
 
 export async function updateBill(billId, payload) {
   try {
-    const response = await fetch(`${API_BASE}/api/bills/${billId}`, {
+    const response = handle401(await fetch(`${API_BASE}/api/bills/${billId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         name:            payload.name,
         category:        payload.category,
@@ -164,7 +214,7 @@ export async function updateBill(billId, payload) {
         recurring:       payload.recurring,
         notes:           payload.notes ?? null,
       }),
-    });
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json());
   } catch (error) {
@@ -175,7 +225,7 @@ export async function updateBill(billId, payload) {
 
 export async function deactivateBill(billId) {
   try {
-    const response = await fetch(`${API_BASE}/api/bills/${billId}`, { method: "DELETE" });
+    const response = handle401(await fetch(`${API_BASE}/api/bills/${billId}`, { method: "DELETE", headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json());
   } catch (error) {
@@ -186,11 +236,11 @@ export async function deactivateBill(billId) {
 
 export async function reactivateBill(billId) {
   try {
-    const response = await fetch(`${API_BASE}/api/bills/${billId}`, {
+    const response = handle401(await fetch(`${API_BASE}/api/bills/${billId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ active: true }),
-    });
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json());
   } catch (error) {
@@ -215,7 +265,7 @@ function mapIncome(raw) {
 export async function getIncome(includeInactive = false) {
   try {
     const qs = includeInactive ? "?include_inactive=true" : "";
-    const response = await fetch(`${API_BASE}/api/income/${qs}`);
+    const response = handle401(await fetch(`${API_BASE}/api/income/${qs}`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return data.map(mapIncome);
@@ -227,16 +277,16 @@ export async function getIncome(includeInactive = false) {
 
 export async function createIncome(payload) {
   try {
-    const response = await fetch(`${API_BASE}/api/income/`, {
+    const response = handle401(await fetch(`${API_BASE}/api/income/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         source_name:        payload.sourceName,
         amount:             payload.amount,
         frequency:          payload.frequency,
         next_expected_date: payload.nextExpectedDate,
       }),
-    });
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapIncome(await response.json());
   } catch (error) {
@@ -247,16 +297,16 @@ export async function createIncome(payload) {
 
 export async function updateIncome(id, payload) {
   try {
-    const response = await fetch(`${API_BASE}/api/income/${id}`, {
+    const response = handle401(await fetch(`${API_BASE}/api/income/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         source_name:        payload.sourceName,
         amount:             payload.amount,
         frequency:          payload.frequency,
         next_expected_date: payload.nextExpectedDate,
       }),
-    });
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapIncome(await response.json());
   } catch (error) {
@@ -267,7 +317,7 @@ export async function updateIncome(id, payload) {
 
 export async function deactivateIncome(id) {
   try {
-    const response = await fetch(`${API_BASE}/api/income/${id}`, { method: "DELETE" });
+    const response = handle401(await fetch(`${API_BASE}/api/income/${id}`, { method: "DELETE", headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     // 204 No Content — nothing to return
   } catch (error) {
@@ -278,10 +328,10 @@ export async function deactivateIncome(id) {
 
 export async function reactivateIncome(id) {
   try {
-    const response = await fetch(`${API_BASE}/api/income/${id}/reactivate`, {
+    const response = handle401(await fetch(`${API_BASE}/api/income/${id}/reactivate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapIncome(await response.json());
   } catch (error) {
@@ -292,7 +342,7 @@ export async function reactivateIncome(id) {
 
 export async function getMonthlyTotal() {
   try {
-    const response = await fetch(`${API_BASE}/api/income/monthly-total`);
+    const response = handle401(await fetch(`${API_BASE}/api/income/monthly-total`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return data.monthly_total;
@@ -306,7 +356,7 @@ export async function getMonthlyTotal() {
 
 export async function getSettings() {
   try {
-    const response = await fetch(`${API_BASE}/api/settings/`);
+    const response = handle401(await fetch(`${API_BASE}/api/settings/`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return {
@@ -321,14 +371,14 @@ export async function getSettings() {
 
 export async function updateSettings(payload) {
   try {
-    const response = await fetch(`${API_BASE}/api/settings/`, {
+    const response = handle401(await fetch(`${API_BASE}/api/settings/`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         due_soon_days:           payload.dueSoonDays,
         large_payment_threshold: payload.largePaymentThreshold,
       }),
-    });
+    }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     return {
@@ -345,7 +395,7 @@ export async function updateSettings(payload) {
 
 export async function getCategories() {
   try {
-    const response = await fetch(`${API_BASE}/api/categories/`);
+    const response = handle401(await fetch(`${API_BASE}/api/categories/`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return await response.json(); // [{ id, name }, ...]
   } catch (error) {
@@ -355,22 +405,22 @@ export async function getCategories() {
 }
 
 export async function createCategory(name) {
-  const response = await fetch(`${API_BASE}/api/categories/`, {
+  const response = handle401(await fetch(`${API_BASE}/api/categories/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ name }),
-  });
+  }));
   if (response.status === 409) return { conflict: true };
   if (!response.ok) throw new Error(`API error: ${response.status}`);
   return await response.json(); // { id, name }
 }
 
 export async function updateCategory(id, name) {
-  const response = await fetch(`${API_BASE}/api/categories/${id}`, {
+  const response = handle401(await fetch(`${API_BASE}/api/categories/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ name }),
-  });
+  }));
   if (response.status === 409) return { conflict: true };
   if (response.status === 404) return { notFound: true };
   if (!response.ok) throw new Error(`API error: ${response.status}`);

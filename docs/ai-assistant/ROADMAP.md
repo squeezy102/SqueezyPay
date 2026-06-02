@@ -10,12 +10,33 @@ Priority labels used throughout this document:
 
 ---
 
+## Engineering Foundations (Pre-Phase 2)
+
+These are infrastructure and tooling items that must be in place before Phase 2 begins. They are cross-cutting concerns, not features.
+
+| Item | Notes | Priority |
+|---|---|---|
+| ~~REQ-016: Authentication (household passphrase, bcrypt, JWT sessions)~~ | ~~Phase 1 item - not yet built~~ DONE | ~~REQUIRED~~ |
+| TypeScript migration (frontend) | Migrate before the codebase grows further | REQUIRED |
+| ~~Alembic database migrations~~ | ~~Schema will evolve; manual migrations are risky~~ DONE | ~~REQUIRED~~ |
+| GitHub Actions CI gate | Automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master | REQUIRED |
+| React Query (TanStack Query) | Add before more API call patterns accumulate | REQUIRED |
+| React Hook Form | Add before more forms are written | REQUIRED |
+| pytest + pytest-asyncio | Backend test infrastructure | REQUIRED |
+| Vitest | Frontend unit test infrastructure | REQUIRED |
+| Playwright | E2E tests for critical flows | GOOD NEXT STEP |
+| Recharts | Needed for Phase 2+ charts; add before Phase 2 begins | GOOD NEXT STEP |
+| PyJWT | Add when authentication is implemented | Add with auth |
+| slowapi | Rate limiting on login endpoint | Add with auth |
+
+---
+
 ## Phase 0 - POC (1-2 coding sessions)
 
-**Goal:** Something real enough to show. Wife can open it on her phone, see
-the household bills, and navigate to a biller's payment page in one click.
-No backend required. No database. No encryption. Just a working frontend
-with real data.
+**Goal:** Something real enough to show. Any household member can open it on
+their phone, see the household bills, and navigate to a biller's payment page
+in one click. No backend required. No database. No encryption. Just a working
+frontend with real data.
 
 | Feature | Requirement | Priority |
 |---|---|---|
@@ -23,7 +44,7 @@ with real data.
 | One-click navigation to biller payment pages | REQ-001 | REQUIRED |
 | Accessible from any device on home network | REQ-014 | REQUIRED |
 | Clean, usable UI - not an embarrassment | - | REQUIRED |
-| PWA manifest so it's installable on her phone | REQ-014 | GOOD START |
+| PWA manifest so it's installable on mobile | REQ-014 | GOOD START |
 
 **What Phase 0 is NOT:**
 - No backend server
@@ -50,7 +71,7 @@ are encrypted. Payment history is logged.
 | Payment history log with confirmation numbers | REQ-003 | REQUIRED |
 | Secure credential vault (encrypted) | REQ-004 | REQUIRED |
 | Payment method storage (encrypted) | REQ-004 | REQUIRED |
-| Authentication (household passphrase) | REQ-016 | REQUIRED |
+| ~~Authentication (household passphrase)~~ | REQ-016 | ~~REQUIRED~~ DONE |
 | Due date alerts on dashboard | REQ-013 | GOOD START |
 | Notification infrastructure (SendGrid + SMS gateway setup) | REQ-017 | GOOD NEXT STEP |
 | Income tracking | REQ-010 | GOOD START |
@@ -64,13 +85,13 @@ in the vault, and payment history is being logged with confirmation numbers.
 
 ## Phase 2 - Bank Integration and Spending Visibility
 
-**Goal:** Connect Example Credit Union via Plaid. The blame graph becomes real.
+**Goal:** Connect your financial institution via Plaid. The blame graph becomes real.
 Spending data flows automatically.
 
 | Feature | Requirement | Priority |
 |---|---|---|
 | Plaid OAuth connection flow | REQ-006 | REQUIRED |
-| ECU account balances displayed | REQ-006 | REQUIRED |
+| Bank account balances displayed | REQ-006 | REQUIRED |
 | Transaction history per account | REQ-006 | REQUIRED |
 | Automatic Plaid category mapping | REQ-009 | GOOD START |
 | Blame graph - by card | REQ-007 | REQUIRED |
@@ -82,8 +103,9 @@ Spending data flows automatically.
 | Spend and deposit notifications | REQ-017 | GOOD NEXT STEP |
 | Recurring transaction detection - auto-suggest bills from Plaid data | REQ-018 | GOOD NEXT STEP |
 
-**Done when:** The blame graph is live with real ECU transaction data
-and the household can have an honest spending conversation backed by numbers.
+**Done when:** The blame graph is live with real transaction data from your
+financial institution and the household can have an honest spending conversation
+backed by numbers.
 
 ---
 
@@ -167,9 +189,9 @@ transaction history limits and rate limits. Confirm these are acceptable for
 household use before building the integration. As of 2025 the free tier
 supports personal development use - verify this hasn't changed.
 
-- **Phase 2 - Example Credit Union Plaid support:** Confirm Example Credit Union is on Plaid's
-supported institutions list before building the integration. This should be
-verified before Phase 2 begins, not during.
+- **Phase 2 - Financial institution Plaid support:** Confirm your financial
+institution is on Plaid's supported institutions list before building the
+integration. This should be verified before Phase 2 begins, not during.
 
 - **Phase 2 - Plaid OAuth on local network:** Plaid's OAuth redirect URL must
 be a reachable address. On a local network this may require configuring the

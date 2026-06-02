@@ -6,9 +6,9 @@ Running notes for AI assistant continuity across sessions.
 
 ## Repository State
 
-- **Active branch:** `master`
+- **Active branch:** `master` (owner works off `dev` or directly on master - no branch overhead for solo work)
 - **Last commit:** (see git log)
-- **Uncommitted changes:** None
+- **Uncommitted changes:** Yes - full session's work is uncommitted (Alembic setup, auth backend + frontend, doc generalization). Commit before starting next session.
 
 ---
 
@@ -16,7 +16,9 @@ Running notes for AI assistant continuity across sessions.
 
 **Phase 0 (POC):** Complete.
 
-**Phase 1 (Real Foundation):** Complete.
+**Phase 1 (Real Foundation):** Complete. All REQs including REQ-016 (authentication) are done.
+
+**Engineering Foundations:** Alembic done. Auth done. TypeScript migration, CI gate, React Query, React Hook Form, testing infrastructure still to do.
 
 **Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
@@ -46,6 +48,11 @@ Running notes for AI assistant continuity across sessions.
 - PWA manifest for home screen install
 - Viewport locked (`user-scalable=no`) to prevent mobile wiggle
 - Logo (`frontend/public/logo.png`) in sidebar and mobile top bar
+- `AuthContext` (`src/context/AuthContext.jsx`) - token state in sessionStorage, 401 event handling, isConfigured/isAuthenticated/loading
+- `SetupScreen` (`src/components/SetupScreen.jsx`) - first-launch passphrase creation screen
+- `LoginScreen` (`src/components/LoginScreen.jsx`) - returning session login screen
+- `AuthGate` in `App.jsx` - routes to Setup, Login, or AppShell based on auth state
+- Logout button in sidebar (desktop) and mobile dropdown
 
 **Backend (FastAPI + SQLite):**
 - SQLAlchemy ORM models: Bill, PaymentHistory, Credential, PaymentMethod, TransactionCategory, Income, Setting
@@ -61,7 +68,12 @@ Running notes for AI assistant continuity across sessions.
 - Encryption service (`services/encryption_service.py`) - Fernet, lazy-init, reads `SQUEEZYPAY_ENCRYPTION_KEY` env var
 - Structured logging (`core/logging_config.py`) - console (plain) + rotating JSON file at `backend/logs/squeezypay.log`
 - Health check endpoint: `/health`
-- Database seed script: 7 household bills
+- Database seed script: example household bills
+- Auth API: `GET /api/auth/status`, `POST /api/auth/setup`, `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/auth/change-passphrase`
+- `AuthConfig` model and `auth_config` table (Alembic migration `3b8a84212839`)
+- `AuthService` (`services/auth_service.py`) - bcrypt hashing, JWT token creation/verification, passphrase change
+- `require_auth` dependency (`core/auth.py`) - JWT bearer token guard on all API routes
+- slowapi rate limiting on login endpoint (10/min)
 
 **Admin Dashboard (FastAPI on port 9000):**
 - Lives in `admin/` directory
@@ -100,18 +112,23 @@ Running notes for AI assistant continuity across sessions.
 
 ---
 
-## What Has NOT Been Built (Phase 1 remaining)
+## What Has NOT Been Built
 
-Phase 1 is complete. All REQs have been built.
+Phase 1 is complete. All REQs including REQ-016 (authentication) have been built.
 
 ---
 
 ## Next Session Priorities
 
-1. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
-2. **Tech debt: mobile bill management table** - likely same issue as payment history, not yet tested on mobile.
-3. **Phase 2 planning: Plaid** - verify Example Credit Union Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
-4. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
+1. **TypeScript migration (frontend)** - highest priority engineering foundation. Migrate before the codebase grows further.
+2. **GitHub Actions CI gate** - automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master.
+3. **React Query + React Hook Form** - add before more API call patterns and forms accumulate.
+4. **Tech debt: admin dashboard Start button must load Windows user env vars** - The backend process must be started with `SQUEEZYPAY_SECRET_KEY` and `SQUEEZYPAY_ENCRYPTION_KEY` visible. These live in the Windows *user* environment, not the system environment. A plain `Start-Process` without explicitly loading user env vars causes 500 errors on login. The admin dashboard launch script (`scripts/launch-admin.ps1`) and the service Start buttons in the admin dashboard need to explicitly load user env vars before spawning the backend. Until fixed, manual launch from a PowerShell terminal (which inherits user env vars) works correctly.
+5. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings when doing the Settings pass.
+6. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
+5. **Tech debt: mobile bill management table** - likely same issue as payment history, not yet tested on mobile.
+6. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+7. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 
@@ -162,9 +179,12 @@ squeezypay/
 │   │   │   ├── PaymentHistory.jsx      History tab - sortable payment table
 │   │   │   ├── IncomeManagement.jsx    Income tab - monthly total + income list
 │   │   │   ├── IncomeFormModal.jsx     Add/edit income modal
-│   │   │   └── Settings.jsx            Settings tab - alert thresholds + categories
+│   │   │   ├── Settings.jsx            Settings tab - alert thresholds + categories
+│   │   │   ├── SetupScreen.jsx         First-launch passphrase creation screen
+│   │   │   └── LoginScreen.jsx         Returning session login screen
 │   │   ├── context/
-│   │   │   └── ThemeContext.jsx
+│   │   │   ├── ThemeContext.jsx
+│   │   │   └── AuthContext.jsx
 │   │   ├── theme/
 │   │   │   └── tokens.js               All colors/design tokens, including alertBannerTokens
 │   │   └── utils/
@@ -175,8 +195,11 @@ squeezypay/
 └── backend/
     ├── main.py
     ├── seed.py
+    ├── alembic/
+    │   └── versions/
     ├── core/
-    │   └── logging_config.py
+    │   ├── logging_config.py
+    │   └── auth.py
     ├── database/
     │   └── db.py
     ├── models/
@@ -197,7 +220,8 @@ squeezypay/
     │   ├── income_service.py
     │   ├── payment_method_service.py
     │   ├── payment_history_service.py
-    │   └── settings_service.py
+    │   ├── settings_service.py
+    │   └── auth_service.py
     ├── api/
     │   ├── bills.py
     │   ├── categories.py
@@ -205,7 +229,8 @@ squeezypay/
     │   ├── income.py
     │   ├── payment_methods.py
     │   ├── payment_history.py
-    │   └── settings.py
+    │   ├── settings.py
+    │   └── auth.py
     └── tests/
         ├── conftest.py
         ├── test_bills.py
@@ -225,6 +250,8 @@ squeezypay/
 - **API response pattern:** All service `_to_dict()` methods control exposed fields. Never return raw ORM objects from routes.
 - **snake_case ↔ camelCase:** Backend speaks snake_case. Frontend speaks camelCase. `api.js` is the only translator.
 - **Encryption key:** `SQUEEZYPAY_ENCRYPTION_KEY` Windows user environment variable. Lose it = lose all vault data.
+- **JWT secret key:** `SQUEEZYPAY_SECRET_KEY` Windows user environment variable. Used for JWT signing. Lose it = all sessions invalidated (not data loss, just forces re-login).
+- **Auth token storage:** Stored in `sessionStorage` - clears on browser/tab close by design (REQ-016).
 - **API base URL:** `window.location.hostname` - works on both localhost and mobile via local IP.
 - **Dashboard filter:** `filterActionableBills()` in `billUtils.js` - shows bills due within N days + overdue. Threshold driven by `due_soon_days` setting (default 7), fetched from backend on load.
 - **Design tokens:** All frontend colors in `src/theme/tokens.js`. Never hardcode colors in components.
@@ -265,7 +292,7 @@ URLs:
 
 ## Decisions Still Open
 
-- **Plaid free tier / Example Credit Union support** - verify before Phase 2 begins
+- **Plaid free tier / institution support** - verify your financial institution is on Plaid's supported list and free tier limits are acceptable before Phase 2 begins
 - **Plaid OAuth on local network** - test redirect URL behavior early in Phase 2
 - **Local DNS** (`squeezypay.local`) - Phase 1+ quality of life, not blocking
 - **Credential vault UX (mobile)** - copy-paste two-trip flow is acknowledged as poor. Second-pass design discussion explicitly wanted before Phase 2.
@@ -275,13 +302,4 @@ URLs:
 
 ## Biller Reference
 
-| Biller | Category | URL |
-|---|---|---|
-| Example Credit Union | Loans / Debt | https://www.example.com |
-| Example Internet Co | Internet / Phone | https://www.example.com/buy/broadband/pay-bill.html |
-| Example Electric Co | Utilities | https://www.example.com/account/pay-bill |
-| City of East Alton | Utilities | (verify URL) |
-| Example Medical Co | Healthcare / Medical | https://www.example.com/pay/ |
-| Example Finance Co | Loans / Debt | https://www.example.com/pay |
-| Example Student Loan Co | Education | https://example.com/payment |
-| Example Student Loan Co 2 | Education | https://www.example.com/manage-loans/make-a-payment/ |
+The database seed script (`backend/seed.py`) includes example bills. Replace these with your own billers after setup.

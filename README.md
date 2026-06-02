@@ -1,6 +1,6 @@
 # SqueezyPay
 
-A private household bill management and personal finance dashboard. Self-hosted on your home network - accessible from any device in the house.
+A self-hosted, open-source household bill management and personal finance dashboard. Self-hosted on your home network - accessible from any device in the house.
 
 **The problem it solves:** Managing household finances is fragmented. Credentials are scattered. Paying a bill means hunting down URLs and navigating forgot-password flows. There is no single place to see the full picture, track spending, or have an honest conversation about where the money is going.
 
@@ -23,7 +23,7 @@ SqueezyPay is the single source of truth for household finances. Every bill, eve
 
 - Payment history log with confirmation numbers
 - Bill management UI (add, edit, deactivate)
-- Example Credit Union integration via Plaid
+- Bank account integration via Plaid (connect your financial institution)
 - Blame graph - spending breakdown by card and category
 - Budget tracking and spending projections
 - Net worth snapshot
@@ -93,7 +93,7 @@ pip install -r requirements.txt
 
 ### 5. Seed the database
 
-On a fresh install, seed the database with the initial bill list:
+On a fresh install, seed the database with example bills to get started. The seed data contains placeholder bills - replace them with your own after setup:
 
 ```
 cd backend
@@ -170,14 +170,20 @@ The `docs/ai-assistant/` directory is the living documentation for this project.
 
 ### Branching strategy
 
+**For contributors:**
+
 | Branch | Purpose |
 |---|---|
-| `master` | Tested, complete, ready-to-ship code only - never commit directly |
-| `dev` | Where all work happens - commit at natural checkpoints, push directly |
-| `feature/short-description` | New features |
-| `fix/short-description` | Bug fixes |
-| `docs/short-description` | Documentation only |
-| `chore/short-description` | Maintenance and cleanup |
+| `master` | Tested, complete, ready-to-ship. Protected branch. Merges from `dev` only at milestones. CI must pass. |
+| `dev` | Integration branch. All feature/fix branches merge here first. CI must pass. |
+| `feature/short-description` | Branch from `dev`. PR into `dev` when complete. |
+| `fix/short-description` | Branch from `dev`. PR into `dev` when complete. |
+| `docs/short-description` | Documentation changes only. |
+| `chore/short-description` | Maintenance, dependency updates, cleanup. |
+
+PRs to `dev` require CI to pass. PRs to `master` require CI to pass and project maintainer approval.
+
+Note: The project owner works directly off `dev` without PRs. Contributors should use feature/fix branches and PR into `dev`.
 
 ### Working with Claude Code
 

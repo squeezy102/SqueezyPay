@@ -95,7 +95,7 @@ Mark each with current status when running: ✅ Pass | ❌ Fail | ⏳ Not yet te
 
 **Expected:** New browser tab opens at the biller's payment URL
 
-**Last result:** ✅ Pass (Phase 0 — verified all 7 billers)
+**Last result:** ✅ Pass (Phase 0 — verified all seeded billers)
 
 ---
 
@@ -339,6 +339,104 @@ Mark each with current status when running: ✅ Pass | ❌ Fail | ⏳ Not yet te
 2. Click the chevron/expand button below the main bill cards
 
 **Expected:** Hidden bills grid expands to show remaining bills; clicking again collapses it
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-027: First Launch - Setup Screen Appears
+
+**What it tests:** AuthGate shows SetupScreen when no passphrase is configured
+
+**Steps:**
+1. With a fresh database (no auth_config row), open http://localhost:5173
+2. Observe the landing screen
+
+**Expected:** Setup screen appears with "Welcome to SqueezyPay" heading and two password fields
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-028: First Launch - Create Passphrase
+
+**What it tests:** Setup flow creates passphrase and logs in automatically
+
+**Steps:**
+1. On the setup screen, enter a passphrase (8+ characters) in both fields
+2. Click "Create Passphrase"
+
+**Expected:** App loads directly into the dashboard - no separate login step
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-029: Login Screen on Reload
+
+**What it tests:** Session does not persist across tab close (sessionStorage behavior)
+
+**Steps:**
+1. After setup/login, close the browser tab
+2. Reopen http://localhost:5173
+
+**Expected:** Login screen appears (not the dashboard)
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-030: Login - Correct Passphrase
+
+**What it tests:** Login with correct passphrase grants access
+
+**Steps:**
+1. On the login screen, enter the correct household passphrase
+2. Click "Sign In"
+
+**Expected:** App loads into the dashboard
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-031: Login - Wrong Passphrase
+
+**What it tests:** Login rejects incorrect passphrase
+
+**Steps:**
+1. On the login screen, enter an incorrect passphrase
+2. Click "Sign In"
+
+**Expected:** Error message appears - app does not grant access
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-032: Logout
+
+**What it tests:** Logout clears session and returns to login screen
+
+**Steps:**
+1. While logged in, click the logout button in the sidebar (desktop) or mobile menu
+2. Observe the result
+
+**Expected:** Login screen appears immediately
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-033: Protected API Without Token
+
+**What it tests:** Backend rejects unauthenticated API requests
+
+**Steps:**
+1. Open http://localhost:8000/docs
+2. Try GET /api/bills/ without a token
+
+**Expected:** 401 Unauthorized response
 
 **Last result:** ⏳ Not yet tested
 

@@ -3,8 +3,9 @@
 ## Vision and Origin
 
 SqueezyPay is a household bill management and personal finance dashboard that lives
-on the home network and is accessible from any device in the house. It is a private,
-self-hosted utility - not a product for distribution.
+on the home network and is accessible from any device in the house. It is a
+self-hosted, open-source utility - freely available for any household to run on
+their own hardware.
 
 **The problem it solves** - Managing household finances is fragmented. Credentials
 are scattered across notebooks, spreadsheets, and browser autofill. Paying bills
@@ -57,7 +58,7 @@ architectural decision should leave room for that growth without requiring a rew
 | SQLite | No server to manage. Single file database. More than sufficient for household-scale data. Portable and easy to back up. |
 | React (frontend) | Component model is well-suited to a dashboard. Runs in any browser. PWA support for mobile home screen install. Large ecosystem. |
 | Fernet encryption (cryptography library) | Industry-standard symmetric encryption for credentials and payment methods at rest. Simple API, well-audited. |
-| Plaid API | Industry-standard bank data aggregator. Powers Venmo, Cash App, Robinhood. Free developer tier covers personal use. Supports Example Credit Union. Legal, stable, designed for this use case. |
+| Plaid API | Industry-standard bank data aggregator. Powers Venmo, Cash App, Robinhood. Free developer tier covers personal use. Supports major US financial institutions. Legal, stable, designed for this use case. |
 | SendGrid (email notifications) | Free tier (100 emails/day) is sufficient for household use. Each household configures their own account and API key - no shared infrastructure. Allows "SqueezyPay" display name on outbound email without requiring a custom domain. |
 | Email-to-SMS gateway | Carrier email gateway addresses (e.g. @txt.att.net) deliver SMS at no cost - no Twilio account, no API, no per-message fees. User configures their phone number and carrier once in settings. |
 | PWA (Progressive Web App) | Enables "Add to Home Screen" on iPhone and Android - looks and feels like a native app. No App Store, no install, no maintenance. Works on any browser. |
@@ -83,7 +84,7 @@ architectural decision should leave room for that growth without requiring a rew
 | Credentials encrypted at rest (Fernet) | Plaintext credentials in a database are unacceptable even for a private app. Fernet provides authenticated encryption - tampering is detectable. |
 | Encryption key in environment variable | The key never lives in the codebase or the database. Stored as a system environment variable on the host machine only. |
 | App bound to local network only | FastAPI server binds to the local network interface, not 0.0.0.0. The app is unreachable from outside the home network without explicit configuration. |
-| Plaid credentials never stored | The Plaid OAuth flow handles the Example Credit Union login handshake. ECU credentials are never transmitted to or stored by SqueezyPay. |
+| Plaid credentials never stored | The Plaid OAuth flow handles the financial institution login handshake. Those credentials are never transmitted to or stored by SqueezyPay. |
 | No authentication layer (Phase 1) | The app is on a private home network. The threat model does not require user login for Phase 1. This is a conscious, documented tradeoff - not an oversight. User accounts may be added in a later phase if kids are given network access. |
 
 ---
@@ -174,7 +175,7 @@ Plaid flow:
   -> User triggers "refresh transactions" in UI
   -> Frontend calls /api/plaid/transactions
   -> PlaidIntegrationService calls Plaid API
-  -> Plaid fetches live data from Example Credit Union
+  -> Plaid fetches live data from your financial institution
   -> Transactions stored/updated in SQLite
   -> Response returned to frontend
 ```
@@ -202,7 +203,7 @@ Plaid flow:
 | PWA for mobile | A home screen icon that opens the app directly is the closest thing to a native app without an App Store submission. Essential for the "pay bills from your phone" use case. |
 | Blame graph by card, not by person | Cards are objective facts in the transaction data. Assigning blame by person requires a mapping that could cause friction. Card-level data is accurate and still tells the story. Users can draw their own conclusions about whose card is whose. |
 | Automatic Plaid categorization | Plaid returns merchant category codes with every transaction. Using these as the default category saves enormous manual effort and makes the blame graph useful from day one. Users can override categories. |
-| Bill amount: expected vs. actual | Fixed bills (Netflix) always match. Variable bills (Example Electric Co, electric) never do. Tracking both gives an accurate picture of projected vs. real cash flow. |
+| Bill amount: expected vs. actual | Fixed bills (Netflix) always match. Variable bills (utilities, electric) never do. Tracking both gives an accurate picture of projected vs. real cash flow. |
 | Income tracked alongside expenses | Spending percentages are meaningless without income context. Budget targets require knowing what the total is. Income is a first-class data point, not an afterthought. |
 
 ## Bill Payment Friction Hierarchy
