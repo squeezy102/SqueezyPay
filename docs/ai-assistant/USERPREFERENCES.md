@@ -79,9 +79,9 @@ batch them with related work
   - `docs/short-description` - documentation only
   - `chore/short-description` - maintenance, cleanup, dependency updates
 - Always suggest the correct branch name before starting new work
-- Branches are short-lived: checkout from dev, do the work, PR to dev, branch
-deleted on merge
-- Never work directly on dev or master
+- Branches are short-lived: checkout from dev, do the work, merge to dev, branch deleted on merge
+- No PRs required - once changes are discussed and approved, commit and push directly to dev
+- Never work directly on master
 
 ---
 
