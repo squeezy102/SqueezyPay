@@ -57,7 +57,15 @@ def _load_user_env() -> dict:
 def _is_port_in_use(port: int) -> bool:
     for conn in psutil.net_connections():
         if conn.laddr.port == port and conn.status == "LISTEN":
-            return True
+            # Verify the owning process is still alive - Windows can show stale entries briefly.
+            if conn.pid:
+                try:
+                    psutil.Process(conn.pid)
+                    return True
+                except psutil.NoSuchProcess:
+                    continue
+            else:
+                return True
     return False
 
 
@@ -138,11 +146,19 @@ def start_service(service: str):
 
 
 def _kill_by_port(port: int) -> bool:
-    """Kill whichever process is listening on the given port. Returns True if killed."""
+    """Kill whichever process is listening on the given port and wait for it to exit."""
     for conn in psutil.net_connections():
         if conn.laddr.port == port and conn.status == "LISTEN" and conn.pid:
             try:
-                psutil.Process(conn.pid).terminate()
+                proc = psutil.Process(conn.pid)
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except (psutil.TimeoutExpired, psutil.NoSuchProcess):
+                    try:
+                        proc.kill()
+                    except psutil.NoSuchProcess:
+                        pass
                 return True
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
@@ -157,7 +173,7 @@ def stop_service(service: str):
 
     port = port_map[service]
 
-    # Try tracked handle first; fall back to killing by port.
+    # Terminate the tracked handle (may be a cmd.exe wrapper).
     proc = _processes.get(service)
     if proc and proc.poll() is None:
         proc.terminate()
@@ -165,14 +181,17 @@ def stop_service(service: str):
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
-        _processes.pop(service, None)
-        return {"ok": True, "message": f"{service.capitalize()} stopped"}
+    _processes.pop(service, None)
 
-    if _kill_by_port(port):
-        _processes.pop(service, None)
-        return {"ok": True, "message": f"{service.capitalize()} stopped"}
+    # Always kill by port - catches orphaned child processes (e.g. node under cmd.exe).
+    # Wait up to 3s for the port to be released after killing.
+    _kill_by_port(port)
+    for _ in range(6):
+        if not _is_port_in_use(port):
+            return {"ok": True, "message": f"{service.capitalize()} stopped"}
+        time.sleep(0.5)
 
-    return {"ok": False, "message": f"{service.capitalize()} is not running"}
+    return {"ok": False, "message": f"{service.capitalize()} did not stop"}
 
 
 @app.get("/api/logs")
