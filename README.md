@@ -172,8 +172,8 @@ The `docs/ai-assistant/` directory is the living documentation for this project.
 
 | Branch | Purpose |
 |---|---|
-| `master` | Stable releases only - never commit directly |
-| `dev` | Active development - all PRs target this branch |
+| `master` | Tested, complete, ready-to-ship code only - never commit directly |
+| `dev` | Where all work happens - commit at natural checkpoints, push directly |
 | `feature/short-description` | New features |
 | `fix/short-description` | Bug fixes |
 | `docs/short-description` | Documentation only |

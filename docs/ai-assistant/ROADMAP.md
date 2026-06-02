@@ -52,6 +52,7 @@ are encrypted. Payment history is logged.
 | Payment method storage (encrypted) | REQ-004 | REQUIRED |
 | Authentication (household passphrase) | REQ-016 | REQUIRED |
 | Due date alerts on dashboard | REQ-013 | GOOD START |
+| Notification infrastructure (SendGrid + SMS gateway setup) | REQ-017 | GOOD NEXT STEP |
 | Income tracking | REQ-010 | GOOD START |
 | Transaction categories | REQ-009 | REQUIRED |
 | Settings screen (basic) | REQ-015 | GOOD NEXT STEP |
@@ -78,6 +79,7 @@ Spending data flows automatically.
 | Transaction search and filter | REQ-006 | GOOD NEXT STEP |
 | Manual category override per transaction | REQ-009 | NICE TO HAVE |
 | Merchant category override rules | REQ-009 | NICE TO HAVE |
+| Spend and deposit notifications | REQ-017 | GOOD NEXT STEP |
 
 **Done when:** The blame graph is live with real ECU transaction data
 and the household can have an honest spending conversation backed by numbers.
@@ -97,6 +99,8 @@ and the household can have an honest spending conversation backed by numbers.
 | Over-budget visual indicators | REQ-008 | NICE TO HAVE |
 | Net worth snapshot | REQ-011 | NICE TO HAVE |
 | Historical net worth line chart | REQ-011 | NICE TO HAVE |
+| Blame and spend report notifications | REQ-017 | GOOD NEXT STEP |
+| Custom report notifications | REQ-017 | NICE TO HAVE |
 
 **Done when:** The household has a monthly budget set per category and
 can see at a glance how they're tracking against it.
@@ -115,7 +119,7 @@ spending insights, and a polished experience.
 | Shared vs. personal expense tagging | - | NICE TO HAVE |
 | User accounts / household member profiles | - | STRETCH GOAL |
 | External asset / liability tracking | REQ-011 | STRETCH GOAL |
-| External push notifications (bill reminders) | REQ-013 | STRETCH GOAL |
+| ~~External push notifications (bill reminders)~~ | ~~REQ-013~~ | Covered by REQ-017 |
 | ~~Dark mode~~ | - | ~~STRETCH GOAL~~ DONE |
 | Export data to CSV | - | STRETCH GOAL |
 | Streamlined setup / installer script | - | GOOD NEXT STEP |

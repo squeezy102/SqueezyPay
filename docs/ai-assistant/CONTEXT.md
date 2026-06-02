@@ -86,6 +86,7 @@ Running notes for AI assistant continuity across sessions.
 3. **Payment history logging API** — next Phase 1 item after admin dashboard
 4. **Bill management UI** — add/edit/deactivate bills from the frontend
 5. **Replace seed data** — `backend/seed.py` contains family-specific bills. Replace with a small set of generic example bills appropriate for a public project, or remove seed data entirely and let users populate their own.
+6. **Add audit columns to all models** — every table needs `created_at`, `updated_at`, and `created_by` (nullable until auth is in). Do this before Phase 1 is complete - retrofitting after data exists requires a migration. See DECISIONS.md.
 
 ---
 

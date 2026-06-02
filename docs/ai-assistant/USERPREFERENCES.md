@@ -67,21 +67,16 @@ tab to click, what the output looks like, and what to copy/paste back
 
 ## Git Commits and Branches
 
-- Don't commit every small change - commit at logical checkpoints (meaningful
-chunks of related work, working states after a feature area is complete)
-- During major restructuring, intermediate commits are acceptable as safety
-checkpoints
-- Avoid committing docs updates, small tweaks, and minor fixes individually -
-batch them with related work
-- Branch naming convention:
-  - `feature/short-description` - new features or enhancements
-  - `fix/short-description` - bug fixes
-  - `docs/short-description` - documentation only
-  - `chore/short-description` - maintenance, cleanup, dependency updates
-- Always suggest the correct branch name before starting new work
-- Branches are short-lived: checkout from dev, do the work, merge to dev, branch deleted on merge
-- No PRs required - once changes are discussed and approved, commit and push directly to dev
-- Never work directly on master
+**The one non-negotiable: never commit untested code. Anywhere. Ever.** If it hasn't been run and verified, it doesn't get committed - not to dev, not to master, not to a feature branch.
+
+**master** - tested, complete, meaningful, ready-to-ship code only. Never commit directly. Only receives merges from dev at real milestones.
+
+**dev** - where all work happens. Commit when it makes sense naturally - when a coherent chunk is done and working. Do not commit minor changes, one-liners, or in-progress work. Batch related changes together.
+
+- No PRs required - once changes are discussed and approved, push directly to dev
+- Short-lived feature/fix/docs/chore branches are optional for larger efforts - branch from dev, merge back when done
+- During major restructuring, intermediate commits are acceptable as safety checkpoints
+- Branch naming: `feature/`, `fix/`, `docs/`, `chore/` + short description
 
 ---
 

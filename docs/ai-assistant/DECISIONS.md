@@ -58,6 +58,8 @@ architectural decision should leave room for that growth without requiring a rew
 | React (frontend) | Component model is well-suited to a dashboard. Runs in any browser. PWA support for mobile home screen install. Large ecosystem. |
 | Fernet encryption (cryptography library) | Industry-standard symmetric encryption for credentials and payment methods at rest. Simple API, well-audited. |
 | Plaid API | Industry-standard bank data aggregator. Powers Venmo, Cash App, Robinhood. Free developer tier covers personal use. Supports Example Credit Union. Legal, stable, designed for this use case. |
+| SendGrid (email notifications) | Free tier (100 emails/day) is sufficient for household use. Each household configures their own account and API key - no shared infrastructure. Allows "SqueezyPay" display name on outbound email without requiring a custom domain. |
+| Email-to-SMS gateway | Carrier email gateway addresses (e.g. @txt.att.net) deliver SMS at no cost - no Twilio account, no API, no per-message fees. User configures their phone number and carrier once in settings. |
 | PWA (Progressive Web App) | Enables "Add to Home Screen" on iPhone and Android - looks and feels like a native app. No App Store, no install, no maintenance. Works on any browser. |
 | Platform target: Windows + iPhone | The app is designed, tested, and optimized for a Windows host machine and iPhone as the primary mobile client. Cross-platform support is not a goal. The code is open - other platforms can adapt it. |
 
@@ -86,6 +88,7 @@ architectural decision should leave room for that growth without requiring a rew
 | Plaid integration as an isolated service | PlaidIntegrationService owns all Plaid API communication. Nothing else in the app knows about Plaid. Swapping or removing it later requires changing only one class. |
 | React component-per-feature structure | Each major feature (dashboard, bills, vault, transactions, blame graph) is its own component tree. Features don't bleed into each other. |
 | Environment variables for all secrets | Encryption key, Plaid credentials, and any future API keys live in a .env file that is gitignored. Never committed. |
+| Audit columns on all tables | Every table carries `created_at`, `updated_at`, and `created_by`. Provides traceability and future-proofs for auth (REQ-016). `created_by` is nullable until auth is implemented. Last-accessed tracking is omitted - updating a row on every read is expensive and not useful at this scale. Compound correlation IDs are omitted - a UUID primary key is sufficient for a single-service app. |
 
 ---
 
@@ -171,8 +174,8 @@ Plaid flow:
 
 | Branch | Purpose |
 |---|---|
-| `master` | Stable milestones only - never commit directly here |
-| `dev` | Active development - all PRs target this branch |
+| `master` | Tested, complete, ready-to-ship code only. Never commit directly. Receives merges from dev at real milestones. |
+| `dev` | Where all work happens. Commit at natural checkpoints. No PRs - push directly once changes are approved. |
 | `feature/short-description` | New features or enhancements |
 | `fix/short-description` | Bug fixes |
 | `docs/short-description` | Documentation changes only |

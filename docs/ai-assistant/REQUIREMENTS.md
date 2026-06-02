@@ -405,3 +405,62 @@ A single household passphrase that gates access to the app. Designed for scenari
 - Single-factor gate appropriate for home network use - not enterprise-grade auth
 - Does not replace network-level access controls
 - Protects against accidental exposure if the host machine becomes reachable beyond the home network
+
+---
+
+## REQ-017: Notification System
+
+A configurable notification system that alerts household members about bills, spending, deposits, and financial summaries via email and/or SMS. Users choose their own delivery method and configure their own sending infrastructure.
+
+### Delivery Methods
+
+- **Email** - via SendGrid. Each household configures their own free SendGrid account and API key. The sending address is user-configured; the display name is "SqueezyPay". No shared infrastructure between households.
+- **SMS** - via email-to-SMS carrier gateway. User configures their phone number and carrier (no third-party SMS API required). Major US carriers supported: Example Internet Co (`@txt.att.net`), T-Mobile (`@tmomail.net`), Verizon (`@vtext.com`). Standard carrier messaging rates apply.
+- Both methods can be active simultaneously per notification type.
+
+### Notification Types
+
+| Notification | Trigger | Configurable |
+|---|---|---|
+| Bill due | X days before due date | Days in advance, per-bill on/off |
+| Bill overdue | Due date passed, no payment logged | On/off |
+| Large transaction | Transaction exceeds threshold | Dollar threshold |
+| Deposit received | Deposit transaction detected | On/off |
+| Weekly spend summary | Scheduled | Day of week, with or without blame breakdown |
+| Monthly snapshot | Scheduled | Day of month, content selection |
+| Spend with blame | Scheduled or on-demand | Frequency, breakdown depth |
+| Custom report | User-defined schedule | Content, frequency, format |
+
+### Presets
+
+Presets are starting points only. Every notification is individually configurable regardless of preset.
+
+| | Low | Medium | High |
+|---|---|---|---|
+| Bills due | Weekly digest | 3 days + day-of | 7 days + 3 days + day-of |
+| Bills overdue | Off | On | On |
+| Monthly snapshot | On | On | On |
+| Large transactions | Off | Configurable threshold | Every transaction |
+| Weekly spend summary | Off | On | On |
+| Daily spend summary | Off | Off | On |
+| Blame breakdown | Monthly | Weekly | Weekly |
+| Deposits | Off | On | On |
+| Custom reports | Off | Off | On |
+
+### Settings
+
+- SendGrid API key
+- Verified sender email address
+- Display name (default: "SqueezyPay")
+- SMS phone number and carrier selection
+- Notification preset selection (Low / Medium / High / Custom)
+- Per-notification toggles and configuration
+- Quiet hours (no notifications sent during configured window)
+
+### Behavior
+
+- Notification infrastructure is built in Phase 1; bill-due alerts are the first live notification type
+- Spend, deposit, and blame notifications activate as their data sources come online (Phase 2+)
+- Custom reports are Phase 3+
+- Notifications are queued and retried on delivery failure - not silently dropped
+- No notification is sent without the user explicitly enabling it
