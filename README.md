@@ -40,7 +40,7 @@ is really going
 - **Budget tracking** - monthly targets per category vs. actual spend
 - **Spending projections** - forward-looking cash flow based on known bills and income
 - **Net worth snapshot** - assets and liabilities in one number
-- **PWA** - installs as a home screen app on iPhone and Android
+- **PWA** - installs as a home screen app on iPhone
 
 ---
 
@@ -144,7 +144,6 @@ Once both frontend and backend are running on your PC, any device on your home n
 access SqueezyPay by navigating to your PC's local IP address in a browser.
 
 **On iPhone:** Navigate to the app URL in Safari, tap Share → "Add to Home Screen" to install as an app.
-**On Android:** Navigate to the app URL in Chrome, tap menu → "Install app" to install.
 
 ## Development
 
@@ -153,8 +152,7 @@ See `docs/ai-assistant/CONTEXT.md` for detailed development notes, current phase
 To find your PC's local IP on Windows: `Win + R` → type `cmd` → run `ipconfig`
 Look for "IPv4 Address" under your active network adapter.
 
-**On iPhone/Android:** Navigate to the app URL in Safari or Chrome, then use
-"Add to Home Screen" to install it as an app icon.
+**On iPhone:** Navigate to the app URL in Safari, tap Share → "Add to Home Screen" to install as an app icon.
 
 ---
 

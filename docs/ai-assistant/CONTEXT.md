@@ -8,7 +8,7 @@ Running notes for AI assistant continuity across sessions.
 
 - **Active branch:** `master`
 - **Last commit:** (see git log)
-- **Uncommitted changes:** Yes - full session work pending commit
+- **Uncommitted changes:** None
 
 ---
 
@@ -16,7 +16,7 @@ Running notes for AI assistant continuity across sessions.
 
 **Phase 0 (POC):** Complete.
 
-**Phase 1 (Real Foundation):** In progress - ~70% complete.
+**Phase 1 (Real Foundation):** In progress - ~85% complete.
 
 **Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
@@ -25,56 +25,58 @@ Running notes for AI assistant continuity across sessions.
 ## What Has Been Built
 
 **Frontend (React + Vite + Tailwind v4):**
-- Bill dashboard with responsive card grid, status badges (overdue, due soon, upcoming)
-- Bill card component — dark mode aware, uses design token system
-- Dark mode toggle (moon/sun icon in header) — defaults to system preference, persists in localStorage
-- Design token system (`src/theme/tokens.js`) — all colors and visual decisions in one place
-- API integration layer (`src/utils/api.js`) — handles snake_case → camelCase mapping from backend
-- PWA manifest for home screen install (iPhone, Android)
-- Removed deprecated `apple-mobile-web-app-capable` meta tag
-- ThemeContext (`src/context/ThemeContext.jsx`) — React context for dark mode state
+- App shell with responsive layout - sidebar nav on desktop (lg+), hamburger menu on mobile
+- Sidebar contains logo, nav items, dark mode toggle at bottom
+- Bill dashboard - card grid, scales 1/2/3/4 columns by breakpoint, status badges
+- Bill cards - "Start Workflow" button opens payment workflow modal
+- Payment workflow modal - two-panel design (Step 1: go pay / Step 2: log it)
+  - Credentials section with show/hide toggle and per-field copy buttons
+  - MoneyInput - standard number input with $ prefix, formats on blur (consistent desktop/iOS)
+  - Payment method dropdown (pulls from vault, falls back to free text if empty)
+  - Success banner on save, error message on failure
+- Payment history view - sortable table, compact rows, search by biller/confirmation/method/notes
+- Dashboard filtered to bills due within 7 days + overdue; hidden bill count shown
+- Dark mode toggle - defaults to system preference, persists in localStorage
+- Design token system (`src/theme/tokens.js`) - all colors in one place
+- API integration layer (`src/utils/api.js`) - snake_case → camelCase mapping, uses `window.location.hostname` so mobile (local IP) works
+- PWA manifest for home screen install
+- Viewport locked (`user-scalable=no`) to prevent mobile wiggle
+- Logo (`frontend/public/logo.png`) in sidebar and mobile top bar
 
 **Backend (FastAPI + SQLite):**
 - SQLAlchemy ORM models: Bill, PaymentHistory, Credential, PaymentMethod, TransactionCategory, Income
-- All models follow snake_case convention; `PaymentMethod.payment_type` (not `type` — avoids Python builtin shadow)
-- Service layer with explicit `_to_dict()` on all services — controls exactly what fields the API exposes
-- Bills API: `/api/bills/` — full CRUD, returns dicts (not raw ORM objects)
+- Bills API: `/api/bills/` - full CRUD
 - Credentials API: `/api/credentials/` and `/api/credentials/by-bill/{bill_id}`
 - Payment Methods API: `/api/payment-methods/`
-- Encryption service (`services/encryption_service.py`) — Fernet, lazy-init, reads `SQUEEZYPAY_ENCRYPTION_KEY` env var
-- Structured logging (`core/logging_config.py`) — console (plain text) + rotating JSON file at `backend/logs/squeezypay.log`
-- All services have named loggers (`squeezypay.services.*`)
+- Payment History API: `/api/payment-history/` - GET all, GET by bill, POST to log, DELETE
+- Encryption service (`services/encryption_service.py`) - Fernet, lazy-init, reads `SQUEEZYPAY_ENCRYPTION_KEY` env var
+- Structured logging (`core/logging_config.py`) - console (plain) + rotating JSON file at `backend/logs/squeezypay.log`
 - Health check endpoint: `/health`
 - Database seed script: 7 household bills
 
 **Admin Dashboard (FastAPI on port 9000):**
 - Lives in `admin/` directory
-- Serves `dashboard.html` at `/`
-- `/api/status` — reports whether backend (8000) and frontend (5173) are running
-- `/api/start/{service}` and `/api/stop/{service}` — starts/stops backend and frontend processes
-- `/api/logs/recent` — returns last N lines of `squeezypay.log` as parsed JSON
-- `/api/logs` — Server-Sent Events stream for live log tailing
-- Dashboard UI: service cards with status dots, start/stop buttons, live log viewer with level filter
-- **Vision:** This grows into a full operations console — logs, metrics, health checks, graphs, diagnostics. Keep it browser-based (pinned tab). Do NOT convert to tray app or native app.
+- Service start/stop, live log viewer, status cards
+- Successful `/api/status` polls suppressed from uvicorn log (noise filter)
+- **Vision:** Full ops console - logs, metrics, health, graphs. Browser-based pinned tab. Do NOT convert to tray/native app.
 
 **Scripts:**
-- `scripts/generate_key.py` — one-time Fernet key generation with setup instructions
-- `scripts/launch-admin.ps1` — starts admin server, waits for ready, opens browser
-- `scripts/create-shortcut.ps1` — creates "SqueezyPay Admin" desktop shortcut
-- `scripts/autostart.ps1` — starts admin server silently on login (no browser, no window)
-- `scripts/register-autostart.ps1` — registers the auto-start as a Windows scheduled task (run once as Administrator)
+- `scripts/generate_key.py` - one-time Fernet key generation
+- `scripts/launch-admin.ps1` - starts admin server, opens browser
+- `scripts/create-shortcut.ps1` - creates desktop shortcut
+- `scripts/autostart.ps1` - starts admin server silently on login
+- `scripts/register-autostart.ps1` - registers auto-start as Windows scheduled task (run once as Administrator)
 
 **Desktop Shortcut:**
 - "SqueezyPay Admin" on the desktop
-- Double-click → launcher window opens → admin server starts → browser opens at `http://localhost:9000`
-- From the dashboard, use Start buttons to bring up backend and frontend
+- Double-click → admin server starts → browser opens at `http://localhost:9000`
+- Use Start buttons in dashboard to bring up backend and frontend
 
 ---
 
 ## What Has NOT Been Built (Phase 1 remaining)
 
-- Payment history logging API and UI (REQ-003)
-- Bill management UI — add, edit, deactivate bills (REQ-002)
+- Bill management UI - add, edit, deactivate bills from the frontend (REQ-002)
 - Due date alerts on dashboard (REQ-013)
 - Income tracking API and UI (REQ-010)
 - Settings screen (REQ-015)
@@ -83,8 +85,10 @@ Running notes for AI assistant continuity across sessions.
 
 ## Next Session Priorities
 
-1. **Payment history logging API** — next Phase 1 item (REQ-003)
-2. **Bill management UI** — add/edit/deactivate bills from the frontend (REQ-002)
+1. **Bill management UI** - add/edit/deactivate bills from the frontend (REQ-002). Currently bills can only be added via the seed script.
+2. **Due date alerts** - banner/badge on dashboard for overdue and due-soon bills (REQ-013)
+3. **Income tracking** - API and UI (REQ-010)
+4. **Settings screen** - alert thresholds, category management (REQ-015)
 
 ---
 
@@ -97,36 +101,47 @@ squeezypay/
 ├── .gitignore
 ├── .env.example
 ├── docs/ai-assistant/
-│   ├── CONTEXT.md          This file
-│   ├── REQUIREMENTS.md     REQ-001 through REQ-015
-│   ├── ROADMAP.md          Build phases and priorities
-│   ├── DECISIONS.md        Architecture and design decisions
-│   ├── USERPREFERENCES.md  Working style guidelines
-│   └── TESTCASES.md        Manual test cases (growing list)
+│   ├── CONTEXT.md              This file
+│   ├── REQUIREMENTS.md         REQ-001 through REQ-015
+│   ├── ROADMAP.md              Build phases and priorities
+│   ├── DECISIONS.md            Architecture and design decisions
+│   ├── USERPREFERENCES.md      Working style guidelines
+│   └── TESTCASES.md            Manual test cases
 ├── scripts/
-│   ├── generate_key.py     One-time encryption key setup
-│   ├── launch-admin.ps1    Admin dashboard launcher
-│   └── create-shortcut.ps1 Desktop shortcut creator
+│   ├── generate_key.py
+│   ├── launch-admin.ps1
+│   ├── create-shortcut.ps1
+│   ├── autostart.ps1
+│   └── register-autostart.ps1
 ├── admin/
-│   ├── main.py             Admin FastAPI app (port 9000)
-│   ├── dashboard.html      Admin dashboard UI
-│   └── requirements.txt    Admin dependencies
+│   ├── main.py
+│   ├── dashboard.html
+│   └── requirements.txt
 ├── frontend/
+│   ├── index.html              Viewport locked for mobile
+│   ├── public/
+│   │   ├── logo.png            App logo
+│   │   ├── manifest.json       PWA manifest
+│   │   ├── favicon.svg
+│   │   └── icons.svg
 │   ├── src/
+│   │   ├── App.jsx             App shell - sidebar + mobile nav + tab routing
+│   │   ├── main.jsx
+│   │   ├── index.css
 │   │   ├── components/
-│   │   │   ├── BillDashboard.jsx
-│   │   │   └── BillCard.jsx
+│   │   │   ├── NavBar.jsx          Sidebar (desktop) + MobileTopBar (mobile)
+│   │   │   ├── BillDashboard.jsx   Home tab - bill cards, status badges
+│   │   │   ├── BillCard.jsx        Individual bill card + Start Workflow button
+│   │   │   ├── LogPaymentModal.jsx Payment workflow modal (2-panel)
+│   │   │   ├── MoneyInput.jsx      Currency input component
+│   │   │   └── PaymentHistory.jsx  History tab - sortable payment table
 │   │   ├── context/
 │   │   │   └── ThemeContext.jsx
 │   │   ├── theme/
-│   │   │   └── tokens.js       Design tokens (all colors live here)
-│   │   ├── utils/
-│   │   │   ├── api.js          API calls + snake_case→camelCase mapping
-│   │   │   └── billUtils.js    Date/status calculations
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   ├── public/manifest.json
+│   │   │   └── tokens.js           All colors/design tokens live here
+│   │   └── utils/
+│   │       ├── api.js              All API calls + snake_case→camelCase mapping
+│   │       └── billUtils.js        Date/status calculations, filterActionableBills
 │   ├── vite.config.js
 │   └── package.json
 └── backend/
@@ -140,29 +155,35 @@ squeezypay/
     │   └── models.py
     ├── repositories/
     │   ├── credential_repository.py
-    │   └── payment_method_repository.py
+    │   ├── payment_method_repository.py
+    │   └── payment_history_repository.py
     ├── services/
     │   ├── bill_service.py
     │   ├── credential_service.py
     │   ├── encryption_service.py
-    │   └── payment_method_service.py
+    │   ├── payment_method_service.py
+    │   └── payment_history_service.py
     └── api/
         ├── bills.py
         ├── credentials.py
-        └── payment_methods.py
+        ├── payment_methods.py
+        └── payment_history.py
 ```
 
 ---
 
 ## Key Technical Notes
 
-- **Naming conventions:** Python = snake_case (vars/functions), PascalCase (classes), UPPER_SNAKE_CASE (constants). JS = camelCase (vars/functions), PascalCase (components/files).
-- **API response pattern:** All service `_to_dict()` methods control what fields are exposed. Never return raw ORM objects from routes.
-- **snake_case ↔ camelCase:** Backend speaks snake_case (Python convention). Frontend speaks camelCase (JS convention). `api.js` is the translator — mapping happens once on the way in.
-- **Encryption key:** `SQUEEZYPAY_ENCRYPTION_KEY` Windows user environment variable. Set once, never touched again. Lose it = lose all vault data.
-- **Admin dashboard vision:** Full ops console (logs, metrics, health, graphs). Browser-based pinned tab — do not convert to tray app or native desktop app.
+- **Naming conventions:** Python = snake_case (vars/functions), PascalCase (classes). JS = camelCase (vars/functions), PascalCase (components).
+- **API response pattern:** All service `_to_dict()` methods control exposed fields. Never return raw ORM objects from routes.
+- **snake_case ↔ camelCase:** Backend speaks snake_case. Frontend speaks camelCase. `api.js` is the only translator.
+- **Encryption key:** `SQUEEZYPAY_ENCRYPTION_KEY` Windows user environment variable. Lose it = lose all vault data.
+- **API base URL:** `window.location.hostname` - works on both localhost and mobile via local IP.
+- **Dashboard filter:** `filterActionableBills()` in `billUtils.js` - shows bills due within 7 days + overdue. Configurable later via settings.
 - **Design tokens:** All frontend colors in `src/theme/tokens.js`. Never hardcode colors in components.
-- **Logging:** JSON logs at `backend/logs/squeezypay.log`. Admin dashboard reads this file. Never log passwords, keys, or credential data.
+- **Logging:** JSON logs at `backend/logs/squeezypay.log`. Never log passwords, keys, or credential data.
+- **Platform targets:** Desktop (Windows) first. iOS parity. Android out of scope.
+- **Credential vault on mobile:** Copy-paste only - iOS clipboard is one item at a time. Known limitation, second-pass design discussion wanted. See DECISIONS.md.
 
 ---
 
@@ -183,10 +204,8 @@ cd c:\SqueezyPay\frontend
 npm run dev
 
 # Terminal 3 - Admin dashboard
-cd c:\SqueezyPay\backend
-.\venv\Scripts\Activate.ps1
-cd ..\admin
-python -m uvicorn main:app --host 0.0.0.0 --port 9000
+cd c:\SqueezyPay\admin
+..\backend\venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 9000
 ```
 
 URLs:
@@ -199,10 +218,11 @@ URLs:
 
 ## Decisions Still Open
 
-- **Auto-start on Windows login** — not yet implemented. Priority for next session.
-- **Plaid free tier / Example Credit Union support** — verify before Phase 2 begins
-- **Plaid OAuth on local network** — test redirect URL behavior early in Phase 2
-- **Local DNS** (`squeezypay.local`) — Phase 1+ quality of life, not blocking
+- **Plaid free tier / Example Credit Union support** - verify before Phase 2 begins
+- **Plaid OAuth on local network** - test redirect URL behavior early in Phase 2
+- **Local DNS** (`squeezypay.local`) - Phase 1+ quality of life, not blocking
+- **Credential vault UX (mobile)** - copy-paste two-trip flow is acknowledged as poor. Second-pass design discussion explicitly wanted before Phase 2.
+- **Browser extension (desktop auto-fill)** - planned for later phase, not yet scoped
 
 ---
 
