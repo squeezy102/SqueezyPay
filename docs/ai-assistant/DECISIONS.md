@@ -69,6 +69,7 @@ architectural decision should leave room for that growth without requiring a rew
 | pytest + pytest-asyncio | Backend testing stack. FastAPI async endpoints require pytest-asyncio. Required before Phase 1 ships given the "never commit untested code" rule. |
 | Vitest | Frontend unit testing, built for Vite. Fast, compatible with the existing toolchain. |
 | Playwright | End-to-end testing against the running app. For critical user flows (pay bill, log payment, vault access). Phase 1+ priority. |
+| GitHub Actions CI | Automated test gate on every push to dev and every PR to master. Runs pytest (backend) and Vitest (frontend). Coverage threshold enforced (80% target) - build fails if new code drops coverage, which is the enforcement mechanism for "never commit untested code." Branch protection on master requires CI to pass before merge. |
 | TypeScript (under consideration) | The frontend is currently plain JavaScript. TypeScript would catch type errors at compile time - the snake_case → camelCase mapping bug in api.js is exactly the kind of error TS prevents. Migration is feasible while the codebase is small. Decision deferred but the window is closing. |
 | PyJWT | JWT session token management for REQ-016 (authentication). Add when auth is implemented. |
 | slowapi | Rate limiting for FastAPI. Applied to the login endpoint when auth lands to prevent brute force. |
