@@ -105,7 +105,7 @@ export function Sidebar({ active, onChange }) {
   return (
     <aside className="hidden lg:flex flex-col w-56 shrink-0 fixed top-0 left-0 h-full bg-violet-900 dark:bg-slate-900 z-40">
       <div className="px-4 py-4 border-b border-violet-800 dark:border-slate-700">
-        <img src="/logo.png" alt="SqueezyPay" className="w-full object-contain" />
+        <span className="text-white font-bold text-lg tracking-wide">SqueezyPay</span>
       </div>
 
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
@@ -224,7 +224,7 @@ export function MobileTopBar({ active, onChange }) {
   return (
     <>
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-violet-900 dark:bg-slate-900 border-b border-violet-800 dark:border-slate-700 flex items-center justify-between px-4 h-14">
-        <img src="/logo.png" alt="SqueezyPay" className="h-8 object-contain" />
+        <span className="text-white font-bold text-lg tracking-wide">SqueezyPay</span>
         <div className="flex items-center gap-1">
           <DarkModeToggle />
           <button

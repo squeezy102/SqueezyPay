@@ -62,7 +62,7 @@ architectural decision should leave room for that growth without requiring a rew
 | SendGrid (email notifications) | Free tier (100 emails/day) is sufficient for household use. Each household configures their own account and API key - no shared infrastructure. Allows "SqueezyPay" display name on outbound email without requiring a custom domain. |
 | Email-to-SMS gateway | Carrier email gateway addresses (e.g. @txt.att.net) deliver SMS at no cost - no Twilio account, no API, no per-message fees. User configures their phone number and carrier once in settings. |
 | PWA (Progressive Web App) | Enables "Add to Home Screen" on iPhone and Android - looks and feels like a native app. No App Store, no install, no maintenance. Works on any browser. |
-| Platform target: Windows + iPhone | The app is designed, tested, and optimized for a Windows host machine and iPhone as the primary mobile client. Cross-platform support is not a goal. The code is open - other platforms can adapt it. |
+| Platform target: Windows primary, iPhone functional | The app is designed, tested, and optimized for Windows. iPhone is supported for core mobile workflows (bill pay, balance check, payment history) but is not a co-equal platform. Android is out of scope. Cross-platform support is not a goal. The code is open - other platforms can adapt it. |
 | Alembic | Database migration tool for SQLAlchemy. Schema will evolve throughout development - audit columns, new features, auth. Without Alembic, migrations on a live database with real data are manual and risky. Industry standard for SQLAlchemy projects. |
 | React Query (TanStack Query) | Industry standard for server state management in React. Handles caching, loading/error states, background refresh, and retries. Replaces manual useState + useEffect API call patterns. Added early before the codebase grows around the manual pattern. |
 | React Hook Form | Form state management library. Bill management, payment history, vault entry, and settings are all form-heavy. Add before the first form is written. |
@@ -154,7 +154,7 @@ These govern every UI decision. Non-negotiable.
 | Household usability test | Every screen must be usable by a non-technical household member with zero explanation. If it needs a label, add the label. If it needs a tooltip, add the tooltip. Assume nothing. |
 | One-click to action | The most common task (paying a bill) must never require more than two screens. The dashboard is the launchpad. |
 | Dark mode | The app supports light and dark mode. Dark mode is toggled by the user and the preference is persisted in localStorage. Default is system preference. |
-| Mobile first | Design for phone first. The app is primarily used on mobile devices by household members. Desktop is secondary. |
+| Windows primary, mobile functional | SqueezyPay is a Windows application. Design, test, and optimize for desktop first. Mobile must work but is not the primary surface. Mobile scope is deliberately limited to core workflows only: view dashboard, pay a bill, check balances, view payment history. Anything else - reporting, graphs, analytics, admin, settings management - is desktop-only. Do not invest in mobile polish or layout work for features outside that scope. |
 | No jargon | Labels, buttons, and messages use plain English. No technical terms visible to end users. |
 | Forgiving UI | Destructive actions (delete, deactivate) require a confirmation step. No accidental data loss. |
 
@@ -199,6 +199,7 @@ Plaid flow:
 
 | Decision | Why |
 |---|---|
+| Windows system tray icon for service management | Originally rejected in favor of a browser-based admin dashboard. Reversed: the admin dashboard solves "manage app services" but not "manage the admin service itself." A tray icon is always visible, requires no browser tab, and can start/stop all three services (backend, frontend, admin) including bootstrapping from a fully dead state. Stack: `pystray` + `Pillow`. Admin dashboard remains the ops console for logs and metrics. |
 | Friction removal hierarchy for bill payment | Four-level priority order for how the app reduces friction when paying a bill. See below. |
 | PWA for mobile | A home screen icon that opens the app directly is the closest thing to a native app without an App Store submission. Essential for the "pay bills from your phone" use case. |
 | Blame graph by card, not by person | Cards are objective facts in the transaction data. Assigning blame by person requires a mapping that could cause friction. Card-level data is accurate and still tells the story. Users can draw their own conclusions about whose card is whose. |

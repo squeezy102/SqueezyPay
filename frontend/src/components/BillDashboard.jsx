@@ -65,8 +65,7 @@ export default function BillDashboard() {
   const overdue      = actionable.filter((b) => getBillStatus(b.dayOfMonth, thresholds.dueSoonDays) === "overdue");
   const dueSoon      = actionable.filter((b) => getBillStatus(b.dayOfMonth, thresholds.dueSoonDays) === "due-soon");
   const largePending = actionable.filter(
-    (b) => getBillStatus(b.dayOfMonth) !== "paid" &&
-           b.expectedAmount >= thresholds.largePaymentThreshold
+    (b) => b.expectedAmount >= thresholds.largePaymentThreshold
   );
 
   const hasAlerts = overdue.length > 0 || dueSoon.length > 0 || largePending.length > 0;

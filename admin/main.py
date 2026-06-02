@@ -4,6 +4,7 @@ import os
 import json
 import time
 import logging
+import winreg
 import psutil
 from pathlib import Path
 from fastapi import FastAPI
@@ -28,6 +29,29 @@ LOG_FILE = BACKEND_DIR / "logs" / "squeezypay.log"
 VENV_PYTHON = BACKEND_DIR / "venv" / "Scripts" / "python.exe"
 
 _processes: dict[str, subprocess.Popen] = {}
+
+
+def _load_user_env() -> dict:
+    """Read Windows user environment variables from the registry and merge with os.environ.
+
+    Start-Process does not guarantee user env vars are visible to child processes
+    when launched from a shortcut context. SQUEEZYPAY_SECRET_KEY and
+    SQUEEZYPAY_ENCRYPTION_KEY live in HKCU\Environment and must be explicitly loaded.
+    """
+    env = dict(os.environ)
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+            i = 0
+            while True:
+                try:
+                    name, value, _ = winreg.EnumValue(key, i)
+                    env[name] = value
+                    i += 1
+                except OSError:
+                    break
+    except OSError:
+        pass
+    return env
 
 
 def _is_port_in_use(port: int) -> bool:
@@ -55,6 +79,7 @@ def service_status() -> dict:
             "running": _process_alive("frontend") or _is_port_in_use(5173),
             "port": 5173,
             "url": "http://localhost:5173",
+            "browseable": True,
         },
     }
 
@@ -87,7 +112,7 @@ def start_service(service: str):
     if service == "backend":
         if _process_alive("backend") or _is_port_in_use(8000):
             return {"ok": False, "message": "Backend is already running"}
-        env = {**os.environ, "PYTHONUNBUFFERED": "1"}
+        env = {**_load_user_env(), "PYTHONUNBUFFERED": "1"}
         proc = subprocess.Popen(
             [str(VENV_PYTHON), "main.py"],
             cwd=str(BACKEND_DIR),
@@ -112,11 +137,27 @@ def start_service(service: str):
     return {"ok": False, "message": f"Unknown service: {service}"}
 
 
+def _kill_by_port(port: int) -> bool:
+    """Kill whichever process is listening on the given port. Returns True if killed."""
+    for conn in psutil.net_connections():
+        if conn.laddr.port == port and conn.status == "LISTEN" and conn.pid:
+            try:
+                psutil.Process(conn.pid).terminate()
+                return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+    return False
+
+
 @app.post("/api/stop/{service}")
 def stop_service(service: str):
-    if service not in ("backend", "frontend"):
+    port_map = {"backend": 8000, "frontend": 5173}
+    if service not in port_map:
         return {"ok": False, "message": f"Unknown service: {service}"}
 
+    port = port_map[service]
+
+    # Try tracked handle first; fall back to killing by port.
     proc = _processes.get(service)
     if proc and proc.poll() is None:
         proc.terminate()
@@ -127,7 +168,11 @@ def stop_service(service: str):
         _processes.pop(service, None)
         return {"ok": True, "message": f"{service.capitalize()} stopped"}
 
-    return {"ok": False, "message": f"{service.capitalize()} was not started by this dashboard"}
+    if _kill_by_port(port):
+        _processes.pop(service, None)
+        return {"ok": True, "message": f"{service.capitalize()} stopped"}
+
+    return {"ok": False, "message": f"{service.capitalize()} is not running"}
 
 
 @app.get("/api/logs")

@@ -25,12 +25,12 @@ class PaymentMethodUpdate(BaseModel):
 
 @router.get("/")
 def list_payment_methods(db: Session = Depends(get_db)):
-    return PaymentMethodService(db).get_all()
+    return PaymentMethodService.get_all(db)
 
 
 @router.get("/{payment_method_id}")
 def get_payment_method(payment_method_id: int, db: Session = Depends(get_db)):
-    result = PaymentMethodService(db).get_by_id(payment_method_id)
+    result = PaymentMethodService.get_by_id(db, payment_method_id)
     if not result:
         raise HTTPException(status_code=404, detail="Payment method not found")
     return result
@@ -38,7 +38,8 @@ def get_payment_method(payment_method_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", status_code=201)
 def create_payment_method(payload: PaymentMethodCreate, db: Session = Depends(get_db)):
-    return PaymentMethodService(db).create(
+    return PaymentMethodService.create(
+        db,
         nickname=payload.nickname,
         payment_type=payload.payment_type,
         last_four=payload.last_four,
@@ -50,7 +51,7 @@ def create_payment_method(payload: PaymentMethodCreate, db: Session = Depends(ge
 @router.put("/{payment_method_id}")
 def update_payment_method(payment_method_id: int, payload: PaymentMethodUpdate, db: Session = Depends(get_db)):
     updates = payload.model_dump(exclude_none=True)
-    result = PaymentMethodService(db).update(payment_method_id, **updates)
+    result = PaymentMethodService.update(db, payment_method_id, **updates)
     if not result:
         raise HTTPException(status_code=404, detail="Payment method not found")
     return result
@@ -58,6 +59,6 @@ def update_payment_method(payment_method_id: int, payload: PaymentMethodUpdate, 
 
 @router.delete("/{payment_method_id}", status_code=204)
 def delete_payment_method(payment_method_id: int, db: Session = Depends(get_db)):
-    deleted = PaymentMethodService(db).delete(payment_method_id)
+    deleted = PaymentMethodService.delete(db, payment_method_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Payment method not found")

@@ -67,6 +67,7 @@
       align-items: center;
       gap: 10px;
       margin-bottom: 16px;
+      min-height: 42px;
     }
 
     .dot {
@@ -312,13 +313,13 @@
           <span class="dot ${info.running ? 'running' : 'stopped'}"></span>
           <div>
             <div class="status-label">${info.running ? 'Running' : 'Stopped'}</div>
-            ${info.running ? `<div class="status-sub">${info.url}</div>` : ''}
+            ${info.running && info.url ? `<div class="status-sub">${info.url}</div>` : ''}
           </div>
         </div>
         <div class="btn-row">
           <button class="btn-start" onclick="startService('${name}')" ${info.running ? 'disabled' : ''}>Start</button>
           <button class="btn-stop"  onclick="stopService('${name}')"  ${!info.running ? 'disabled' : ''}>Stop</button>
-          ${info.running ? `<button class="btn-link" onclick="window.open('${info.url}')">Open →</button>` : ''}
+          ${info.running && info.browseable ? `<button class="btn-link" onclick="window.open('${info.url}')">Open →</button>` : ''}
         </div>
       </div>
     `).join('');

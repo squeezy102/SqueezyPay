@@ -19,12 +19,13 @@ class PaymentHistoryService:
 
     @staticmethod
     def get_all(db: Session) -> list[dict]:
-        payments = PaymentHistoryRepository.get_all(db)
-        bill_names = {
-            b.id: b.name
-            for b in db.query(Bill).all()
-        }
-        return [PaymentHistoryService._to_dict(p, bill_names.get(p.bill_id, "Unknown")) for p in payments]
+        rows = (
+            db.query(PaymentHistory, Bill.name)
+            .join(Bill, PaymentHistory.bill_id == Bill.id)
+            .order_by(PaymentHistory.payment_date.desc())
+            .all()
+        )
+        return [PaymentHistoryService._to_dict(payment, bill_name) for payment, bill_name in rows]
 
     @staticmethod
     def log_payment(db: Session, data: dict) -> dict | None:

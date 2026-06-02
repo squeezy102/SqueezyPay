@@ -1,9 +1,32 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from database.db import get_db
 from services.bill_service import BillService
 
 router = APIRouter(prefix="/api/bills", tags=["bills"])
+
+
+class BillCreate(BaseModel):
+    name: str
+    category: str
+    expected_amount: float
+    day_of_month: int
+    url: str
+    recurring: bool = True
+    active: bool = True
+    notes: str | None = None
+
+
+class BillUpdate(BaseModel):
+    name: str | None = None
+    category: str | None = None
+    expected_amount: float | None = None
+    day_of_month: int | None = None
+    url: str | None = None
+    recurring: bool | None = None
+    active: bool | None = None
+    notes: str | None = None
 
 
 @router.get("/")
@@ -15,20 +38,25 @@ def get_bills(include_inactive: bool = Query(False), db: Session = Depends(get_d
 def get_bill(bill_id: int, db: Session = Depends(get_db)):
     bill = BillService.get_bill(db, bill_id)
     if not bill:
-        return {"error": "Bill not found"}
+        raise HTTPException(status_code=404, detail="Bill not found")
     return bill
 
 
-@router.post("/")
-def create_bill(bill_data: dict, db: Session = Depends(get_db)):
-    return BillService.create_bill(db, bill_data)
+@router.post("/", status_code=201)
+def create_bill(payload: BillCreate, db: Session = Depends(get_db)):
+    return BillService.create_bill(db, payload.model_dump())
 
 
 @router.put("/{bill_id}")
-def update_bill(bill_id: int, bill_data: dict, db: Session = Depends(get_db)):
-    return BillService.update_bill(db, bill_id, bill_data)
+def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)):
+    result = BillService.update_bill(db, bill_id, payload.model_dump(exclude_none=True))
+    if not result:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    return result
 
 
-@router.delete("/{bill_id}")
+@router.delete("/{bill_id}", status_code=204)
 def deactivate_bill(bill_id: int, db: Session = Depends(get_db)):
-    return BillService.deactivate_bill(db, bill_id)
+    result = BillService.deactivate_bill(db, bill_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Bill not found")

@@ -45,8 +45,6 @@ export function sortBillsByDueDate(bills) {
 // Returns bills that are overdue or due within windowDays. Default 7.
 export function filterActionableBills(bills, windowDays = 7) {
   return bills.filter((b) => {
-    const status = getBillStatus(b.dayOfMonth);
-    if (status === "overdue") return true;
     const days = getDaysUntilDue(b.dayOfMonth);
     return days <= windowDays;
   });

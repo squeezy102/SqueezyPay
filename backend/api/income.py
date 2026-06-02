@@ -1,9 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from database.db import get_db
 from services.income_service import IncomeService
 
 router = APIRouter(prefix="/api/income", tags=["income"])
+
+
+class IncomeCreate(BaseModel):
+    source_name: str
+    amount: float
+    frequency: str
+    next_expected_date: str | None = None
+    active: bool = True
+
+
+class IncomeUpdate(BaseModel):
+    source_name: str | None = None
+    amount: float | None = None
+    frequency: str | None = None
+    next_expected_date: str | None = None
+    active: bool | None = None
 
 
 @router.get("/monthly-total")
@@ -13,7 +30,7 @@ def get_monthly_total(db: Session = Depends(get_db)):
 
 
 @router.get("/")
-def get_all_income(include_inactive: bool = False, db: Session = Depends(get_db)):
+def get_all_income(include_inactive: bool = Query(False), db: Session = Depends(get_db)):
     return IncomeService.get_all(db, include_inactive=include_inactive)
 
 
@@ -26,13 +43,13 @@ def get_income_by_id(income_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", status_code=201)
-def create_income(income_data: dict, db: Session = Depends(get_db)):
-    return IncomeService.create(db, income_data)
+def create_income(payload: IncomeCreate, db: Session = Depends(get_db)):
+    return IncomeService.create(db, payload.model_dump())
 
 
 @router.put("/{income_id}")
-def update_income(income_id: int, income_data: dict, db: Session = Depends(get_db)):
-    record = IncomeService.update(db, income_id, income_data)
+def update_income(income_id: int, payload: IncomeUpdate, db: Session = Depends(get_db)):
+    record = IncomeService.update(db, income_id, payload.model_dump(exclude_none=True))
     if not record:
         raise HTTPException(status_code=404, detail="Income record not found")
     return record

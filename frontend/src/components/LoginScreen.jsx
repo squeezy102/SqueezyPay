@@ -27,11 +27,6 @@ export default function LoginScreen() {
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 flex items-center justify-center px-4">
       <div className={`${cardClass} rounded-2xl shadow-lg w-full max-w-sm p-8`}>
-        {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <img src="/logo.png" alt="SqueezyPay" className="h-16 object-contain" />
-        </div>
-
         {/* Headings */}
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 text-center mb-1">
           SqueezyPay

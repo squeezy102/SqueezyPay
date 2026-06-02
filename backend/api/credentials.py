@@ -22,12 +22,12 @@ class CredentialUpdate(BaseModel):
 
 @router.get("/")
 def list_credentials(db: Session = Depends(get_db)):
-    return CredentialService(db).get_all()
+    return CredentialService.get_all(db)
 
 
 @router.get("/{credential_id}")
 def get_credential(credential_id: int, db: Session = Depends(get_db)):
-    result = CredentialService(db).get_by_id(credential_id)
+    result = CredentialService.get_by_id(db, credential_id)
     if not result:
         raise HTTPException(status_code=404, detail="Credential not found")
     return result
@@ -35,7 +35,7 @@ def get_credential(credential_id: int, db: Session = Depends(get_db)):
 
 @router.get("/by-bill/{bill_id}")
 def get_credential_by_bill(bill_id: int, db: Session = Depends(get_db)):
-    result = CredentialService(db).get_by_bill_id(bill_id)
+    result = CredentialService.get_by_bill_id(db, bill_id)
     if not result:
         raise HTTPException(status_code=404, detail="No credential found for this bill")
     return result
@@ -43,7 +43,8 @@ def get_credential_by_bill(bill_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", status_code=201)
 def create_credential(payload: CredentialCreate, db: Session = Depends(get_db)):
-    return CredentialService(db).create(
+    return CredentialService.create(
+        db,
         bill_id=payload.bill_id,
         username=payload.username,
         password=payload.password,
@@ -54,7 +55,7 @@ def create_credential(payload: CredentialCreate, db: Session = Depends(get_db)):
 @router.put("/{credential_id}")
 def update_credential(credential_id: int, payload: CredentialUpdate, db: Session = Depends(get_db)):
     updates = payload.model_dump(exclude_none=True)
-    result = CredentialService(db).update(credential_id, **updates)
+    result = CredentialService.update(db, credential_id, **updates)
     if not result:
         raise HTTPException(status_code=404, detail="Credential not found")
     return result
@@ -62,6 +63,6 @@ def update_credential(credential_id: int, payload: CredentialUpdate, db: Session
 
 @router.delete("/{credential_id}", status_code=204)
 def delete_credential(credential_id: int, db: Session = Depends(get_db)):
-    deleted = CredentialService(db).delete(credential_id)
+    deleted = CredentialService.delete(db, credential_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Credential not found")

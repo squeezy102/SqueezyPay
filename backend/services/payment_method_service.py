@@ -6,43 +6,46 @@ logger = get_logger("squeezypay.services.payment_methods")
 
 
 class PaymentMethodService:
-    def __init__(self, db: Session):
-        self.repo = PaymentMethodRepository(db)
+    @staticmethod
+    def get_all(db: Session) -> list[dict]:
+        return [PaymentMethodService._to_dict(m) for m in PaymentMethodRepository.get_all(db)]
 
-    def get_all(self) -> list[dict]:
-        return [self._to_dict(m) for m in self.repo.get_all()]
-
-    def get_by_id(self, payment_method_id: int) -> dict | None:
-        method = self.repo.get_by_id(payment_method_id)
+    @staticmethod
+    def get_by_id(db: Session, payment_method_id: int) -> dict | None:
+        method = PaymentMethodRepository.get_by_id(db, payment_method_id)
         if not method:
             return None
-        return self._to_dict(method)
+        return PaymentMethodService._to_dict(method)
 
-    def create(self, nickname: str, payment_type: str, last_four: str, expiration_date: str | None, notes: str | None) -> dict:
-        method = self.repo.create(nickname, payment_type, last_four, expiration_date, notes)
-        result = self._to_dict(method)
+    @staticmethod
+    def create(db: Session, nickname: str, payment_type: str, last_four: str, expiration_date: str | None, notes: str | None) -> dict:
+        method = PaymentMethodRepository.create(db, nickname, payment_type, last_four, expiration_date, notes)
+        result = PaymentMethodService._to_dict(method)
         logger.info(f"Created payment method id={result['id']} nickname='{nickname}'")
         return result
 
-    def update(self, payment_method_id: int, **kwargs) -> dict | None:
-        method = self.repo.get_by_id(payment_method_id)
+    @staticmethod
+    def update(db: Session, payment_method_id: int, **kwargs) -> dict | None:
+        method = PaymentMethodRepository.get_by_id(db, payment_method_id)
         if not method:
             logger.warning(f"Update attempted on non-existent payment method id={payment_method_id}")
             return None
-        result = self._to_dict(self.repo.update(method, **kwargs))
+        result = PaymentMethodService._to_dict(PaymentMethodRepository.update(db, method, **kwargs))
         logger.info(f"Updated payment method id={payment_method_id}")
         return result
 
-    def delete(self, payment_method_id: int) -> bool:
-        method = self.repo.get_by_id(payment_method_id)
+    @staticmethod
+    def delete(db: Session, payment_method_id: int) -> bool:
+        method = PaymentMethodRepository.get_by_id(db, payment_method_id)
         if not method:
             logger.warning(f"Delete attempted on non-existent payment method id={payment_method_id}")
             return False
-        self.repo.delete(method)
+        PaymentMethodRepository.delete(db, method)
         logger.info(f"Deleted payment method id={payment_method_id}")
         return True
 
-    def _to_dict(self, method) -> dict:
+    @staticmethod
+    def _to_dict(method) -> dict:
         return {
             "id": method.id,
             "nickname": method.nickname,

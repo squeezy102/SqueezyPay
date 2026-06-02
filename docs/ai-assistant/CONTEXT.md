@@ -97,6 +97,23 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
+**Codebase audit and cleanup:**
+- Service/repository layer standardized - `CredentialRepository`, `PaymentMethodRepository`, `CredentialService`, `PaymentMethodService` converted from instance-based to static methods. Entire backend now uses one consistent pattern.
+- Pydantic request models added to all endpoints that were using raw `dict`: `bills.py`, `income.py`, `payment_history.py`, `settings.py`, `categories.py`. All 404s now use `HTTPException` consistently.
+- N+1 query fixed in `PaymentHistoryService.get_all()` - now a single JOIN query. Also added `order_by(payment_date.desc())`.
+- `BillDashboard.jsx` `largePending` filter - removed dead `!== "paid"` check that could never be true.
+- CORS locked down from `allow_origins=["*"]` to localhost ports + private network IP regex (`192.168.*`, `10.*`).
+- `filterActionableBills()` in `billUtils.js` - removed redundant double status calculation. Overdue bills have negative `daysUntilDue` so `<= windowDays` already catches them.
+- Logo removed from all components (SetupScreen, LoginScreen, NavBar sidebar, NavBar mobile). `logo.png` deleted from repo. App name displayed as text.
+- Mobile scope formally narrowed: Windows primary, iPhone functional for core workflows only (dashboard, bill pay, balance check, payment history). Documented in DECISIONS.md.
+- Decision reversed: system tray icon approved for service management. Documented in DECISIONS.md.
+
+**Admin dashboard stop/start fixes:**
+- `_load_user_env()` added to `admin/main.py` - reads `HKCU\Environment` from the Windows registry and merges user env vars into the backend subprocess env. Fixes 500 errors on login when backend is launched from the admin dashboard shortcut.
+- `stop_service` rewritten to kill by port via `psutil` when no tracked process handle exists. Stop now works regardless of how the service was started (manually, prior admin instance, shortcut, etc.)
+- Backend Open link removed from dashboard - backend has no browseable UI; link returned 404. `url` field removed from backend status response; dashboard template updated to only render Open button when `info.url` is present.
+- Service card `min-height` added to `status-row` to keep card heights uniform after removing the URL line from the backend card.
+
 **Frontend retheme - SNES-inspired design system:**
 - Full color scheme overhaul across all frontend components
 - Sidebar: deep SNES violet (`violet-900`) with violet-tinted nav states; teal action buttons (`teal-600`) throughout
@@ -120,16 +137,17 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **TypeScript migration (frontend)** - highest priority engineering foundation. Migrate before the codebase grows further.
-2. **GitHub Actions CI gate** - automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master.
-3. **React Query + React Hook Form** - add before more API call patterns and forms accumulate.
-4. **Tech debt: admin dashboard Start button must load Windows user env vars** - The backend process must be started with `SQUEEZYPAY_SECRET_KEY` and `SQUEEZYPAY_ENCRYPTION_KEY` visible. These live in the Windows *user* environment, not the system environment. A plain `Start-Process` without explicitly loading user env vars causes 500 errors on login. The admin dashboard launch script (`scripts/launch-admin.ps1`) and the service Start buttons in the admin dashboard need to explicitly load user env vars before spawning the backend. Until fixed, manual launch from a PowerShell terminal (which inherits user env vars) works correctly.
-5. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Deferred until all key functionality is in place. Treat the current theme as a placeholder.
-6. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings when doing the Settings pass.
-6. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
-5. **Tech debt: mobile bill management table** - likely same issue as payment history, not yet tested on mobile.
-6. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
-7. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
+1. **System tray icon** - Windows tray icon for start/stop/status of all three services (backend, frontend, admin). Replaces the need to keep the admin dashboard open. User changed their mind on browser-only approach - the admin server itself needs a management point that doesn't depend on the admin server being up. Stack: `pystray` + `Pillow`. See DECISIONS.md for updated rationale.
+2. **TypeScript migration (frontend)** - highest priority engineering foundation. Migrate before the codebase grows further.
+3. **GitHub Actions CI gate** - automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master.
+4. **React Query + React Hook Form** - add before more API call patterns and forms accumulate.
+5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
+6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.
+7. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings when doing the Settings pass.
+8. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Payment history is a core mobile workflow - needs a card-based or condensed layout for small screens.
+9. **Tech debt: mobile bill management table** - bill management (add/edit/deactivate) is desktop-only scope. Mobile only needs to view and pay bills, not manage them. Low priority.
+10. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+11. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 
@@ -257,7 +275,7 @@ squeezypay/
 - **Dashboard filter:** `filterActionableBills()` in `billUtils.js` - shows bills due within N days + overdue. Threshold driven by `due_soon_days` setting (default 7), fetched from backend on load.
 - **Design tokens:** All frontend colors in `src/theme/tokens.js`. Never hardcode colors in components.
 - **Logging:** JSON logs at `backend/logs/squeezypay.log`. Never log passwords, keys, or credential data.
-- **Platform targets:** Desktop (Windows) first. iOS parity. Android out of scope.
+- **Platform targets:** Windows primary. Mobile (iPhone) supported for core workflows only: dashboard, bill pay, balance check, payment history. All other features (reporting, graphs, analytics, settings management, bill management) are desktop-only. Android out of scope.
 - **Credential vault on mobile:** Copy-paste only - iOS clipboard is one item at a time. Known limitation, second-pass design discussion wanted. See DECISIONS.md.
 
 ---
