@@ -20,7 +20,7 @@ BILL_PAYLOAD = {
 
 def test_bill_repository_create_and_retrieve(client):
     create_response = client.post("/api/bills/", json=BILL_PAYLOAD)
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
     created = create_response.json()
 
     get_response = client.get(f"/api/bills/{created['id']}")
@@ -43,8 +43,7 @@ def test_bill_repository_deactivate(client):
 
     # Deactivate the bill
     delete_response = client.delete(f"/api/bills/{bill_id}")
-    assert delete_response.status_code == 200
-    assert delete_response.json()["active"] is False
+    assert delete_response.status_code == 204
 
     # Active-only list should NOT include the deactivated bill
     active_response = client.get("/api/bills/")

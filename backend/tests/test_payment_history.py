@@ -37,7 +37,7 @@ PAYMENT_PAYLOAD = {
 @pytest.fixture()
 def bill(client):
     response = client.post("/api/bills/", json=BILL_PAYLOAD)
-    assert response.status_code == 200
+    assert response.status_code == 201
     return response.json()
 
 

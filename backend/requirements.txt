@@ -10,4 +10,5 @@ slowapi
 
 # Testing
 pytest==9.0.3
+pytest-cov==6.0.0
 httpx==0.28.1

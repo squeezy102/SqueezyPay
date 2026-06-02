@@ -32,7 +32,7 @@ def test_list_bills_empty(client):
 
 def test_create_bill(client):
     response = client.post("/api/bills/", json=BILL_PAYLOAD)
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
     assert data["name"] == "Example Electric Co"
     assert data["category"] == "Utilities"
@@ -76,8 +76,7 @@ def test_get_bill_by_id(client):
 
 def test_get_bill_not_found(client):
     response = client.get("/api/bills/9999")
-    assert response.status_code == 200
-    assert "error" in response.json()
+    assert response.status_code == 404
 
 
 def test_update_bill(client):
@@ -95,15 +94,13 @@ def test_update_bill(client):
 
 def test_update_bill_not_found(client):
     response = client.put("/api/bills/9999", json=BILL_PAYLOAD)
-    assert response.status_code == 200
-    assert response.json() is None
+    assert response.status_code == 404
 
 
 def test_deactivate_bill(client):
     created = client.post("/api/bills/", json=BILL_PAYLOAD).json()
     response = client.delete(f"/api/bills/{created['id']}")
-    assert response.status_code == 200
-    assert response.json()["active"] is False
+    assert response.status_code == 204
 
     # Should no longer appear in active list
     active = client.get("/api/bills/").json()
@@ -112,12 +109,11 @@ def test_deactivate_bill(client):
 
 def test_deactivate_bill_not_found(client):
     response = client.delete("/api/bills/9999")
-    assert response.status_code == 200
-    assert response.json() is None
+    assert response.status_code == 404
 
 
 def test_bill_amount_optional(client):
     payload = {**BILL_PAYLOAD, "expected_amount": None}
     response = client.post("/api/bills/", json=payload)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["expected_amount"] is None

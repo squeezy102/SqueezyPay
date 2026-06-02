@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/bills", tags=["bills"])
 class BillCreate(BaseModel):
     name: str
     category: str
-    expected_amount: float
+    expected_amount: float | None = None
     day_of_month: int
     url: str
     recurring: bool = True
