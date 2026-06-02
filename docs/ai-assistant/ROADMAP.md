@@ -17,7 +17,7 @@ These are infrastructure and tooling items that must be in place before Phase 2 
 | Item | Notes | Priority |
 |---|---|---|
 | ~~REQ-016: Authentication (household passphrase, bcrypt, JWT sessions)~~ | ~~Phase 1 item - not yet built~~ DONE | ~~REQUIRED~~ |
-| TypeScript migration (frontend) | Migrate before the codebase grows further | REQUIRED |
+| ~~TypeScript migration (frontend)~~ | ~~Migrate before the codebase grows further~~ DONE | ~~REQUIRED~~ |
 | ~~Alembic database migrations~~ | ~~Schema will evolve; manual migrations are risky~~ DONE | ~~REQUIRED~~ |
 | GitHub Actions CI gate | Automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master | REQUIRED |
 | React Query (TanStack Query) | Add before more API call patterns accumulate | REQUIRED |

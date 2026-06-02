@@ -1,20 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { getIncome, deactivateIncome, reactivateIncome, getMonthlyTotal } from "../utils/api";
+import type { Income, IncomeFrequency } from "../types";
 import IncomeFormModal from "./IncomeFormModal";
 
-const FREQUENCY_LABELS = {
+const FREQUENCY_LABELS: Record<IncomeFrequency, string> = {
   "weekly":       "Weekly",
   "bi-weekly":    "Bi-Weekly",
   "semi-monthly": "Semi-Monthly",
   "monthly":      "Monthly",
 };
 
-function formatCurrency(amount) {
+function formatCurrency(amount: number | null): string {
   if (amount == null) return "—";
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 }
 
-function formatDate(dateStr) {
+function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
   // ISO datetime — take only the date portion before "T" to avoid UTC offset shifting the day
   const [year, month, day] = dateStr.split("T")[0].split("-");
@@ -23,11 +24,12 @@ function formatDate(dateStr) {
 }
 
 export default function IncomeManagement() {
-  const [sources, setSources]           = useState([]);
-  const [monthlyTotal, setMonthlyTotal] = useState(null);
+  const [sources, setSources]           = useState<Income[]>([]);
+  const [monthlyTotal, setMonthlyTotal] = useState<number | null>(null);
   const [showInactive, setShowInactive] = useState(false);
-  const [modalIncome, setModalIncome]   = useState(undefined); // undefined=closed, null=add, object=edit
-  const [error, setError]               = useState(null);
+  // undefined = closed, null = add new, Income = edit existing
+  const [modalIncome, setModalIncome]   = useState<Income | null | undefined>(undefined);
+  const [error, setError]               = useState<string | null>(null);
 
   const loadTotal = useCallback(async () => {
     const total = await getMonthlyTotal();
@@ -49,7 +51,7 @@ export default function IncomeManagement() {
     await load();
   }
 
-  async function handleToggleActive(source) {
+  async function handleToggleActive(source: Income) {
     setError(null);
     if (source.active) {
       await deactivateIncome(source.id);
@@ -155,7 +157,13 @@ export default function IncomeManagement() {
   );
 }
 
-function IncomeTable({ sources, onEdit, onToggle }) {
+interface IncomeTableProps {
+  sources: Income[];
+  onEdit: (income: Income) => void;
+  onToggle: (income: Income) => void;
+}
+
+function IncomeTable({ sources, onEdit, onToggle }: IncomeTableProps) {
   if (!sources.length) return null;
 
   return (

@@ -1,8 +1,6 @@
-// Design token definitions for SqueezyPay.
-// All visual decisions live here. Components import from this file.
-// To customize the look of the app, edit this file — not the components.
+import type { BillStatus } from "../types";
 
-export const categoryTokens = {
+export const categoryTokens: Record<string, string> = {
   "Loans / Debt":              "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
   "Internet / Phone":          "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
   "Utilities":                 "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
@@ -26,14 +24,19 @@ export const defaultCategoryToken = "bg-slate-100 text-slate-600 dark:bg-slate-7
 
 export const cardClass = "border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800";
 
-export const statusTokens = {
+interface StatusToken {
+  badge?: string;
+  dot?: string;
+}
+
+export const statusTokens: Record<BillStatus, StatusToken> = {
   overdue: {
-    badge:  "text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-400",
-    dot:    "bg-red-500 dark:bg-red-400",
+    badge: "text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-400",
+    dot:   "bg-red-500 dark:bg-red-400",
   },
   "due-soon": {
-    badge:  "text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-400",
-    dot:    "bg-amber-500 dark:bg-amber-400",
+    badge: "text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-400",
+    dot:   "bg-amber-500 dark:bg-amber-400",
   },
   upcoming: {},
 };
@@ -48,7 +51,13 @@ export const alertThresholds = {
   largePaymentAmount: 500,
 };
 
-export const alertBannerTokens = {
+interface BannerToken {
+  bar: string;
+  icon: string;
+  text: string;
+}
+
+export const alertBannerTokens: Record<string, BannerToken> = {
   overdue: {
     bar:  "bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700",
     icon: "text-red-500 dark:text-red-400",

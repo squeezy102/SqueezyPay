@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAllBills, createBill, updateBill, deactivateBill, reactivateBill } from "../utils/api";
 import { categoryTokens, defaultCategoryToken } from "../theme/tokens";
+import type { Bill } from "../types";
+import type { BillPayload } from "../utils/api";
 import BillFormModal from "./BillFormModal";
 
-function CategoryBadge({ category }) {
+function CategoryBadge({ category }: { category: string }) {
   const cls = categoryTokens[category] ?? defaultCategoryToken;
   return (
     <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>
@@ -13,9 +15,10 @@ function CategoryBadge({ category }) {
 }
 
 export default function BillManagement() {
-  const [bills, setBills]         = useState([]);
-  const [modalBill, setModalBill] = useState(undefined); // undefined=closed, null=add, object=edit
-  const [error, setError]         = useState(null);
+  const [bills, setBills]         = useState<Bill[]>([]);
+  // undefined = closed, null = add new, Bill = edit existing
+  const [modalBill, setModalBill] = useState<Bill | null | undefined>(undefined);
+  const [error, setError]         = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const data = await getAllBills();
@@ -25,9 +28,9 @@ export default function BillManagement() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleSave(payload) {
+  async function handleSave(payload: BillPayload) {
     setError(null);
-    let result;
+    let result: Bill | null;
     if (modalBill) {
       result = await updateBill(modalBill.id, payload);
     } else {
@@ -38,7 +41,7 @@ export default function BillManagement() {
     await load();
   }
 
-  async function handleToggleActive(bill) {
+  async function handleToggleActive(bill: Bill) {
     const result = bill.active
       ? await deactivateBill(bill.id)
       : await reactivateBill(bill.id);
@@ -101,7 +104,14 @@ export default function BillManagement() {
   );
 }
 
-function BillTable({ bills, onEdit, onToggle, dimmed = false }) {
+interface BillTableProps {
+  bills: Bill[];
+  onEdit: (bill: Bill) => void;
+  onToggle: (bill: Bill) => void;
+  dimmed?: boolean;
+}
+
+function BillTable({ bills, onEdit, onToggle, dimmed = false }: BillTableProps) {
   if (!bills.length) return null;
 
   return (

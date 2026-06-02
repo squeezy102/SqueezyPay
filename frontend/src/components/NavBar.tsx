@@ -10,7 +10,14 @@ function LogoutIcon() {
   );
 }
 
-const tabs = [
+interface Tab {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  disabled?: boolean;
+}
+
+const tabs: Tab[] = [
   {
     id: "home",
     label: "Home",
@@ -100,8 +107,13 @@ function DarkModeToggle() {
   );
 }
 
+interface NavProps {
+  active: string;
+  onChange: (id: string) => void;
+}
+
 // ── Desktop sidebar ───────────────────────────────────────────────────────────
-export function Sidebar({ active, onChange }) {
+export function Sidebar({ active, onChange }: NavProps) {
   return (
     <aside className="hidden lg:flex flex-col w-56 shrink-0 fixed top-0 left-0 h-full bg-violet-900 dark:bg-slate-900 z-40">
       <div className="px-4 py-4 border-b border-violet-800 dark:border-slate-700">
@@ -161,7 +173,7 @@ function SidebarLogoutButton() {
 }
 
 function AdminLink() {
-  const [up, setUp] = useState(null); // null=checking, true=up, false=down
+  const [up, setUp] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -202,7 +214,7 @@ function AdminLink() {
   );
 }
 
-function MobileLogoutButton({ onClose }) {
+function MobileLogoutButton({ onClose }: { onClose: () => void }) {
   const { logout } = useAuth();
   return (
     <div className="border-t border-violet-800 dark:border-slate-700 mt-1 pt-1">
@@ -218,7 +230,7 @@ function MobileLogoutButton({ onClose }) {
 }
 
 // ── Mobile top bar ────────────────────────────────────────────────────────────
-export function MobileTopBar({ active, onChange }) {
+export function MobileTopBar({ active, onChange }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (

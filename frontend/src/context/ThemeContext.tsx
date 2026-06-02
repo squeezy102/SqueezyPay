@@ -1,9 +1,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
-const ThemeContext = createContext(null);
+interface ThemeContextValue {
+  dark: boolean;
+  toggle: () => void;
+}
 
-export function ThemeProvider({ children }) {
-  const [dark, setDark] = useState(() => {
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [dark, setDark] = useState<boolean>(() => {
     const saved = localStorage.getItem("squeezypay-theme");
     if (saved) return saved === "dark";
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -26,6 +32,8 @@ export function ThemeProvider({ children }) {
   );
 }
 
-export function useTheme() {
-  return useContext(ThemeContext);
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
+  return ctx;
 }

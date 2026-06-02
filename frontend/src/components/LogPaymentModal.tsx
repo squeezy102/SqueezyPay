@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { logPayment, getCredentialByBill, getPaymentMethods } from "../utils/api";
+import type { Bill, Payment, Credential, PaymentMethod } from "../types";
 import MoneyInput from "./MoneyInput";
 
-function CopyButton({ text }) {
+interface CopyButtonProps {
+  text: string;
+}
+
+function CopyButton({ text }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   function handleCopy() {
     if (navigator.clipboard) {
@@ -36,13 +41,27 @@ function CopyButton({ text }) {
   );
 }
 
-export default function LogPaymentModal({ bill, onClose, onLogged }) {
+interface FormState {
+  paymentDate: string;
+  amountPaid: number;
+  confirmationNumber: string;
+  paymentMethod: string;
+  notes: string;
+}
+
+interface Props {
+  bill: Bill;
+  onClose: () => void;
+  onLogged: (payment: Payment) => void;
+}
+
+export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   const today = new Date().toISOString().split("T")[0];
 
-  const [credential, setCredential]         = useState(null);
-  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [credential, setCredential]         = useState<Credential | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [showCreds, setShowCreds]           = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     paymentDate:        today,
     amountPaid:         bill.expectedAmount ?? 0,
     confirmationNumber: "",
@@ -51,14 +70,14 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
   });
   const [saving, setSaving]   = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError]     = useState(null);
+  const [error, setError]     = useState<string | null>(null);
 
   useEffect(() => {
     getCredentialByBill(bill.id).then(setCredential);
     getPaymentMethods().then(setPaymentMethods);
   }, [bill.id]);
 
-  function set(field, value) {
+  function set<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -66,7 +85,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
     window.open(bill.url, "_blank", "noopener,noreferrer");
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!form.amountPaid || form.amountPaid <= 0) {
@@ -229,7 +248,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
                 type="text"
                 value={form.paymentMethod}
                 onChange={(e) => set("paymentMethod", e.target.value)}
-                placeholder="e.g. ECU Visa, Joint Checking"
+                placeholder="e.g. Visa, Joint Checking"
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             )}

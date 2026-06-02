@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { getAllPayments } from "../utils/api";
+import type { Payment } from "../types";
 
-function formatDate(iso) {
+function formatDate(iso: string | null): string {
   if (!iso) return "-";
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function formatAmount(amount) {
+function formatAmount(amount: number | null): string {
   if (amount == null) return "-";
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 }
 
-const COLUMNS = [
+type SortKey = keyof Payment;
+type SortDir = "asc" | "desc";
+
+const COLUMNS: { key: SortKey; label: string }[] = [
   { key: "paymentDate",        label: "Date" },
   { key: "billName",           label: "Biller" },
   { key: "amountPaid",         label: "Amount" },
@@ -20,7 +24,7 @@ const COLUMNS = [
   { key: "notes",              label: "Notes" },
 ];
 
-function SortIcon({ direction }) {
+function SortIcon({ direction }: { direction: SortDir | null }) {
   if (!direction) return (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" viewBox="0 0 20 20" fill="currentColor">
       <path d="M5 8l5-5 5 5H5zm0 4l5 5 5-5H5z" />
@@ -37,18 +41,29 @@ function SortIcon({ direction }) {
   );
 }
 
+function cellValue(p: Payment, key: SortKey): React.ReactNode {
+  switch (key) {
+    case "paymentDate": return formatDate(p.paymentDate);
+    case "amountPaid":  return formatAmount(p.amountPaid);
+    default: {
+      const val = p[key];
+      return val != null && val !== "" ? String(val) : <span className="text-slate-300 dark:text-slate-600">-</span>;
+    }
+  }
+}
+
 export default function PaymentHistory() {
-  const [payments, setPayments] = useState([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
-  const [sortKey, setSortKey]   = useState("paymentDate");
-  const [sortDir, setSortDir]   = useState("desc");
+  const [sortKey, setSortKey]   = useState<SortKey>("paymentDate");
+  const [sortDir, setSortDir]   = useState<SortDir>("desc");
 
   useEffect(() => {
     getAllPayments().then((data) => { setPayments(data); setLoading(false); });
   }, []);
 
-  function handleSort(key) {
+  function handleSort(key: SortKey) {
     if (sortKey === key) {
       setSortDir((d) => d === "asc" ? "desc" : "asc");
     } else {
@@ -69,22 +84,18 @@ export default function PaymentHistory() {
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    let av = a[sortKey] ?? "";
-    let bv = b[sortKey] ?? "";
-    if (sortKey === "amountPaid") return sortDir === "asc" ? av - bv : bv - av;
-    if (sortKey === "paymentDate") { av = new Date(av); bv = new Date(bv); }
-    return sortDir === "asc"
-      ? String(av).localeCompare(String(bv))
-      : String(bv).localeCompare(String(av));
-  });
-
-  function cellValue(p, key) {
-    switch (key) {
-      case "paymentDate": return formatDate(p.paymentDate);
-      case "amountPaid":  return formatAmount(p.amountPaid);
-      default:            return p[key] || <span className="text-slate-300 dark:text-slate-600">-</span>;
+    if (sortKey === "amountPaid") {
+      return sortDir === "asc" ? a.amountPaid - b.amountPaid : b.amountPaid - a.amountPaid;
     }
-  }
+    if (sortKey === "paymentDate") {
+      const ad = new Date(a.paymentDate).getTime();
+      const bd = new Date(b.paymentDate).getTime();
+      return sortDir === "asc" ? ad - bd : bd - ad;
+    }
+    const av = String(a[sortKey] ?? "");
+    const bv = String(b[sortKey] ?? "");
+    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
 
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">

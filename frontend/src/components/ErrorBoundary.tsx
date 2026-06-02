@@ -1,35 +1,44 @@
 import { Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
 
 const API_BASE = `http://${window.location.hostname}:8000`;
 
-function reportError(error, componentStack) {
+function reportError(error: Error, componentStack: string) {
   fetch(`${API_BASE}/api/frontend-log/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       level: "ERROR",
-      message: error?.message ?? String(error),
-      detail: error?.stack ?? "",
-      component: componentStack ?? "",
+      message: error.message,
+      detail: error.stack ?? "",
+      component: componentStack,
     }),
   }).catch(() => {
-    // If the backend is also down, at least log to console
     console.error("[ErrorBoundary] Failed to report error to backend:", error);
   });
 }
 
-export default class ErrorBoundary extends Component {
-  constructor(props) {
+interface Props {
+  children: ReactNode;
+}
+
+interface State {
+  crashed: boolean;
+  message: string;
+}
+
+export default class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = { crashed: false, message: "" };
   }
 
-  static getDerivedStateFromError(error) {
-    return { crashed: true, message: error?.message ?? String(error) };
+  static getDerivedStateFromError(error: Error): State {
+    return { crashed: true, message: error.message };
   }
 
-  componentDidCatch(error, info) {
-    reportError(error, info?.componentStack ?? "");
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    reportError(error, info.componentStack ?? "");
   }
 
   render() {

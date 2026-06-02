@@ -1,12 +1,23 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { getAuthStatus, logoutAuth } from "../utils/api";
 
 const TOKEN_KEY = "squeezypay_token";
 
-const AuthContext = createContext(null);
+interface AuthContextValue {
+  token: string | null;
+  isAuthenticated: boolean;
+  isConfigured: boolean;
+  login: (newToken: string) => void;
+  logout: () => Promise<void>;
+  loading: boolean;
+  setIsConfigured: (val: boolean) => void;
+}
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY));
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(() => sessionStorage.getItem(TOKEN_KEY));
   const [isConfigured, setIsConfigured] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +38,7 @@ export function AuthProvider({ children }) {
     return () => { cancelled = true; };
   }, []);
 
-  // Listen for 401 events dispatched by api.js
+  // Listen for 401 events dispatched by api.ts
   useEffect(() => {
     function handleUnauthorized() {
       setToken(null);
@@ -36,7 +47,7 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("squeezypay:unauthorized", handleUnauthorized);
   }, []);
 
-  function login(newToken) {
+  function login(newToken: string) {
     sessionStorage.setItem(TOKEN_KEY, newToken);
     setToken(newToken);
   }
@@ -68,6 +79,8 @@ export function AuthProvider({ children }) {
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 }

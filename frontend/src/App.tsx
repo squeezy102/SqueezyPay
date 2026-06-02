@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Sidebar, MobileTopBar } from "./components/NavBar";
@@ -20,9 +21,9 @@ function AppShell() {
 
       {/* Content area - offset for sidebar on desktop, top bar on mobile */}
       <div className="lg:pl-56 pt-14 lg:pt-0">
-        {activeTab === "home"    && <BillDashboard />}
-        {activeTab === "bills"   && <BillManagement />}
-        {activeTab === "history" && <PaymentHistory />}
+        {activeTab === "home"     && <BillDashboard />}
+        {activeTab === "bills"    && <BillManagement />}
+        {activeTab === "history"  && <PaymentHistory />}
         {activeTab === "income"   && <IncomeManagement />}
         {activeTab === "settings" && <Settings />}
       </div>
@@ -30,12 +31,12 @@ function AppShell() {
   );
 }
 
-function AuthGate({ children }) {
+function AuthGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, isConfigured, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-violet-50 dark:bg-slate-950" />;
   if (!isConfigured) return <SetupScreen />;
   if (!isAuthenticated) return <LoginScreen />;
-  return children;
+  return <>{children}</>;
 }
 
 export default function App() {

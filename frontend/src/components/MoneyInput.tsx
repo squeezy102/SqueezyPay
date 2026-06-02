@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
 
-export default function MoneyInput({ value, onChange, required, className = "" }) {
-  const [raw, setRaw] = useState(() => value > 0 ? value.toFixed(2) : "");
+interface Props {
+  value: number;
+  onChange: (val: number) => void;
+  required?: boolean;
+  className?: string;
+}
+
+export default function MoneyInput({ value, onChange, required, className = "" }: Props) {
+  const [raw, setRaw] = useState<string>(() => value > 0 ? value.toFixed(2) : "");
 
   useEffect(() => {
-    const parsed = parseFloat(value);
+    const parsed = parseFloat(String(value));
     setRaw(!isNaN(parsed) && parsed > 0 ? parsed.toFixed(2) : "");
   }, [value]);
 
-  function handleChange(e) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setRaw(val);
     const parsed = parseFloat(val);

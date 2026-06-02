@@ -1,21 +1,31 @@
 import { useState, useEffect } from "react";
 import { createIncome, updateIncome } from "../utils/api";
+import type { Income, IncomeFrequency } from "../types";
 
-const FREQUENCIES = [
+const FREQUENCIES: { value: IncomeFrequency; label: string }[] = [
   { value: "weekly",       label: "Weekly" },
   { value: "bi-weekly",    label: "Bi-Weekly" },
   { value: "semi-monthly", label: "Semi-Monthly" },
   { value: "monthly",      label: "Monthly" },
 ];
 
-const EMPTY_FORM = {
+interface FormState {
+  sourceName: string;
+  amount: string;
+  frequency: IncomeFrequency;
+  nextExpectedDate: string;
+}
+
+const EMPTY_FORM: FormState = {
   sourceName:       "",
   amount:           "",
   frequency:        "monthly",
   nextExpectedDate: "",
 };
 
-function fieldClass(hasError) {
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
+function fieldClass(hasError: string | undefined) {
   const base =
     "w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors";
   return hasError
@@ -23,32 +33,38 @@ function fieldClass(hasError) {
     : `${base} border-slate-300 dark:border-slate-600`;
 }
 
-export default function IncomeFormModal({ income, onSave, onClose }) {
+interface Props {
+  income: Income | null;
+  onSave: () => void;
+  onClose: () => void;
+}
+
+export default function IncomeFormModal({ income, onSave, onClose }: Props) {
   const isEdit = !!income;
 
-  const [form, setForm]     = useState(EMPTY_FORM);
-  const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [apiError, setApiError] = useState(null);
+  const [form, setForm]         = useState<FormState>(EMPTY_FORM);
+  const [errors, setErrors]     = useState<FormErrors>({});
+  const [saving, setSaving]     = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     if (income) {
       setForm({
-        sourceName:       income.sourceName ?? "",
+        sourceName:       income.sourceName,
         amount:           income.amount != null ? String(income.amount) : "",
-        frequency:        income.frequency ?? "monthly",
-        nextExpectedDate: income.nextExpectedDate ?? "",
+        frequency:        income.frequency,
+        nextExpectedDate: income.nextExpectedDate,
       });
     }
   }, [income]);
 
-  function set(field, value) {
+  function set<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: null }));
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
   }
 
-  function validate() {
-    const e = {};
+  function validate(): FormErrors {
+    const e: FormErrors = {};
     if (!form.sourceName.trim()) e.sourceName = "Required";
     const amt = Number(form.amount);
     if (!form.amount || isNaN(amt) || amt <= 0) e.amount = "Enter a positive amount";
@@ -57,7 +73,7 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
     return e;
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
@@ -72,7 +88,7 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
       nextExpectedDate: form.nextExpectedDate,
     };
 
-    const result = isEdit
+    const result = isEdit && income
       ? await updateIncome(income.id, payload)
       : await createIncome(payload);
 
@@ -149,7 +165,7 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
                   value={form.amount}
                   onChange={(e) => set("amount", e.target.value)}
                   placeholder="0.00"
-                  className={fieldClass(errors.amount) + " pl-7"}
+                  className={`${fieldClass(errors.amount)} pl-7`}
                 />
               </div>
               {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount}</p>}
@@ -161,7 +177,7 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
               </label>
               <select
                 value={form.frequency}
-                onChange={(e) => set("frequency", e.target.value)}
+                onChange={(e) => set("frequency", e.target.value as IncomeFrequency)}
                 className={fieldClass(errors.frequency)}
               >
                 {FREQUENCIES.map((f) => (

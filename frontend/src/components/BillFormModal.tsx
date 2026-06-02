@@ -1,20 +1,34 @@
 import { useState, useEffect } from "react";
 import { categoryTokens } from "../theme/tokens";
+import type { Bill } from "../types";
+import type { BillPayload } from "../utils/api";
 import MoneyInput from "./MoneyInput";
 
 const CATEGORIES = Object.keys(categoryTokens);
 
-const EMPTY_FORM = {
-  name: "",
-  category: CATEGORIES[0],
-  url: "",
+interface FormState {
+  name: string;
+  category: string;
+  url: string;
+  expectedAmount: number | "";
+  dayOfMonth: number | "";
+  recurring: boolean;
+  notes: string;
+}
+
+const EMPTY_FORM: FormState = {
+  name:           "",
+  category:       CATEGORIES[0] ?? "",
+  url:            "",
   expectedAmount: "",
-  dayOfMonth: "",
-  recurring: true,
-  notes: "",
+  dayOfMonth:     "",
+  recurring:      true,
+  notes:          "",
 };
 
-function fieldClass(error) {
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
+function fieldClass(error: string | undefined) {
   const base =
     "w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors";
   return error
@@ -22,53 +36,63 @@ function fieldClass(error) {
     : `${base} border-slate-300 dark:border-slate-600`;
 }
 
-export default function BillFormModal({ bill, onSave, onClose }) {
+interface Props {
+  bill: Bill | null;
+  onSave: (payload: BillPayload) => Promise<void>;
+  onClose: () => void;
+}
+
+export default function BillFormModal({ bill, onSave, onClose }: Props) {
   const isEdit = !!bill;
 
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [errors, setErrors] = useState({});
+  const [form, setForm]     = useState<FormState>(EMPTY_FORM);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (bill) {
       setForm({
-        name:           bill.name ?? "",
-        category:       bill.category ?? CATEGORIES[0],
-        url:            bill.url ?? "",
+        name:           bill.name,
+        category:       bill.category || CATEGORIES[0] || "",
+        url:            bill.url,
         expectedAmount: bill.expectedAmount ?? "",
-        dayOfMonth:     bill.dayOfMonth ?? "",
-        recurring:      bill.recurring ?? true,
+        dayOfMonth:     bill.dayOfMonth,
+        recurring:      bill.recurring,
         notes:          bill.notes ?? "",
       });
     }
   }, [bill]);
 
-  function set(field, value) {
+  function set<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: null }));
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
   }
 
-  function validate() {
-    const e = {};
-    if (!form.name.trim())          e.name       = "Required";
-    if (!form.category)             e.category   = "Required";
-    if (!form.url.trim())           e.url        = "Required";
+  function validate(): FormErrors {
+    const e: FormErrors = {};
+    if (!form.name.trim())  e.name     = "Required";
+    if (!form.category)     e.category = "Required";
+    if (!form.url.trim())   e.url      = "Required";
     const day = Number(form.dayOfMonth);
-    if (!form.dayOfMonth || isNaN(day) || day < 1 || day > 31)
+    if (form.dayOfMonth === "" || isNaN(day) || day < 1 || day > 31)
       e.dayOfMonth = "Enter a day 1-31";
     return e;
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     setSaving(true);
-    const payload = {
-      ...form,
+    const payload: BillPayload = {
+      name:           form.name,
+      category:       form.category,
+      url:            form.url,
       expectedAmount: form.expectedAmount === "" ? null : Number(form.expectedAmount),
       dayOfMonth:     Number(form.dayOfMonth),
+      recurring:      form.recurring,
+      notes:          form.notes || null,
     };
     await onSave(payload);
     setSaving(false);
@@ -150,9 +174,8 @@ export default function BillFormModal({ bill, onSave, onClose }) {
                 Expected Amount
               </label>
               <MoneyInput
-                value={form.expectedAmount}
+                value={form.expectedAmount === "" ? 0 : form.expectedAmount}
                 onChange={(v) => set("expectedAmount", v)}
-                placeholder="0.00"
               />
             </div>
             <div>
@@ -164,7 +187,7 @@ export default function BillFormModal({ bill, onSave, onClose }) {
                 min={1}
                 max={31}
                 value={form.dayOfMonth}
-                onChange={(e) => set("dayOfMonth", e.target.value)}
+                onChange={(e) => set("dayOfMonth", e.target.value === "" ? "" : Number(e.target.value))}
                 placeholder="1-31"
                 className={fieldClass(errors.dayOfMonth)}
               />
@@ -200,7 +223,7 @@ export default function BillFormModal({ bill, onSave, onClose }) {
               onChange={(e) => set("notes", e.target.value)}
               placeholder="Optional notes..."
               rows={2}
-              className={fieldClass(false) + " resize-none"}
+              className={`${fieldClass(undefined)} resize-none`}
             />
           </div>
         </form>

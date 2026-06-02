@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { getBillStatus, getDaysUntilDue, formatDueDate } from "../utils/billUtils";
 import { statusTokens, actionTokens, cardClass } from "../theme/tokens";
+import type { Bill, BillStatus } from "../types";
 import LogPaymentModal from "./LogPaymentModal";
 
-function StatusBadge({ status, daysUntil }) {
+interface StatusBadgeProps {
+  status: BillStatus;
+  daysUntil: number;
+}
+
+function StatusBadge({ status, daysUntil }: StatusBadgeProps) {
   const tokens = statusTokens[status];
-  if (!tokens?.badge) return null;
+  if (!tokens.badge) return null;
 
   const label =
     status === "overdue"
@@ -16,19 +22,24 @@ function StatusBadge({ status, daysUntil }) {
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${tokens.badge}`}>
-      <span className={`w-1.5 h-1.5 rounded-full inline-block ${tokens.dot}`} />
+      <span className={`w-1.5 h-1.5 rounded-full inline-block ${tokens.dot ?? ""}`} />
       {label}
     </span>
   );
 }
 
-export default function BillCard({ bill, dueSoonDays = 7 }) {
+interface Props {
+  bill: Bill;
+  dueSoonDays?: number;
+}
+
+export default function BillCard({ bill, dueSoonDays = 7 }: Props) {
   const status    = getBillStatus(bill.dayOfMonth, dueSoonDays);
   const daysUntil = getDaysUntilDue(bill.dayOfMonth);
   const dueDate   = formatDueDate(bill.dayOfMonth);
   const [showModal, setShowModal] = useState(false);
 
-  function handlePayClick(e) {
+  function handlePayClick(e: React.MouseEvent) {
     e.preventDefault();
     setShowModal(true);
   }

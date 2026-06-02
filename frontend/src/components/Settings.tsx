@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getSettings, updateSettings, getCategories, createCategory, updateCategory } from "../utils/api";
+import type { Category } from "../types";
 
-// ── Pencil icon ───────────────────────────────────────────────────────────────
 function PencilIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
@@ -12,13 +12,13 @@ function PencilIcon() {
 
 // ── Alert Thresholds section ──────────────────────────────────────────────────
 function AlertThresholdsCard() {
-  const [dueSoonDays, setDueSoonDays]               = useState("");
-  const [largePaymentThreshold, setLargePayment]    = useState("");
-  const [loading, setLoading]                       = useState(true);
-  const [saving, setSaving]                         = useState(false);
-  const [saved, setSaved]                           = useState(false);
-  const [error, setError]                           = useState(null);
-  const savedTimerRef                               = useRef(null);
+  const [dueSoonDays, setDueSoonDays]            = useState("");
+  const [largePaymentThreshold, setLargePayment] = useState("");
+  const [loading, setLoading]                    = useState(true);
+  const [saving, setSaving]                      = useState(false);
+  const [saved, setSaved]                        = useState(false);
+  const [error, setError]                        = useState<string | null>(null);
+  const savedTimerRef                            = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     getSettings().then((data) => {
@@ -31,7 +31,7 @@ function AlertThresholdsCard() {
     return () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); };
   }, []);
 
-  async function handleSave(e) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaving(true);
@@ -121,13 +121,18 @@ function AlertThresholdsCard() {
   );
 }
 
-// ── Category row (view or inline-edit) ────────────────────────────────────────
-function CategoryRow({ category, onSaved }) {
-  const [editing, setEditing]   = useState(false);
-  const [draft, setDraft]       = useState(category.name);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState(null);
-  const inputRef                = useRef(null);
+// ── Category row ──────────────────────────────────────────────────────────────
+interface CategoryRowProps {
+  category: Category;
+  onSaved: () => void;
+}
+
+function CategoryRow({ category, onSaved }: CategoryRowProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft]     = useState(category.name);
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+  const inputRef              = useRef<HTMLInputElement>(null);
 
   function startEdit() {
     setDraft(category.name);
@@ -149,8 +154,8 @@ function CategoryRow({ category, onSaved }) {
     try {
       const result = await updateCategory(category.id, trimmed);
       setSaving(false);
-      if (result?.conflict) { setError("A category with that name already exists."); return; }
-      if (result?.notFound)  { setError("Category not found."); return; }
+      if (result && "conflict" in result) { setError("A category with that name already exists."); return; }
+      if (result && "notFound" in result) { setError("Category not found."); return; }
       setEditing(false);
       onSaved();
     } catch {
@@ -159,7 +164,7 @@ function CategoryRow({ category, onSaved }) {
     }
   }
 
-  function handleKeyDown(e) {
+  function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter")  { e.preventDefault(); save(); }
     if (e.key === "Escape") { cancel(); }
   }
@@ -212,11 +217,16 @@ function CategoryRow({ category, onSaved }) {
 }
 
 // ── Add category inline form ──────────────────────────────────────────────────
-function AddCategoryForm({ onSaved, onCancel }) {
+interface AddCategoryFormProps {
+  onSaved: () => void;
+  onCancel: () => void;
+}
+
+function AddCategoryForm({ onSaved, onCancel }: AddCategoryFormProps) {
   const [name, setName]     = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState(null);
-  const inputRef            = useRef(null);
+  const [error, setError]   = useState<string | null>(null);
+  const inputRef            = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -228,7 +238,7 @@ function AddCategoryForm({ onSaved, onCancel }) {
     try {
       const result = await createCategory(trimmed);
       setSaving(false);
-      if (result?.conflict) { setError("A category with that name already exists."); return; }
+      if (result && "conflict" in result) { setError("A category with that name already exists."); return; }
       setName("");
       onSaved();
     } catch {
@@ -237,7 +247,7 @@ function AddCategoryForm({ onSaved, onCancel }) {
     }
   }
 
-  function handleKeyDown(e) {
+  function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter")  { e.preventDefault(); save(); }
     if (e.key === "Escape") { onCancel(); }
   }
@@ -277,9 +287,9 @@ function AddCategoryForm({ onSaved, onCancel }) {
 
 // ── Transaction Categories section ────────────────────────────────────────────
 function CategoriesCard() {
-  const [categories, setCategories]   = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [adding, setAdding]           = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [adding, setAdding]         = useState(false);
 
   const load = useCallback(async () => {
     const data = await getCategories();

@@ -18,7 +18,7 @@ Running notes for AI assistant continuity across sessions.
 
 **Phase 1 (Real Foundation):** Complete. All REQs including REQ-016 (authentication) are done.
 
-**Engineering Foundations:** Alembic done. Auth done. TypeScript migration, CI gate, React Query, React Hook Form, testing infrastructure still to do.
+**Engineering Foundations:** Alembic done. Auth done. TypeScript migration done. CI gate, React Query, React Hook Form, testing infrastructure still to do.
 
 **Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
@@ -26,7 +26,7 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Has Been Built
 
-**Frontend (React + Vite + Tailwind v4):**
+**Frontend (React + Vite + Tailwind v4 + TypeScript):**
 - App shell with responsive layout - sidebar nav on desktop (lg+), hamburger menu on mobile
 - Sidebar contains logo, nav items, dark mode toggle at bottom
 - Bill dashboard - card grid, scales 1/2/3/4 columns by breakpoint, status badges
@@ -100,6 +100,19 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
+**TypeScript migration (frontend):**
+- Full migration from `.jsx`/`.js` to `.tsx`/`.ts` — zero old source files remain
+- `src/types.ts` — all shared domain interfaces (Bill, Payment, Income, AppSettings, Category, Credential, PaymentMethod, auth types, BillStatus union)
+- `src/utils/api.ts` — all API functions typed with raw/mapped interfaces, typed payloads (BillPayload, LogPaymentPayload, IncomePayload)
+- `src/utils/billUtils.ts` — date/status utilities typed
+- `src/theme/tokens.ts` — design tokens typed
+- `src/context/AuthContext.tsx`, `ThemeContext.tsx` — contexts typed with explicit interfaces, `useAuth`/`useTheme` now throw if used outside provider
+- All 14 components converted to `.tsx` with full prop/state typing
+- `tsconfig.json` with strict mode enabled
+- `src/vite-env.d.ts` — Vite client type reference
+- `package.json` — added `typecheck` script (`tsc --noEmit`)
+- Build: 0 TS errors, clean Vite build (95ms, 35 modules)
+
 **System tray icon:**
 - `scripts/tray.py` — pystray + Pillow tray icon; owns the admin server process directly; delegates backend/frontend to the admin API; polls every 4s and updates icon color (green/yellow/red) and menu state in real time
 - `scripts/launch-tray.ps1` — desktop shortcut target; installs deps, launches tray with no console window
@@ -147,8 +160,7 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **TypeScript migration (frontend)** - TOP PRIORITY. No more deferrals. Migrate before anything else is added to the frontend.
-2. **GitHub Actions CI gate** - automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master.
+1. **GitHub Actions CI gate** - automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master.
 4. **React Query + React Hook Form** - add before more API call patterns and forms accumulate.
 5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
 6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.

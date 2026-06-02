@@ -2,9 +2,17 @@ import { useState, useEffect } from "react";
 import { sortBillsByDueDate, getBillStatus, filterActionableBills } from "../utils/billUtils";
 import { getBills, getSettings } from "../utils/api";
 import { alertBannerTokens } from "../theme/tokens";
+import type { Bill, AppSettings } from "../types";
 import BillCard from "./BillCard";
 
-function AlertBanner({ type, children }) {
+type AlertType = "overdue" | "due-soon" | "large-payment";
+
+interface AlertBannerProps {
+  type: AlertType;
+  children: React.ReactNode;
+}
+
+function AlertBanner({ type, children }: AlertBannerProps) {
   const t = alertBannerTokens[type];
   return (
     <div className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${t.bar}`}>
@@ -14,7 +22,7 @@ function AlertBanner({ type, children }) {
   );
 }
 
-function AlertIcon({ type, className }) {
+function AlertIcon({ type, className }: { type: AlertType; className: string }) {
   if (type === "overdue") {
     return (
       <svg className={className} viewBox="0 0 20 20" fill="currentColor">
@@ -36,7 +44,7 @@ function AlertIcon({ type, className }) {
   );
 }
 
-function ChevronIcon({ open }) {
+function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
       className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
@@ -49,9 +57,9 @@ function ChevronIcon({ open }) {
 }
 
 export default function BillDashboard() {
-  const [bills, setBills] = useState([]);
-  const [showAll, setShowAll] = useState(false);
-  const [thresholds, setThresholds] = useState({ dueSoonDays: 7, largePaymentThreshold: 500 });
+  const [bills, setBills]         = useState<Bill[]>([]);
+  const [showAll, setShowAll]     = useState(false);
+  const [thresholds, setThresholds] = useState<AppSettings>({ dueSoonDays: 7, largePaymentThreshold: 500 });
 
   useEffect(() => {
     getBills().then(setBills);
@@ -65,7 +73,7 @@ export default function BillDashboard() {
   const overdue      = actionable.filter((b) => getBillStatus(b.dayOfMonth, thresholds.dueSoonDays) === "overdue");
   const dueSoon      = actionable.filter((b) => getBillStatus(b.dayOfMonth, thresholds.dueSoonDays) === "due-soon");
   const largePending = actionable.filter(
-    (b) => b.expectedAmount >= thresholds.largePaymentThreshold
+    (b) => (b.expectedAmount ?? 0) >= thresholds.largePaymentThreshold
   );
 
   const hasAlerts = overdue.length > 0 || dueSoon.length > 0 || largePending.length > 0;
