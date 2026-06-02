@@ -33,6 +33,8 @@ __pycache__/
 *.pyo
 venv/
 .venv/
+.coverage
+htmlcov/
 
 # Playwright
 /test-results/

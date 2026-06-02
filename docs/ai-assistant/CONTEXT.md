@@ -18,7 +18,7 @@ Running notes for AI assistant continuity across sessions.
 
 **Phase 1 (Real Foundation):** Complete. All REQs including REQ-016 (authentication) are done.
 
-**Engineering Foundations:** Alembic done. Auth done. TypeScript migration done. CI gate, React Query, React Hook Form, testing infrastructure still to do.
+**Engineering Foundations:** Alembic done. Auth done. TypeScript migration done. CI gate done. Playwright scaffolded. React Query, React Hook Form, Vitest still to do.
 
 **Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
@@ -100,6 +100,32 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
+**CI gate (GitHub Actions):**
+- `.github/workflows/ci.yml` — runs on push to dev and PR to master
+- Backend job: `pytest --cov --cov-fail-under=80` (currently 87% coverage, 55 tests passing)
+- Frontend job: `tsc --noEmit` typecheck
+- Secrets: `CI_ENCRYPTION_KEY` and `CI_SECRET_KEY` stored in GitHub repo secrets
+- Node.js pinned to 24 in workflow (20 deprecated June 2026)
+- `fastapi` pinned to `0.136.3` in requirements.txt to match local venv (was 0.104.1, caused CI httpx compat failure)
+- `pytest-cov==6.0.0` added to requirements
+- `.coverage` and `htmlcov/` added to `.gitignore`
+- Fixed stale status code assertions in `test_bills.py`, `test_bill_repository.py`, `test_payment_history.py` (tests expected 200 on endpoints that now correctly return 201/204/404)
+- `BillCreate.expected_amount` made `float | None` (was required float — test correctly caught it)
+- Branch protection on master enabled in GitHub with "Do not allow bypassing" checked
+
+**Playwright E2E scaffold:**
+- `package.json` + `package-lock.json` at repo root — standard Playwright layout
+- `playwright.config.ts` — targets `localhost:5173`, Chromium + Mobile Safari projects
+- `tests/e2e/dashboard.spec.ts` — placeholder spec; full suite to be written as features accumulate
+- Playwright browsers downloaded locally
+
+**Repo made public:**
+- Full git history scrubbed via `git filter-repo --replace-text` — all personal biller names (Navy Federal/NFCU, Sallie Mae, Nelnet, Ameren, AT&T, CareCredit, Synchrony) replaced with generic examples across all commits on all branches
+- Force-pushed all branches after rewrite
+- GitHub repo visibility changed to public
+- Issues enabled; branch protection enforced
+
+**Previous session (tray + TypeScript):**
 **Single-instance tray enforcement:**
 - `tray.py` acquires Windows named mutex `Global\SqueezyPayTray` at startup; second launch detects it and exits silently before doing anything
 - `launch-tray.ps1` also checks for a running `tray.py` process before launching to avoid even a brief double-icon flash
@@ -164,8 +190,9 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **GitHub Actions CI gate** - automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master.
-4. **React Query + React Hook Form** - add before more API call patterns and forms accumulate.
+1. **React Query (TanStack Query)** - add before more API call patterns accumulate. Install, wrap app in QueryClientProvider, migrate all `useEffect`/fetch calls to `useQuery`/`useMutation`.
+2. **React Hook Form** - add before more forms are written. Migrate BillFormModal, IncomeFormModal, LogPaymentModal, Settings.
+3. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
 5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
 6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.
 7. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings when doing the Settings pass.

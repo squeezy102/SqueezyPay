@@ -19,12 +19,12 @@ These are infrastructure and tooling items that must be in place before Phase 2 
 | ~~REQ-016: Authentication (household passphrase, bcrypt, JWT sessions)~~ | ~~Phase 1 item - not yet built~~ DONE | ~~REQUIRED~~ |
 | ~~TypeScript migration (frontend)~~ | ~~Migrate before the codebase grows further~~ DONE | ~~REQUIRED~~ |
 | ~~Alembic database migrations~~ | ~~Schema will evolve; manual migrations are risky~~ DONE | ~~REQUIRED~~ |
-| GitHub Actions CI gate | Automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master | REQUIRED |
+| ~~GitHub Actions CI gate~~ | ~~Automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master~~ DONE | ~~REQUIRED~~ |
+| ~~Playwright~~ | ~~E2E tests for critical flows~~ Scaffolded at repo root; tests/e2e/ ready; full suite to be written as features accumulate DONE | ~~GOOD NEXT STEP~~ |
 | React Query (TanStack Query) | Add before more API call patterns accumulate | REQUIRED |
 | React Hook Form | Add before more forms are written | REQUIRED |
 | pytest + pytest-asyncio | Backend test infrastructure | REQUIRED |
 | Vitest | Frontend unit test infrastructure | REQUIRED |
-| Playwright | E2E tests for critical flows | GOOD NEXT STEP |
 | Recharts | Needed for Phase 2+ charts; add before Phase 2 begins | GOOD NEXT STEP |
 | PyJWT | Add when authentication is implemented | Add with auth |
 | slowapi | Rate limiting on login endpoint | Add with auth |
