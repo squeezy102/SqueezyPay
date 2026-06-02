@@ -127,7 +127,7 @@ def start_service(service: str):
             return {"ok": False, "message": "Frontend is already running"}
         npm = r"C:\Program Files\nodejs\npm.cmd"
         proc = subprocess.Popen(
-            [npm, "run", "dev"],
+            ["cmd.exe", "/c", npm, "run", "dev"],
             cwd=str(FRONTEND_DIR),
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
         )
