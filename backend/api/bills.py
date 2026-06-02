@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from database.db import get_db
 from services.bill_service import BillService
@@ -7,8 +7,8 @@ router = APIRouter(prefix="/api/bills", tags=["bills"])
 
 
 @router.get("/")
-def get_bills(db: Session = Depends(get_db)):
-    return BillService.get_all_bills(db)
+def get_bills(include_inactive: bool = Query(False), db: Session = Depends(get_db)):
+    return BillService.get_all_bills(db, include_inactive=include_inactive)
 
 
 @router.get("/{bill_id}")

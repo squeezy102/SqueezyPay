@@ -114,13 +114,239 @@ Mark each with current status when running: ✅ Pass | ❌ Fail | ⏳ Not yet te
 
 ---
 
+## TC-008: Log a Payment via Start Workflow Modal
+
+**What it tests:** Payment workflow modal saves a payment record correctly
+
+**Steps:**
+1. Open `http://localhost:5173`
+2. Click "Start Workflow" on any bill card
+3. Click "Go to [Biller]" - verify biller site opens in new tab
+4. Enter an amount, confirmation number, and payment method
+5. Click "Save Payment"
+
+**Expected:** Green "Payment saved!" banner appears, modal closes after ~1.5 seconds
+
+**Last result:** ✅ Pass (2026-06-01)
+
+---
+
+## TC-009: Payment History Table Shows Saved Records
+
+**What it tests:** Payment history API and table view
+
+**Steps:**
+1. Log a payment via TC-008
+2. Click "History" in the nav
+3. Verify the payment appears in the table
+
+**Expected:** Record visible with correct biller, amount, date, confirmation number
+
+**Last result:** ✅ Pass (2026-06-01)
+
+---
+
+## TC-010: Payment History Search
+
+**What it tests:** Search filtering in history table
+
+**Steps:**
+1. Open History tab
+2. Type part of a biller name in the search box
+
+**Expected:** Table filters to matching records only, record count updates
+
+**Last result:** ✅ Pass (2026-06-01)
+
+---
+
+## TC-011: Payment History Sort
+
+**What it tests:** Column sort in history table
+
+**Steps:**
+1. Open History tab with multiple records
+2. Click "Amount" column header
+3. Click again to reverse sort
+
+**Expected:** Rows reorder by amount ascending then descending
+
+**Last result:** ⏳ Not yet tested - requires multiple payment records
+
+---
+
+## TC-012: Mobile Layout Renders Correctly
+
+**What it tests:** Responsive layout on iPhone
+
+**Steps:**
+1. Open app on iPhone via local IP
+2. Verify hamburger menu appears (no sidebar)
+3. Tap hamburger - verify nav dropdown opens
+4. Navigate to History tab
+
+**Expected:** Clean single-column layout, no horizontal overflow, no wiggle
+
+**Last result:** ✅ Pass (2026-06-01)
+
+---
+
+## TC-013: Auto-Start on Windows Login
+
+**What it tests:** Admin server starts automatically on login
+
+**Steps:**
+1. Restart PC
+2. Wait ~30 seconds after login
+3. Navigate to `http://localhost:9000`
+
+**Expected:** Admin dashboard loads without manually starting anything
+
+**Last result:** ✅ Registered and verified via Task Scheduler (2026-06-01)
+
+---
+
+## TC-014: Add a Bill via Bill Management UI
+
+**What it tests:** BillManagement add flow — form modal saves to backend, table updates
+
+**Steps:**
+1. Open the Bills tab
+2. Click "Add Bill"
+3. Fill in biller name, category, day of month, amount
+4. Click Save
+
+**Expected:** Modal closes, new bill appears in the table
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-015: Edit a Bill via Bill Management UI
+
+**What it tests:** BillManagement edit flow — existing values pre-populate, changes persist
+
+**Steps:**
+1. Open the Bills tab
+2. Click Edit on any existing bill
+3. Change the amount
+4. Click Save
+
+**Expected:** Modal closes, updated amount shows in the table
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-016: Deactivate a Bill
+
+**What it tests:** Deactivate action removes bill from dashboard and marks inactive in Bills tab
+
+**Steps:**
+1. Open the Bills tab
+2. Click Deactivate on any active bill
+3. Confirm the action
+4. Navigate to Dashboard
+
+**Expected:** Bill no longer appears on dashboard; still visible in Bills tab as inactive
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-017: Add an Income Source
+
+**What it tests:** IncomeManagement add flow and monthly total recalculation
+
+**Steps:**
+1. Open the Income tab
+2. Click "Add Income"
+3. Enter a source name, amount, and frequency (e.g. bi-weekly)
+4. Click Save
+
+**Expected:** New income source appears in the list; monthly total bar updates to reflect the new entry
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-018: Edit Alert Threshold in Settings
+
+**What it tests:** Settings save + live dashboard behavior driven by updated threshold
+
+**Steps:**
+1. Open the Settings tab
+2. Change "Due Soon Days" to 3
+3. Click Save — verify confirmation flash appears
+4. Navigate to Dashboard
+
+**Expected:** Dashboard only shows due-soon alert banners for bills due within 3 days (not 7)
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-019: Add a Transaction Category
+
+**What it tests:** Settings category add flow + category appears in bill form dropdown
+
+**Steps:**
+1. Open the Settings tab
+2. In the Transaction Categories card, type a new category name and click Add
+3. Open the Bills tab and click "Add Bill"
+4. Open the category dropdown
+
+**Expected:** New category appears in the dropdown list
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-020: Dashboard Shows Overdue Alert Banner
+
+**What it tests:** Overdue detection in `billUtils.js` and red AlertBanner rendering
+
+**Steps:**
+1. Ensure at least one bill has a due date in the past (day of month already passed this cycle)
+2. Open the Dashboard tab
+
+**Expected:** Red "Overdue" alert banner appears at the top of the dashboard listing the overdue bill(s)
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-021: Dashboard Shows Due-Soon Alert Banner
+
+**What it tests:** Due-soon detection and amber AlertBanner rendering
+
+**Steps:**
+1. Ensure at least one bill is due within the configured due-soon threshold (default 7 days)
+2. Open the Dashboard tab
+
+**Expected:** Amber "Due Soon" alert banner appears listing the upcoming bill(s)
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-022: Hidden Bills Expand/Collapse Toggle
+
+**What it tests:** Expand/collapse chevron button reveals and hides the upcoming bills grid
+
+**Steps:**
+1. Open the Dashboard tab when more bills exist than are shown in the action area
+2. Click the chevron/expand button below the main bill cards
+
+**Expected:** Hidden bills grid expands to show remaining bills; clicking again collapses it
+
+**Last result:** ⏳ Not yet tested
+
+---
+
 ## Future Test Cases (not yet testable)
 
-- TC-008: Add a bill via bill management UI
-- TC-009: Edit a bill via bill management UI  
-- TC-010: Log a payment with confirmation number
-- TC-011: Payment history appears in history view
-- TC-012: Credential vault — store and retrieve biller credentials
-- TC-013: Payment method vault — store and retrieve payment method
-- TC-014: PWA installs on iPhone home screen
-- TC-015: App accessible from another device on the home network via local IP
+- TC-023: Credential vault - store and retrieve biller credentials
+- TC-024: Payment method vault - store and retrieve payment method
+- TC-025: PWA installs on iPhone home screen
+- TC-026: Show credentials in workflow modal - copy username and password

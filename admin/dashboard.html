@@ -109,9 +109,7 @@
       border-bottom: 1px solid var(--border);
     }
     .log-header h2 { font-size: 0.875rem; font-weight: 600; }
-
-    .log-controls { display: flex; gap: 8px; align-items: center; }
-
+    .log-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .log-filter {
       padding: 4px 10px;
       border-radius: 6px;
@@ -121,12 +119,72 @@
       font-size: 0.75rem;
     }
 
+    .level-checks { display: flex; gap: 12px; align-items: center; }
+    .level-check  {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      user-select: none;
+    }
+    .level-check input[type=checkbox] { accent-color: currentColor; cursor: pointer; width: 14px; height: 14px; }
+    .level-check.info    { color: var(--green); }
+    .level-check.warning { color: var(--amber); }
+    .level-check.error   { color: var(--red); }
+
+    /* ── Ticker ──────────────────────────────────────────────────────── */
+    #ticker {
+      height: 220px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 12px 20px;
+      gap: 4px;
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 0.75rem;
+      position: relative;
+    }
+
+    .ticker-entry {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      animation: fadeIn 0.25s ease;
+      transition: opacity 0.6s ease;
+    }
+    .ticker-entry.fading { opacity: 0; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ticker-ts      { color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+    .ticker-level   { font-weight: 700; flex-shrink: 0; width: 54px; }
+    .ticker-msg     { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Idle state */
+    #ticker-idle {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 0.8125rem;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    #ticker-idle.hidden { opacity: 0; }
+
+    /* ── Full log pane ───────────────────────────────────────────────── */
     #log-body {
       height: 400px;
       overflow-y: auto;
       padding: 12px 0;
       font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
       font-size: 0.75rem;
+      display: none;
     }
 
     .log-line {
@@ -170,7 +228,13 @@
     <h1>SqueezyPay Admin</h1>
     <p>Developer Dashboard</p>
   </div>
-  <button class="btn-stop" onclick="refreshStatus()" style="font-size:0.75rem;">Refresh</button>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <a href="http://localhost:5173" target="_blank" rel="noreferrer"
+       style="font-size:0.75rem; color:var(--indigo); text-decoration:none; font-weight:600;">
+      To Site →
+    </a>
+    <button class="btn-stop" onclick="refreshStatus()" style="font-size:0.75rem;">Refresh</button>
+  </div>
 </header>
 
 <div class="grid" id="service-grid">
@@ -181,32 +245,54 @@
   <div class="log-header">
     <h2>Application Log</h2>
     <div class="log-controls">
-      <select class="log-filter" id="level-filter" onchange="applyFilter()">
-        <option value="">All levels</option>
-        <option value="INFO">INFO</option>
-        <option value="WARNING">WARNING</option>
-        <option value="ERROR">ERROR</option>
-      </select>
-      <button class="btn-stop" onclick="clearLog()" style="font-size:0.75rem; padding:4px 10px;">Clear</button>
-      <button class="btn-stop" id="scroll-btn" onclick="toggleAutoScroll()" style="font-size:0.75rem; padding:4px 10px;">Auto-scroll: ON</button>
+      <!-- Level checkboxes - always visible, filter both ticker and full log -->
+      <div class="level-checks">
+        <label class="level-check info">
+          <input type="checkbox" id="chk-info" checked onchange="updateLevelFilter()"> INFO
+        </label>
+        <label class="level-check warning">
+          <input type="checkbox" id="chk-warning" checked onchange="updateLevelFilter()"> WARN
+        </label>
+        <label class="level-check error">
+          <input type="checkbox" id="chk-error" checked onchange="updateLevelFilter()"> ERROR
+        </label>
+      </div>
+      <!-- Full log controls - hidden in ticker mode -->
+      <button class="btn-stop" id="clear-btn" onclick="clearLog()" style="font-size:0.75rem; padding:4px 10px; display:none;">Clear</button>
+      <button class="btn-stop" id="scroll-btn" onclick="toggleAutoScroll()" style="font-size:0.75rem; padding:4px 10px; display:none;">Auto-scroll: ON</button>
+      <!-- Always visible -->
+      <button class="btn-stop" id="expand-btn" onclick="toggleExpanded()" style="font-size:0.75rem; padding:4px 10px;">Expand Logs</button>
     </div>
   </div>
-  <div id="log-body"><div class="empty-log">Loading logs...</div></div>
+
+  <!-- Ticker (default) -->
+  <div id="ticker">
+    <div id="ticker-idle">Listening for events<span id="dots"></span></div>
+  </div>
+
+  <!-- Full scrollable log (expanded mode) -->
+  <div id="log-body"></div>
 </div>
 
 <div id="toast"></div>
 
 <script>
   const API = 'http://localhost:9000/api';
-  let autoScroll = true;
-  let allLogLines = [];
-  let activeFilter = '';
+  let autoScroll   = true;
+  let allLogLines  = [];
+  let activeLevels = new Set(['INFO', 'WARNING', 'ERROR']); // checkboxes
+  let expanded     = false;
 
-  // --- Status ---
+  // Fade timeout per ticker entry: INFO fades after 8s, WARNING/ERROR after 20s
+  const FADE_DELAY = { INFO: 8000, WARNING: 20000, ERROR: 20000 };
+  const IDLE_DELAY = 6000; // show idle state after this many ms of no activity
+  let idleTimer = null;
+
+  // ── Status ────────────────────────────────────────────────────────────────
 
   async function refreshStatus() {
     try {
-      const res = await fetch(`${API}/status`);
+      const res  = await fetch(`${API}/status`);
       const data = await res.json();
       renderServices(data);
     } catch {
@@ -246,50 +332,96 @@
   }
 
   async function startService(name) {
-    const res = await fetch(`${API}/start/${name}`, { method: 'POST' });
+    const res  = await fetch(`${API}/start/${name}`, { method: 'POST' });
     const data = await res.json();
     showToast(data.message);
     setTimeout(refreshStatus, 1500);
   }
 
   async function stopService(name) {
-    const res = await fetch(`${API}/stop/${name}`, { method: 'POST' });
+    const res  = await fetch(`${API}/stop/${name}`, { method: 'POST' });
     const data = await res.json();
     showToast(data.message);
     setTimeout(refreshStatus, 800);
   }
 
-  // --- Logs ---
+  // ── Ticker ────────────────────────────────────────────────────────────────
 
-  async function loadRecentLogs() {
-    try {
-      const res = await fetch(`${API}/logs/recent?lines=200`);
-      const lines = await res.json();
-      allLogLines = lines;
-      renderLog();
-      startLogStream();
-    } catch {
-      document.getElementById('log-body').innerHTML = '<div class="empty-log">Could not load logs.</div>';
+  function updateLevelFilter() {
+    activeLevels = new Set([
+      document.getElementById('chk-info').checked    ? 'INFO'    : null,
+      document.getElementById('chk-warning').checked ? 'WARNING' : null,
+      document.getElementById('chk-error').checked   ? 'ERROR'   : null,
+    ].filter(Boolean));
+    if (expanded) renderLog();
+  }
+
+  function levelAllowed(level) {
+    return activeLevels.has(level || 'INFO');
+  }
+
+  function pushTicker(entry) {
+    if (!levelAllowed(entry.level)) return;
+
+    const ticker = document.getElementById('ticker');
+    const idle   = document.getElementById('ticker-idle');
+
+    // Hide idle state
+    idle.classList.add('hidden');
+    clearTimeout(idleTimer);
+
+    const level = entry.level || 'INFO';
+    const ts    = entry.timestamp ? entry.timestamp.replace('T', ' ').slice(11, 19) : '';
+    const msg   = entry.message || '';
+
+    const el = document.createElement('div');
+    el.className = 'ticker-entry';
+    el.innerHTML = `
+      <span class="ticker-ts">${escHtml(ts)}</span>
+      <span class="ticker-level level-${level}">${level}</span>
+      <span class="ticker-msg">${escHtml(msg)}</span>
+    `;
+    ticker.appendChild(el);
+
+    // Fade out after delay, then remove
+    const delay = FADE_DELAY[level] ?? 8000;
+    setTimeout(() => {
+      el.classList.add('fading');
+      setTimeout(() => {
+        el.remove();
+        if (ticker.querySelectorAll('.ticker-entry').length === 0) {
+          showIdle();
+        }
+      }, 600);
+    }, delay);
+
+    // Reset idle timer
+    idleTimer = setTimeout(showIdle, IDLE_DELAY + delay);
+  }
+
+  function showIdle() {
+    const ticker = document.getElementById('ticker');
+    if (ticker.querySelectorAll('.ticker-entry').length === 0) {
+      document.getElementById('ticker-idle').classList.remove('hidden');
     }
   }
 
-  function startLogStream() {
-    const es = new EventSource(`${API}/logs`);
-    es.onmessage = (e) => {
-      try {
-        const entry = JSON.parse(e.data);
-        allLogLines.push(entry);
-        if (allLogLines.length > 2000) allLogLines.shift();
-        if (!activeFilter || entry.level === activeFilter) {
-          appendLogLine(entry);
-        }
-      } catch {}
-    };
-  }
+  // Animated ellipsis: dot...dot...dot...
+  (function animateDots() {
+    const el     = document.getElementById('dots');
+    const frames = ['', '.', '..', '...'];
+    let i = 0;
+    setInterval(() => {
+      el.textContent = frames[i % frames.length];
+      i++;
+    }, 500);
+  })();
+
+  // ── Full log pane ─────────────────────────────────────────────────────────
 
   function renderLog() {
-    const body = document.getElementById('log-body');
-    const filtered = activeFilter ? allLogLines.filter(l => l.level === activeFilter) : allLogLines;
+    const body     = document.getElementById('log-body');
+    const filtered = allLogLines.filter(l => levelAllowed(l.level));
     if (filtered.length === 0) {
       body.innerHTML = '<div class="empty-log">No log entries yet. Start the backend to begin logging.</div>';
       return;
@@ -298,8 +430,10 @@
     if (autoScroll) body.scrollTop = body.scrollHeight;
   }
 
-  function appendLogLine(entry) {
-    const body = document.getElementById('log-body');
+  function appendToFullLog(entry) {
+    if (!expanded) return;
+    if (!levelAllowed(entry.level)) return;
+    const body  = document.getElementById('log-body');
     const empty = body.querySelector('.empty-log');
     if (empty) body.innerHTML = '';
     body.insertAdjacentHTML('beforeend', formatLogLine(entry));
@@ -307,25 +441,16 @@
   }
 
   function formatLogLine(entry) {
-    const ts = entry.timestamp ? entry.timestamp.replace('T', ' ').slice(0, 19) : '';
-    const level = entry.level || 'INFO';
+    const ts      = entry.timestamp ? entry.timestamp.replace('T', ' ').slice(0, 19) : '';
+    const level   = entry.level || 'INFO';
     const service = (entry.service || '').replace('squeezypay.', '');
-    const msg = entry.message || '';
+    const msg     = entry.message || '';
     return `<div class="log-line">
       <span class="log-ts">${ts}</span>
       <span class="log-level level-${level}">${level}</span>
-      <span class="log-service">${service}</span>
+      <span class="log-service">${escHtml(service)}</span>
       <span class="log-msg">${escHtml(msg)}</span>
     </div>`;
-  }
-
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  function applyFilter() {
-    activeFilter = document.getElementById('level-filter').value;
-    renderLog();
   }
 
   function clearLog() {
@@ -338,7 +463,65 @@
     document.getElementById('scroll-btn').textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
   }
 
-  // --- Toast ---
+  // ── Expand / collapse ─────────────────────────────────────────────────────
+
+  function toggleExpanded() {
+    expanded = !expanded;
+    const ticker  = document.getElementById('ticker');
+    const logBody = document.getElementById('log-body');
+    const btn     = document.getElementById('expand-btn');
+    const clearB  = document.getElementById('clear-btn');
+    const scrollB = document.getElementById('scroll-btn');
+
+    if (expanded) {
+      ticker.style.display  = 'none';
+      logBody.style.display = 'block';
+      clearB.style.display  = '';
+      scrollB.style.display = '';
+      btn.textContent       = 'Collapse';
+      renderLog();
+    } else {
+      ticker.style.display  = '';
+      logBody.style.display = 'none';
+      clearB.style.display  = 'none';
+      scrollB.style.display = 'none';
+      btn.textContent       = 'Expand Logs';
+    }
+  }
+
+  // ── Stream ────────────────────────────────────────────────────────────────
+
+  async function loadRecentLogs() {
+    try {
+      const res   = await fetch(`${API}/logs/recent?lines=200`);
+      allLogLines = await res.json();
+      startLogStream();
+    } catch {
+      // Backend not yet running - stream will retry on next load
+    }
+  }
+
+  function startLogStream() {
+    const es = new EventSource(`${API}/logs`);
+    es.onmessage = (e) => {
+      try {
+        const entry = JSON.parse(e.data);
+        allLogLines.push(entry);
+        if (allLogLines.length > 2000) allLogLines.shift();
+        if (!expanded) {
+          pushTicker(entry);
+        } else {
+          appendToFullLog(entry);
+        }
+      } catch {}
+    };
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
   let toastTimer;
   function showToast(msg) {
@@ -349,7 +532,7 @@
     toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
   }
 
-  // --- Init ---
+  // ── Init ──────────────────────────────────────────────────────────────────
 
   refreshStatus();
   loadRecentLogs();

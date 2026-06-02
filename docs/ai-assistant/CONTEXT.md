@@ -8,7 +8,7 @@ Running notes for AI assistant continuity across sessions.
 
 - **Active branch:** `master`
 - **Last commit:** (see git log)
-- **Uncommitted changes:** Yes - full session work pending commit
+- **Uncommitted changes:** None
 
 ---
 
@@ -16,7 +16,7 @@ Running notes for AI assistant continuity across sessions.
 
 **Phase 0 (POC):** Complete.
 
-**Phase 1 (Real Foundation):** In progress - ~70% complete.
+**Phase 1 (Real Foundation):** Complete.
 
 **Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
@@ -25,76 +25,93 @@ Running notes for AI assistant continuity across sessions.
 ## What Has Been Built
 
 **Frontend (React + Vite + Tailwind v4):**
-- Bill dashboard with responsive card grid, status badges (overdue, due soon, upcoming)
-- Bill card component — dark mode aware, uses design token system
-- Dark mode toggle (moon/sun icon in header) — defaults to system preference, persists in localStorage
-- Design token system (`src/theme/tokens.js`) — all colors and visual decisions in one place
-- API integration layer (`src/utils/api.js`) — handles snake_case → camelCase mapping from backend
-- PWA manifest for home screen install (iPhone, Android)
-- Removed deprecated `apple-mobile-web-app-capable` meta tag
-- ThemeContext (`src/context/ThemeContext.jsx`) — React context for dark mode state
+- App shell with responsive layout - sidebar nav on desktop (lg+), hamburger menu on mobile
+- Sidebar contains logo, nav items, dark mode toggle at bottom
+- Bill dashboard - card grid, scales 1/2/3/4 columns by breakpoint, status badges
+- Bill cards - "Start Workflow" button opens payment workflow modal
+- Payment workflow modal - two-panel design (Step 1: go pay / Step 2: log it)
+  - Credentials section with show/hide toggle and per-field copy buttons
+  - MoneyInput - standard number input with $ prefix, formats on blur (consistent desktop/iOS)
+  - Payment method dropdown (pulls from vault, falls back to free text if empty)
+  - Success banner on save, error message on failure
+- Payment history view - sortable table, compact rows, search by biller/confirmation/method/notes
+- Bill management view (`BillManagement.jsx`) - table of all bills (active + inactive), add/edit/deactivate actions; `BillFormModal.jsx` for add/edit with validation, category dropdown, recurring toggle
+- Income management view (`IncomeManagement.jsx`) - monthly total summary bar, table, show/hide inactive toggle; `IncomeFormModal.jsx` for add/edit
+- Settings page (`Settings.jsx`) - Alert Thresholds card (due-soon days, large payment threshold with save confirmation); Transaction Categories card (inline add/edit, 409 conflict messaging)
+- Dashboard filtered to bills due within N days (configurable via settings) + overdue; hidden bills expand/collapse toggle (chevron button reveals upcoming bills grid)
+- Alert banners on dashboard: overdue, due-soon, large payment - neutral card style, colored icon conveys criticality; thresholds loaded from live settings
+- Dark mode toggle - defaults to system preference, persists in localStorage
+- Design token system (`src/theme/tokens.js`) - all colors in one place; `cardClass` for uniform card backgrounds, `alertBannerTokens` for banner styling, `actionTokens` for buttons
+- API integration layer (`src/utils/api.js`) - snake_case → camelCase mapping, uses `window.location.hostname` so mobile (local IP) works
+- PWA manifest for home screen install
+- Viewport locked (`user-scalable=no`) to prevent mobile wiggle
+- Logo (`frontend/public/logo.png`) in sidebar and mobile top bar
 
 **Backend (FastAPI + SQLite):**
-- SQLAlchemy ORM models: Bill, PaymentHistory, Credential, PaymentMethod, TransactionCategory, Income
-- All models follow snake_case convention; `PaymentMethod.payment_type` (not `type` — avoids Python builtin shadow)
-- Service layer with explicit `_to_dict()` on all services — controls exactly what fields the API exposes
-- Bills API: `/api/bills/` — full CRUD, returns dicts (not raw ORM objects)
+- SQLAlchemy ORM models: Bill, PaymentHistory, Credential, PaymentMethod, TransactionCategory, Income, Setting
+- Bills API: `/api/bills/` - full CRUD
 - Credentials API: `/api/credentials/` and `/api/credentials/by-bill/{bill_id}`
 - Payment Methods API: `/api/payment-methods/`
-- Encryption service (`services/encryption_service.py`) — Fernet, lazy-init, reads `SQUEEZYPAY_ENCRYPTION_KEY` env var
-- Structured logging (`core/logging_config.py`) — console (plain text) + rotating JSON file at `backend/logs/squeezypay.log`
-- All services have named loggers (`squeezypay.services.*`)
+- Payment History API: `/api/payment-history/` - GET all, GET by bill, POST to log, DELETE
+- Income API: `/api/income/` - full CRUD + `/monthly-total` endpoint
+- Settings API: `GET /PUT /api/settings/` - key/value store, defaults seeded at startup (`due_soon_days=7`, `large_payment_threshold=500.0`)
+- Categories API: `GET/POST/PUT /api/categories/` - no delete endpoint, 409 on duplicate name
+- Repository layer: `BillRepository`, `IncomeRepository`, `SettingsRepository`, `CategoryRepository` (joins existing credential/payment method/payment history repositories)
+- `IncomeService` with `get_monthly_total` computing estimated monthly income from frequency
+- Encryption service (`services/encryption_service.py`) - Fernet, lazy-init, reads `SQUEEZYPAY_ENCRYPTION_KEY` env var
+- Structured logging (`core/logging_config.py`) - console (plain) + rotating JSON file at `backend/logs/squeezypay.log`
 - Health check endpoint: `/health`
 - Database seed script: 7 household bills
 
 **Admin Dashboard (FastAPI on port 9000):**
 - Lives in `admin/` directory
-- Serves `dashboard.html` at `/`
-- `/api/status` — reports whether backend (8000) and frontend (5173) are running
-- `/api/start/{service}` and `/api/stop/{service}` — starts/stops backend and frontend processes
-- `/api/logs/recent` — returns last N lines of `squeezypay.log` as parsed JSON
-- `/api/logs` — Server-Sent Events stream for live log tailing
-- Dashboard UI: service cards with status dots, start/stop buttons, live log viewer with level filter
-- **Vision:** This grows into a full operations console — logs, metrics, health checks, graphs, diagnostics. Keep it browser-based (pinned tab). Do NOT convert to tray app or native app.
+- Service start/stop, live log viewer, status cards
+- Successful `/api/status` polls suppressed from uvicorn log (noise filter)
+- **Vision:** Full ops console - logs, metrics, health, graphs. Browser-based pinned tab. Do NOT convert to tray/native app.
 
 **Scripts:**
-- `scripts/generate_key.py` — one-time Fernet key generation with setup instructions
-- `scripts/launch-admin.ps1` — starts admin server, waits for ready, opens browser
-- `scripts/create-shortcut.ps1` — creates "SqueezyPay Admin" desktop shortcut
+- `scripts/generate_key.py` - one-time Fernet key generation
+- `scripts/launch-admin.ps1` - starts admin server, opens browser
+- `scripts/create-shortcut.ps1` - creates desktop shortcut
+- `scripts/autostart.ps1` - starts admin server silently on login
+- `scripts/register-autostart.ps1` - registers auto-start as Windows scheduled task (run once as Administrator)
 
 **Desktop Shortcut:**
 - "SqueezyPay Admin" on the desktop
-- Double-click → launcher window opens → admin server starts → browser opens at `http://localhost:9000`
-- From the dashboard, use Start buttons to bring up backend and frontend
+- Double-click → admin server starts → browser opens at `http://localhost:9000`
+- Use Start buttons in dashboard to bring up backend and frontend
+
+---
+
+## What Was Built This Session
+
+**Frontend retheme - SNES-inspired design system:**
+- Full color scheme overhaul across all frontend components
+- Sidebar: deep SNES violet (`violet-900`) with violet-tinted nav states; teal action buttons (`teal-600`) throughout
+- Page backgrounds: `violet-50` light / `slate-950` dark
+- All `gray-*` replaced with `slate-*`; all `indigo-*` replaced with `violet-*` (accents) or `teal-*` (buttons)
+- `cardClass` token added to `tokens.js` — single uniform card style (`white / slate-800`) used everywhere
+- Bill cards: removed status-driven colored backgrounds; all cards now same neutral color; status conveyed by badge only
+- Category badges removed from bill dashboard cards — reduced visual noise
+- Alert banners: removed colored backgrounds; neutral card style with colored icons only (red=overdue, amber=due-soon, violet=large payment)
+- `statusTokens.card` removed — no component reads card background from status tokens anymore
+- All modal components (`LogPaymentModal`, `BillFormModal`, `IncomeFormModal`) updated to slate palette
+- Mobile top bar matches sidebar violet treatment
 
 ---
 
 ## What Has NOT Been Built (Phase 1 remaining)
 
-- Payment history logging API and UI (REQ-003)
-- Bill management UI — add, edit, deactivate bills (REQ-002)
-- Due date alerts on dashboard (REQ-013)
-- Income tracking API and UI (REQ-010)
-- Settings screen (REQ-015)
+Phase 1 is complete. All REQs have been built.
 
 ---
 
 ## Next Session Priorities
 
-1. **Check local branch for existing test infrastructure** — the working branch downstairs may already have API tests started using pytest. Check before setting up anything new to avoid duplicating work.
-2. **URGENT: Add Alembic** — database migration tool for SQLAlchemy. Audit columns are coming and the schema will keep evolving. Without Alembic, schema changes on a live database with real data are manual and risky. Must be in place before any schema changes are made.
-3. **URGENT: Add React Query (TanStack Query)** — industry standard for server state management in React. The app is early enough that adding it now is straightforward. Every API call written without it is technical debt. Add before the next API call is written.
-4. **Add React Hook Form** — before any form UI is written. Bill management UI is the next Phase 1 item and it will be form-heavy. Add this first.
-5. **Add Recharts** — chart library for the blame graph and budget charts (Phase 2+). Pick it now before Phase 2 arrives.
-6. **Set up testing infrastructure** — "never commit untested code" is a rule with no enforcement mechanism yet. Backend: pytest + pytest-asyncio. Frontend: Vitest. E2E: Playwright (later). Set up before Phase 1 is declared done. (See item 1 — may already be partially done.)
-7. **GitHub Actions CI gate** — once tests exist, add a GitHub Actions workflow that runs pytest and Vitest on every push to dev and every PR to master. Enforce a coverage threshold (80% target) so code written without tests fails the build. Enable branch protection on master requiring the CI check to pass before merge. This is the enforcement mechanism for the "never commit untested code" rule.
-7. **TypeScript migration** — the frontend is still small enough to migrate. Worth a deliberate decision before the codebase grows further. Not urgent but the window is closing.
-8. **Write health check log suppression** — the uvicorn access log is noisy with successful `/api/status` polls from the dashboard's status poller. Add a custom logging filter in `admin/main.py` that suppresses these from the access log.
-9. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
-10. **Payment history logging API** — next Phase 1 feature after tooling is in place.
-11. **Bill management UI** — add/edit/deactivate bills from the frontend. Add React Hook Form first (item 4).
-12. **Replace seed data** — `backend/seed.py` contains family-specific bills. Replace with a small set of generic example bills appropriate for a public project, or remove seed data entirely and let users populate their own.
-13. **Add audit columns to all models** — every table needs `created_at`, `updated_at`, and `created_by` (nullable until auth is in). Do this after Alembic is set up (item 2). See DECISIONS.md.
+1. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
+2. **Tech debt: mobile bill management table** - likely same issue as payment history, not yet tested on mobile.
+3. **Phase 2 planning: Plaid** - verify Example Credit Union Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+4. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 
@@ -107,36 +124,52 @@ squeezypay/
 ├── .gitignore
 ├── .env.example
 ├── docs/ai-assistant/
-│   ├── CONTEXT.md          This file
-│   ├── REQUIREMENTS.md     REQ-001 through REQ-015
-│   ├── ROADMAP.md          Build phases and priorities
-│   ├── DECISIONS.md        Architecture and design decisions
-│   ├── USERPREFERENCES.md  Working style guidelines
-│   └── TESTCASES.md        Manual test cases (growing list)
+│   ├── CONTEXT.md              This file
+│   ├── REQUIREMENTS.md         REQ-001 through REQ-015
+│   ├── ROADMAP.md              Build phases and priorities
+│   ├── DECISIONS.md            Architecture and design decisions
+│   ├── USERPREFERENCES.md      Working style guidelines
+│   └── TESTCASES.md            Manual test cases
 ├── scripts/
-│   ├── generate_key.py     One-time encryption key setup
-│   ├── launch-admin.ps1    Admin dashboard launcher
-│   └── create-shortcut.ps1 Desktop shortcut creator
+│   ├── generate_key.py
+│   ├── launch-admin.ps1
+│   ├── create-shortcut.ps1
+│   ├── autostart.ps1
+│   └── register-autostart.ps1
 ├── admin/
-│   ├── main.py             Admin FastAPI app (port 9000)
-│   ├── dashboard.html      Admin dashboard UI
-│   └── requirements.txt    Admin dependencies
+│   ├── main.py
+│   ├── dashboard.html
+│   └── requirements.txt
 ├── frontend/
+│   ├── index.html              Viewport locked for mobile
+│   ├── public/
+│   │   ├── logo.png            App logo
+│   │   ├── manifest.json       PWA manifest
+│   │   ├── favicon.svg
+│   │   └── icons.svg
 │   ├── src/
+│   │   ├── App.jsx             App shell - sidebar + mobile nav + tab routing
+│   │   ├── main.jsx
+│   │   ├── index.css
 │   │   ├── components/
-│   │   │   ├── BillDashboard.jsx
-│   │   │   └── BillCard.jsx
+│   │   │   ├── NavBar.jsx              Sidebar (desktop) + MobileTopBar (mobile)
+│   │   │   ├── BillDashboard.jsx       Home tab - bill cards, alert banners, expand/collapse
+│   │   │   ├── BillCard.jsx            Individual bill card + Start Workflow button
+│   │   │   ├── BillManagement.jsx      Bills tab - manage all bills (active + inactive)
+│   │   │   ├── BillFormModal.jsx       Add/edit bill modal
+│   │   │   ├── LogPaymentModal.jsx     Payment workflow modal (2-panel)
+│   │   │   ├── MoneyInput.jsx          Currency input component
+│   │   │   ├── PaymentHistory.jsx      History tab - sortable payment table
+│   │   │   ├── IncomeManagement.jsx    Income tab - monthly total + income list
+│   │   │   ├── IncomeFormModal.jsx     Add/edit income modal
+│   │   │   └── Settings.jsx            Settings tab - alert thresholds + categories
 │   │   ├── context/
 │   │   │   └── ThemeContext.jsx
 │   │   ├── theme/
-│   │   │   └── tokens.js       Design tokens (all colors live here)
-│   │   ├── utils/
-│   │   │   ├── api.js          API calls + snake_case→camelCase mapping
-│   │   │   └── billUtils.js    Date/status calculations
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   ├── public/manifest.json
+│   │   │   └── tokens.js               All colors/design tokens, including alertBannerTokens
+│   │   └── utils/
+│   │       ├── api.js                  All API calls + snake_case→camelCase mapping
+│   │       └── billUtils.js            Date/status calculations, filterActionableBills
 │   ├── vite.config.js
 │   └── package.json
 └── backend/
@@ -149,30 +182,55 @@ squeezypay/
     ├── models/
     │   └── models.py
     ├── repositories/
+    │   ├── bill_repository.py
     │   ├── credential_repository.py
-    │   └── payment_method_repository.py
+    │   ├── income_repository.py
+    │   ├── payment_method_repository.py
+    │   ├── payment_history_repository.py
+    │   ├── settings_repository.py
+    │   └── category_repository.py
     ├── services/
     │   ├── bill_service.py
+    │   ├── category_service.py
     │   ├── credential_service.py
     │   ├── encryption_service.py
-    │   └── payment_method_service.py
-    └── api/
-        ├── bills.py
-        ├── credentials.py
-        └── payment_methods.py
+    │   ├── income_service.py
+    │   ├── payment_method_service.py
+    │   ├── payment_history_service.py
+    │   └── settings_service.py
+    ├── api/
+    │   ├── bills.py
+    │   ├── categories.py
+    │   ├── credentials.py
+    │   ├── income.py
+    │   ├── payment_methods.py
+    │   ├── payment_history.py
+    │   └── settings.py
+    └── tests/
+        ├── conftest.py
+        ├── test_bills.py
+        ├── test_bill_repository.py
+        ├── test_categories.py
+        ├── test_frontend_log.py
+        ├── test_income.py
+        ├── test_payment_history.py
+        └── test_settings.py
 ```
 
 ---
 
 ## Key Technical Notes
 
-- **Naming conventions:** Python = snake_case (vars/functions), PascalCase (classes), UPPER_SNAKE_CASE (constants). JS = camelCase (vars/functions), PascalCase (components/files).
-- **API response pattern:** All service `_to_dict()` methods control what fields are exposed. Never return raw ORM objects from routes.
-- **snake_case ↔ camelCase:** Backend speaks snake_case (Python convention). Frontend speaks camelCase (JS convention). `api.js` is the translator — mapping happens once on the way in.
-- **Encryption key:** `SQUEEZYPAY_ENCRYPTION_KEY` Windows user environment variable. Set once, never touched again. Lose it = lose all vault data.
-- **Admin dashboard vision:** Full ops console (logs, metrics, health, graphs). Browser-based pinned tab — do not convert to tray app or native desktop app.
+- **Naming conventions:** Python = snake_case (vars/functions), PascalCase (classes). JS = camelCase (vars/functions), PascalCase (components).
+- **API response pattern:** All service `_to_dict()` methods control exposed fields. Never return raw ORM objects from routes.
+- **snake_case ↔ camelCase:** Backend speaks snake_case. Frontend speaks camelCase. `api.js` is the only translator.
+- **Encryption key:** `SQUEEZYPAY_ENCRYPTION_KEY` Windows user environment variable. Lose it = lose all vault data.
+- **API base URL:** `window.location.hostname` - works on both localhost and mobile via local IP.
+- **Dashboard filter:** `filterActionableBills()` in `billUtils.js` - shows bills due within N days + overdue. Threshold driven by `due_soon_days` setting (default 7), fetched from backend on load.
 - **Design tokens:** All frontend colors in `src/theme/tokens.js`. Never hardcode colors in components.
-- **Logging:** JSON logs at `backend/logs/squeezypay.log`. Admin dashboard reads this file. Never log passwords, keys, or credential data.
+- **Logging:** JSON logs at `backend/logs/squeezypay.log`. Never log passwords, keys, or credential data.
+- **Platform targets:** Desktop (Windows) first. iOS parity. Android out of scope.
+- **Credential vault on mobile:** Copy-paste only - iOS clipboard is one item at a time. Known limitation, second-pass design discussion wanted. See DECISIONS.md.
 
 ---
 
@@ -193,14 +251,12 @@ cd c:\SqueezyPay\frontend
 npm run dev
 
 # Terminal 3 - Admin dashboard
-cd c:\SqueezyPay\backend
-.\venv\Scripts\Activate.ps1
-cd ..\admin
-python -m uvicorn main:app --host 0.0.0.0 --port 9000
+cd c:\SqueezyPay\admin
+..\backend\venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 9000
 ```
 
 URLs:
-- App: `http://localhost:5173` (network: `http://<your-pc-ip>:5173`)
+- App: `http://localhost:5173` (network: `http://192.168.1.221:5173`)
 - Backend API: `http://localhost:8000`
 - API docs: `http://localhost:8000/docs`
 - Admin dashboard: `http://localhost:9000`
@@ -209,7 +265,23 @@ URLs:
 
 ## Decisions Still Open
 
-- **Auto-start on Windows login** — not yet implemented. Priority for next session.
-- **Plaid free tier / Example Credit Union support** — verify before Phase 2 begins
-- **Plaid OAuth on local network** — test redirect URL behavior early in Phase 2
-- **Local DNS** (`squeezypay.local`) — Phase 1+ quality of life, not blocking
+- **Plaid free tier / Example Credit Union support** - verify before Phase 2 begins
+- **Plaid OAuth on local network** - test redirect URL behavior early in Phase 2
+- **Local DNS** (`squeezypay.local`) - Phase 1+ quality of life, not blocking
+- **Credential vault UX (mobile)** - copy-paste two-trip flow is acknowledged as poor. Second-pass design discussion explicitly wanted before Phase 2.
+- **Browser extension (desktop auto-fill)** - planned for later phase, not yet scoped
+
+---
+
+## Biller Reference
+
+| Biller | Category | URL |
+|---|---|---|
+| Example Credit Union | Loans / Debt | https://www.example.com |
+| Example Internet Co | Internet / Phone | https://www.example.com/buy/broadband/pay-bill.html |
+| Example Electric Co | Utilities | https://www.example.com/account/pay-bill |
+| City of East Alton | Utilities | (verify URL) |
+| Example Medical Co | Healthcare / Medical | https://www.example.com/pay/ |
+| Example Finance Co | Loans / Debt | https://www.example.com/pay |
+| Example Student Loan Co | Education | https://example.com/payment |
+| Example Student Loan Co 2 | Education | https://www.example.com/manage-loans/make-a-payment/ |

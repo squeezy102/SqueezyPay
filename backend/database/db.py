@@ -23,6 +23,23 @@ def get_db():
 def init_db():
     Base.metadata.create_all(bind=engine)
     _seed_default_categories()
+    _seed_default_settings()
+
+
+def _seed_default_settings():
+    from models.models import Setting
+    db = SessionLocal()
+    try:
+        defaults = {
+            "due_soon_days": "7",
+            "large_payment_threshold": "500.0",
+        }
+        for key, value in defaults.items():
+            if not db.query(Setting).filter(Setting.key == key).first():
+                db.add(Setting(key=key, value=value))
+        db.commit()
+    finally:
+        db.close()
 
 
 def _seed_default_categories():
