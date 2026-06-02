@@ -183,15 +183,18 @@ Plaid flow:
 
 | Decision | Why |
 |---|---|
-| Friction removal hierarchy for bill payment | The primary job of the app is to remove friction. There are four levels, in priority order:
-1. **Ideal:** Automated payment - user clicks "pay full" or "pay custom amount" and the app handles everything (requires biller API).
-2. **Fallback 1:** Seamless login - app navigates user directly to account portal with pre-filled credentials, skipping the login screen (requires biller OAuth or credential vaulting support).
-3. **Fallback 2:** One-click navigation - app opens the biller's payment page URL, user logs in manually (current Phase 0 approach).
-4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces the stored credentials (username/password) so the user can log in themselves without hunting through notebooks.
-
-The credential vault (REQ-004) enables fallbacks 1 and 4 by securely storing and retrieving biller credentials. For billers with no API support, fallback 2 or 4 is the best we can do. |
+| Friction removal hierarchy for bill payment | Four-level priority order for how the app reduces friction when paying a bill. See below. |
 | PWA for mobile | A home screen icon that opens the app directly is the closest thing to a native app without an App Store submission. Essential for the "pay bills from your phone" use case. |
 | Blame graph by card, not by person | Cards are objective facts in the transaction data. Assigning blame by person requires a mapping that could cause friction. Card-level data is accurate and still tells the story. Users can draw their own conclusions about whose card is whose. |
 | Automatic Plaid categorization | Plaid returns merchant category codes with every transaction. Using these as the default category saves enormous manual effort and makes the blame graph useful from day one. Users can override categories. |
 | Bill amount: expected vs. actual | Fixed bills (Netflix) always match. Variable bills (Example Electric Co, electric) never do. Tracking both gives an accurate picture of projected vs. real cash flow. |
 | Income tracked alongside expenses | Spending percentages are meaningless without income context. Budget targets require knowing what the total is. Income is a first-class data point, not an afterthought. |
+
+## Bill Payment Friction Hierarchy
+
+The primary job of the app is to remove friction from bill payment. These four levels are in priority order - the app implements the highest level each biller supports.
+
+1. **Ideal:** Automated payment - user clicks "pay full" or "pay custom amount" and the app handles everything (requires biller API).
+2. **Fallback 1:** Seamless login - app navigates user directly to account portal with pre-filled credentials, skipping the login screen (requires biller OAuth or credential vaulting support).
+3. **Fallback 2:** One-click navigation - app opens the biller's payment page URL, user logs in manually (current approach).
+4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces the stored credentials (username/password) so the user can log in without hunting through notebooks.
