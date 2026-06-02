@@ -126,10 +126,9 @@ def start_service(service: str):
         if _process_alive("frontend") or _is_port_in_use(5173):
             return {"ok": False, "message": "Frontend is already running"}
         proc = subprocess.Popen(
-            ["npm", "run", "dev"],
+            ["cmd.exe", "/c", "npm run dev"],
             cwd=str(FRONTEND_DIR),
-            shell=True,
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
         )
         _processes["frontend"] = proc
         return {"ok": True, "message": "Frontend started"}
