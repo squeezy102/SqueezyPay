@@ -62,6 +62,16 @@ architectural decision should leave room for that growth without requiring a rew
 | Email-to-SMS gateway | Carrier email gateway addresses (e.g. @txt.att.net) deliver SMS at no cost - no Twilio account, no API, no per-message fees. User configures their phone number and carrier once in settings. |
 | PWA (Progressive Web App) | Enables "Add to Home Screen" on iPhone and Android - looks and feels like a native app. No App Store, no install, no maintenance. Works on any browser. |
 | Platform target: Windows + iPhone | The app is designed, tested, and optimized for a Windows host machine and iPhone as the primary mobile client. Cross-platform support is not a goal. The code is open - other platforms can adapt it. |
+| Alembic | Database migration tool for SQLAlchemy. Schema will evolve throughout development - audit columns, new features, auth. Without Alembic, migrations on a live database with real data are manual and risky. Industry standard for SQLAlchemy projects. |
+| React Query (TanStack Query) | Industry standard for server state management in React. Handles caching, loading/error states, background refresh, and retries. Replaces manual useState + useEffect API call patterns. Added early before the codebase grows around the manual pattern. |
+| React Hook Form | Form state management library. Bill management, payment history, vault entry, and settings are all form-heavy. Add before the first form is written. |
+| Recharts | React-native charting library for the blame graph and budget visualizations (Phase 2+). Selected early so component design can account for it. |
+| pytest + pytest-asyncio | Backend testing stack. FastAPI async endpoints require pytest-asyncio. Required before Phase 1 ships given the "never commit untested code" rule. |
+| Vitest | Frontend unit testing, built for Vite. Fast, compatible with the existing toolchain. |
+| Playwright | End-to-end testing against the running app. For critical user flows (pay bill, log payment, vault access). Phase 1+ priority. |
+| TypeScript (under consideration) | The frontend is currently plain JavaScript. TypeScript would catch type errors at compile time - the snake_case → camelCase mapping bug in api.js is exactly the kind of error TS prevents. Migration is feasible while the codebase is small. Decision deferred but the window is closing. |
+| PyJWT | JWT session token management for REQ-016 (authentication). Add when auth is implemented. |
+| slowapi | Rate limiting for FastAPI. Applied to the login endpoint when auth lands to prevent brute force. |
 
 ---
 
@@ -198,7 +208,7 @@ Plaid flow:
 
 The primary job of the app is to remove friction from bill payment. These four levels are in priority order - the app implements the highest level each biller supports.
 
-1. **Ideal:** Automated payment - user clicks "pay full" or "pay custom amount" and the app handles everything (requires biller API).
-2. **Fallback 1:** Seamless login - app navigates user directly to account portal with pre-filled credentials, skipping the login screen (requires biller OAuth or credential vaulting support).
-3. **Fallback 2:** One-click navigation - app opens the biller's payment page URL, user logs in manually (current approach).
-4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces the stored credentials (username/password) so the user can log in without hunting through notebooks.
+1. **Ideal:** Automated payment via biller API. **Out of scope.** No public biller payment API standard exists. Each integration would be hand-built per biller with no generalizable solution.
+2. **Fallback 1:** Seamless login - app navigates user directly to the biller's payment page already authenticated. Achievable for billers that support OAuth (OpenID Connect). Requires a community-maintained catalog of OAuth-capable billers; each entry is a per-biller integration. Browser autofill cannot be leveraged - browsers sandbox autofill by origin and a page at `localhost` cannot inject credentials into a biller's domain. A companion browser extension is the only architectural path to truly seamless cross-site credential fill (see roadmap - stretch goal).
+3. **Fallback 2:** One-click navigation - app opens the biller's payment URL, user logs in manually. Works for every biller with a website. Current default.
+4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces stored credentials for manual copy/paste. Vault copy-to-clipboard (REQ-004) supports this.

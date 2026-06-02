@@ -80,6 +80,7 @@ Spending data flows automatically.
 | Manual category override per transaction | REQ-009 | NICE TO HAVE |
 | Merchant category override rules | REQ-009 | NICE TO HAVE |
 | Spend and deposit notifications | REQ-017 | GOOD NEXT STEP |
+| Recurring transaction detection - auto-suggest bills from Plaid data | REQ-018 | GOOD NEXT STEP |
 
 **Done when:** The blame graph is live with real ECU transaction data
 and the household can have an honest spending conversation backed by numbers.
@@ -101,6 +102,7 @@ and the household can have an honest spending conversation backed by numbers.
 | Historical net worth line chart | REQ-011 | NICE TO HAVE |
 | Blame and spend report notifications | REQ-017 | GOOD NEXT STEP |
 | Custom report notifications | REQ-017 | NICE TO HAVE |
+| Cash flow calendar view (income + bills on a calendar) | REQ-005 | NICE TO HAVE |
 
 **Done when:** The household has a monthly budget set per category and
 can see at a glance how they're tracking against it.
@@ -122,6 +124,9 @@ spending insights, and a polished experience.
 | ~~External push notifications (bill reminders)~~ | ~~REQ-013~~ | Covered by REQ-017 |
 | ~~Dark mode~~ | - | ~~STRETCH GOAL~~ DONE |
 | Export data to CSV | - | STRETCH GOAL |
+| Card scanning for payment method entry (camera + client-side OCR) | REQ-004 | STRETCH GOAL |
+| Community-maintained OAuth biller catalog | - | STRETCH GOAL |
+| Companion browser extension - Edge, Chrome, Safari (seamless biller login from vault) | - | STRETCH GOAL |
 | Streamlined setup / installer script | - | GOOD NEXT STEP |
 | ~~Local admin dashboard (service management)~~ | - | ~~STRETCH GOAL~~ PULLED FORWARD - BASIC VERSION DONE |
 | Auto-start on Windows login | - | REQUIRED (next session) |

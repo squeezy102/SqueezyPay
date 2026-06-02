@@ -81,12 +81,19 @@ Running notes for AI assistant continuity across sessions.
 
 ## Next Session Priorities
 
-1. **Write health check log suppression** — the uvicorn access log is noisy with successful `/api/status` polls from the dashboard's status poller. Add a custom logging filter in `admin/main.py` that suppresses these from the access log.
-2. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
-3. **Payment history logging API** — next Phase 1 item after admin dashboard
-4. **Bill management UI** — add/edit/deactivate bills from the frontend
-5. **Replace seed data** — `backend/seed.py` contains family-specific bills. Replace with a small set of generic example bills appropriate for a public project, or remove seed data entirely and let users populate their own.
-6. **Add audit columns to all models** — every table needs `created_at`, `updated_at`, and `created_by` (nullable until auth is in). Do this before Phase 1 is complete - retrofitting after data exists requires a migration. See DECISIONS.md.
+1. **Check local branch for existing test infrastructure** — the working branch downstairs may already have API tests started using pytest. Check before setting up anything new to avoid duplicating work.
+2. **URGENT: Add Alembic** — database migration tool for SQLAlchemy. Audit columns are coming and the schema will keep evolving. Without Alembic, schema changes on a live database with real data are manual and risky. Must be in place before any schema changes are made.
+3. **URGENT: Add React Query (TanStack Query)** — industry standard for server state management in React. The app is early enough that adding it now is straightforward. Every API call written without it is technical debt. Add before the next API call is written.
+4. **Add React Hook Form** — before any form UI is written. Bill management UI is the next Phase 1 item and it will be form-heavy. Add this first.
+5. **Add Recharts** — chart library for the blame graph and budget charts (Phase 2+). Pick it now before Phase 2 arrives.
+6. **Set up testing infrastructure** — "never commit untested code" is a rule with no enforcement mechanism yet. Backend: pytest + pytest-asyncio. Frontend: Vitest. E2E: Playwright (later). Set up before Phase 1 is declared done. (See item 1 — may already be partially done.)
+7. **TypeScript migration** — the frontend is still small enough to migrate. Worth a deliberate decision before the codebase grows further. Not urgent but the window is closing.
+8. **Write health check log suppression** — the uvicorn access log is noisy with successful `/api/status` polls from the dashboard's status poller. Add a custom logging filter in `admin/main.py` that suppresses these from the access log.
+9. **Auto-start on Windows login** — services should start automatically so the user never has to think about it. Admin tab should open on login. This was deferred at end of session 2.
+10. **Payment history logging API** — next Phase 1 feature after tooling is in place.
+11. **Bill management UI** — add/edit/deactivate bills from the frontend. Add React Hook Form first (item 4).
+12. **Replace seed data** — `backend/seed.py` contains family-specific bills. Replace with a small set of generic example bills appropriate for a public project, or remove seed data entirely and let users populate their own.
+13. **Add audit columns to all models** — every table needs `created_at`, `updated_at`, and `created_by` (nullable until auth is in). Do this after Alembic is set up (item 2). See DECISIONS.md.
 
 ---
 

@@ -73,7 +73,8 @@ tab to click, what the output looks like, and what to copy/paste back
 
 **dev** - where all work happens. Commit when it makes sense naturally - when a coherent chunk is done and working. Do not commit minor changes, one-liners, or in-progress work. Batch related changes together.
 
-- No PRs required - once changes are discussed and approved, push directly to dev
+- No PRs required for dev work - once changes are discussed and approved, push directly to dev
+- Merging dev to master does require confirmation - check with the user first, then do it. No formal GitHub PR needed, just explicit approval.
 - Short-lived feature/fix/docs/chore branches are optional for larger efforts - branch from dev, merge back when done
 - During major restructuring, intermediate commits are acceptable as safety checkpoints
 - Branch naming: `feature/`, `fix/`, `docs/`, `chore/` + short description

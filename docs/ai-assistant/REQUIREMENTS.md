@@ -109,6 +109,15 @@ OAuth flow
 - Payment methods are referenced by nickname throughout the app - full details
 only visible in the vault
 
+### Card Scanning
+
+- Payment method details can be captured by pointing the device camera at a physical card
+- All scanning and OCR processing is client-side only - card data never leaves the device during capture
+- Scanned data populates the payment method entry form; user confirms before saving
+- Implemented via Tesseract.js (browser-based OCR, no external API)
+- Supported on iPhone Safari via getUserMedia()
+- UX consideration: card scanning has a reputation for taking as long as manual entry in practice - evaluate real-world value before investing in this
+
 ---
 
 ## REQ-005: Spending Projections
@@ -127,6 +136,7 @@ Forward-looking cash flow view based on known recurring bills and income.
 - Income entries (REQ-010) feed the starting balance
 - One-time bills are included if they fall within the projection window
 - Projection updates automatically when bills or income entries change
+- A calendar view showing income dates and bill due dates together is a planned layout alternative to the timeline view
 
 ---
 
@@ -265,6 +275,7 @@ A standardized category list used across bills, transactions, and the blame grap
 - Plaid merchant category codes are automatically mapped to SqueezyPay categories
 at import time
 - User can set a permanent override rule: "Always categorize [merchant] as [category]"
+- Transactions can be split across multiple categories (e.g. a single Costco transaction categorized as part groceries, part household, part clothing)
 
 ---
 
@@ -426,6 +437,7 @@ A configurable notification system that alerts household members about bills, sp
 | Bill overdue | Due date passed, no payment logged | On/off |
 | Large transaction | Transaction exceeds threshold | Dollar threshold |
 | Deposit received | Deposit transaction detected | On/off |
+| Anomaly alert | Spending in a category is significantly above the user's normal pattern | Sensitivity threshold |
 | Weekly spend summary | Scheduled | Day of week, with or without blame breakdown |
 | Monthly snapshot | Scheduled | Day of month, content selection |
 | Spend with blame | Scheduled or on-demand | Frequency, breakdown depth |
@@ -464,3 +476,17 @@ Presets are starting points only. Every notification is individually configurabl
 - Custom reports are Phase 3+
 - Notifications are queued and retried on delivery failure - not silently dropped
 - No notification is sent without the user explicitly enabling it
+
+---
+
+## REQ-018: Recurring Transaction Detection
+
+Automatic identification of recurring charges in Plaid transaction data, with suggestions to add them as tracked bills.
+
+### Behavior
+
+- On transaction sync, the app scans for charges that recur on a regular interval (weekly, monthly, annual)
+- Detected recurring charges are surfaced to the user as suggested bills to add to the dashboard
+- User can accept (adds bill), dismiss (ignores suggestion), or mark as already tracked
+- Detection is heuristic-based - same merchant, similar amount, regular cadence
+- Bridges Phase 2 (Plaid data) and the bill management system automatically
