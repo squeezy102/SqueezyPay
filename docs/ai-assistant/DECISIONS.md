@@ -59,6 +59,7 @@ architectural decision should leave room for that growth without requiring a rew
 | Fernet encryption (cryptography library) | Industry-standard symmetric encryption for credentials and payment methods at rest. Simple API, well-audited. |
 | Plaid API | Industry-standard bank data aggregator. Powers Venmo, Cash App, Robinhood. Free developer tier covers personal use. Supports Example Credit Union. Legal, stable, designed for this use case. |
 | PWA (Progressive Web App) | Enables "Add to Home Screen" on iPhone and Android - looks and feels like a native app. No App Store, no install, no maintenance. Works on any browser. |
+| Platform target: Windows + iPhone | The app is designed, tested, and optimized for a Windows host machine and iPhone as the primary mobile client. Cross-platform support is not a goal. The code is open - other platforms can adapt it. |
 
 ---
 
