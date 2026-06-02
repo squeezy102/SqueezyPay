@@ -74,9 +74,55 @@ Running notes for AI assistant continuity across sessions.
 
 ---
 
+## What Was Built This Session
+
+**Bill Management UI (REQ-002):**
+- `BillManagement.jsx` - table of all bills (active + inactive), add/edit/deactivate actions
+- `BillFormModal.jsx` - add/edit form modal with validation, category dropdown, recurring toggle
+- Bills tab added to sidebar nav and App.jsx routing
+- Backend: `GET /api/bills/?include_inactive=true` query param added
+- `api.js`: `getAllBills`, `createBill`, `updateBill`, `deactivateBill`, `reactivateBill`
+- `MoneyInput` fixed to respond to external value changes (edit mode was broken)
+
+**Testing infrastructure:**
+- pytest + httpx installed, `backend/tests/` created with `conftest.py`
+- `conftest.py` uses StaticPool in-memory SQLite - fully isolated per test, no disk DB touched
+- `test_bills.py` - 11 tests, full CRUD coverage including inactive filter
+- `test_payment_history.py` - 9 tests, log/list/delete coverage
+- `test_frontend_log.py` - 3 tests for error reporting endpoint
+- All 23 tests passing
+
+**Deprecation warnings resolved:**
+- `declarative_base` moved from `sqlalchemy.ext.declarative` to `sqlalchemy.orm`
+- `datetime.utcnow()` replaced with `datetime.now(timezone.utc)` via `_utcnow()` helper
+- `@app.on_event("startup")` replaced with `lifespan` context manager
+
+**Admin dashboard log panel redesign:**
+- Default view: live event ticker - messages fade in at bottom, fade out after 8s (INFO) / 20s (WARN/ERROR)
+- Idle state: animated "Listening for events..." dots when quiet
+- INFO/WARN/ERROR checkboxes filter both ticker and full log pane
+- "Expand Logs" toggle reveals full scrollable history
+- "To Site →" link in admin header opens the app at localhost:5173
+
+**Cross-linking:**
+- Sidebar "Admin dashboard →" link with live status dot (green/red/gray) - shows "Admin offline" instead of dead link when admin isn't running
+- Uses `AbortController` + `setTimeout` for timeout (not `AbortSignal.timeout` which crashed older Edge)
+
+**Frontend error boundary:**
+- `ErrorBoundary.jsx` wraps the full app in `main.jsx`
+- Catches React render crashes - shows error message + "Reload app" instead of white screen
+- POSTs crash details to `/api/frontend-log/` → lands in `squeezypay.log` → surfaces in admin ticker
+- `frontend_log.py` API endpoint + backend route registered
+
+**Warnings policy established:**
+- All warnings (any type) must be explicitly addressed - never ignored silently
+- Exception: third-party library internals we cannot modify
+- One known outstanding: `StarletteDeprecationWarning` from `starlette.testclient` re: httpx/httpx2 - not our code, requires FastAPI version upgrade to resolve
+
+---
+
 ## What Has NOT Been Built (Phase 1 remaining)
 
-- Bill management UI - add, edit, deactivate bills from the frontend (REQ-002)
 - Due date alerts on dashboard (REQ-013)
 - Income tracking API and UI (REQ-010)
 - Settings screen (REQ-015)
@@ -85,10 +131,11 @@ Running notes for AI assistant continuity across sessions.
 
 ## Next Session Priorities
 
-1. **Bill management UI** - add/edit/deactivate bills from the frontend (REQ-002). Currently bills can only be added via the seed script.
-2. **Due date alerts** - banner/badge on dashboard for overdue and due-soon bills (REQ-013)
-3. **Income tracking** - API and UI (REQ-010)
-4. **Settings screen** - alert thresholds, category management (REQ-015)
+1. **Due date alerts** - banner/badge on dashboard for overdue and due-soon bills (REQ-013)
+2. **Income tracking** - API and UI (REQ-010)
+3. **Settings screen** - alert thresholds, category management (REQ-015)
+4. **Known tech debt** - BillService bypasses repository pattern (queries DB directly). A `BillRepository` should be created to match the pattern used by Credential, PaymentMethod, and PaymentHistory. Not urgent but should be done before Phase 2.
+5. **Mobile history view** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
 
 ---
 

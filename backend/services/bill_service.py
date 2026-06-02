@@ -7,9 +7,10 @@ logger = get_logger("squeezypay.services.bills")
 
 class BillService:
     @staticmethod
-    def get_all_bills(db: Session) -> list[dict]:
-        bills = db.query(Bill).filter(Bill.active == True).all()
-        logger.info(f"Retrieved {len(bills)} active bills")
+    def get_all_bills(db: Session, include_inactive: bool = False) -> list[dict]:
+        query = db.query(Bill) if include_inactive else db.query(Bill).filter(Bill.active == True)
+        bills = query.all()
+        logger.info(f"Retrieved {len(bills)} bills (include_inactive={include_inactive})")
         return [BillService._to_dict(b) for b in bills]
 
     @staticmethod

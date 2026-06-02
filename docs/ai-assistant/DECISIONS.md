@@ -88,6 +88,18 @@ architectural decision should leave room for that growth without requiring a rew
 
 ---
 
+## Known Tech Debt
+
+| Item | Description | Priority |
+|---|---|---|
+| `BillRepository` missing | `BillService` queries the ORM directly instead of going through a repository, violating the pattern used by every other service. Create `BillRepository` to match. | Before Phase 2 |
+| `Income` model unused | Model defined and migration-ready but no API, service, or UI. Placeholder for Phase 1 income tracking (REQ-010). | Resolve when building REQ-010 |
+| `TransactionCategory` model unused | Seeded in `db.py` but never exposed. Will be wired up in Settings screen (REQ-015). | Resolve when building REQ-015 |
+| Mobile payment history | Table layout scrolls off-screen on mobile. Needs card/condensed layout for small screens. | Phase 1 quality pass |
+| Starlette httpx warning | `StarletteDeprecationWarning` from `starlette.testclient` - not our code. Requires FastAPI upgrade to resolve. | Low - third-party |
+
+---
+
 ## Design Pattern Standards
 
 All backend code follows these patterns consistently. New code must conform.
@@ -168,14 +180,7 @@ Plaid flow:
 
 ## Branching Strategy
 
-| Branch | Purpose |
-|---|---|
-| `master` | Stable milestones only - never commit directly here |
-| `dev` | Active development - all PRs target this branch |
-| `feature/short-description` | New features or enhancements |
-| `fix/short-description` | Bug fixes |
-| `docs/short-description` | Documentation changes only |
-| `chore/short-description` | Maintenance, cleanup, dependency updates |
+Solo project, no collaborators. Work directly off `dev`. No feature branches, no PRs. Commit and push when it feels right.
 
 ---
 

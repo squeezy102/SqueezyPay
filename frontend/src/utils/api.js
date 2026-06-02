@@ -114,3 +114,87 @@ export async function getBills() {
     return [];
   }
 }
+
+export async function getAllBills() {
+  try {
+    const response = await fetch(`${API_BASE}/api/bills/?include_inactive=true`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    return data.map(mapBill);
+  } catch (error) {
+    console.error("Failed to fetch all bills:", error);
+    return [];
+  }
+}
+
+export async function createBill(payload) {
+  try {
+    const response = await fetch(`${API_BASE}/api/bills/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name:            payload.name,
+        category:        payload.category,
+        url:             payload.url,
+        expected_amount: payload.expectedAmount ?? null,
+        day_of_month:    payload.dayOfMonth,
+        recurring:       payload.recurring,
+        notes:           payload.notes ?? null,
+      }),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapBill(await response.json());
+  } catch (error) {
+    console.error("Failed to create bill:", error);
+    return null;
+  }
+}
+
+export async function updateBill(billId, payload) {
+  try {
+    const response = await fetch(`${API_BASE}/api/bills/${billId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name:            payload.name,
+        category:        payload.category,
+        url:             payload.url,
+        expected_amount: payload.expectedAmount ?? null,
+        day_of_month:    payload.dayOfMonth,
+        recurring:       payload.recurring,
+        notes:           payload.notes ?? null,
+      }),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapBill(await response.json());
+  } catch (error) {
+    console.error("Failed to update bill:", error);
+    return null;
+  }
+}
+
+export async function deactivateBill(billId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/bills/${billId}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapBill(await response.json());
+  } catch (error) {
+    console.error("Failed to deactivate bill:", error);
+    return null;
+  }
+}
+
+export async function reactivateBill(billId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/bills/${billId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: true }),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapBill(await response.json());
+  } catch (error) {
+    console.error("Failed to reactivate bill:", error);
+    return null;
+  }
+}

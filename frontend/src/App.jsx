@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { Sidebar, MobileTopBar } from "./components/NavBar";
 import BillDashboard from "./components/BillDashboard";
+import BillManagement from "./components/BillManagement";
 import PaymentHistory from "./components/PaymentHistory";
 
 function AppShell() {
@@ -15,6 +16,7 @@ function AppShell() {
       {/* Content area - offset for sidebar on desktop, top bar on mobile */}
       <div className="lg:pl-56 pt-14 lg:pt-0">
         {activeTab === "home"    && <BillDashboard />}
+        {activeTab === "bills"   && <BillManagement />}
         {activeTab === "history" && <PaymentHistory />}
       </div>
     </div>

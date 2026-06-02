@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function MoneyInput({ value, onChange, required, className = "" }) {
   const [raw, setRaw] = useState(() => value > 0 ? value.toFixed(2) : "");
+
+  useEffect(() => {
+    const parsed = parseFloat(value);
+    setRaw(!isNaN(parsed) && parsed > 0 ? parsed.toFixed(2) : "");
+  }, [value]);
 
   function handleChange(e) {
     const val = e.target.value;

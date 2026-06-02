@@ -43,6 +43,19 @@ non-obvious decisions
 
 ---
 
+## Warnings Policy
+
+- All warnings must be explicitly addressed - never silently ignored
+- This applies to every warning type: deprecation, runtime, compiler, linter,
+  test runner output, anything
+- Fix immediately when possible
+- If a fix must be deferred, call it out explicitly: what the warning is, why
+  it's being deferred, and log it as a known issue
+- The only exception: warnings originating inside third-party library code we
+  cannot modify - confirm they are not ours, note them, move on
+
+---
+
 ## Technical Standards
 
 - Correct, scalable, industry-standard solutions - not quick hacks or band-aids
@@ -54,6 +67,23 @@ scripts
 what purpose they serve - e.g. `BillPaymentRepository` not `db_helper`
 - Structure code with testability in mind from the start
 - No unnecessary comments - only add a comment when the WHY is non-obvious
+
+---
+
+## Testing Standards
+
+- **All code written must be tested.** Backend API tests are written alongside
+the code, in the same session, not deferred.
+- **Backend:** pytest + FastAPI TestClient against an in-memory SQLite database.
+Tests live in `backend/tests/`. Run with: `cd backend && .\venv\Scripts\pytest.exe -v`
+- **Test isolation:** Each test gets a fresh in-memory database via the `client`
+fixture in `conftest.py`. No test should depend on data from another test.
+- **Coverage target:** Every API endpoint must have a test. At minimum: happy
+path, not-found / 404 path, and any meaningful edge cases (optional fields, filters).
+- **Do not mock the database.** Tests hit real SQL against in-memory SQLite.
+Mocking the database was explicitly ruled out - it lets mock/real divergence hide bugs.
+- **Frontend:** Vitest for component logic, Playwright for E2E. Not yet
+implemented - add when frontend complexity warrants it.
 
 ---
 
@@ -79,21 +109,8 @@ tab to click, what the output looks like, and what to copy/paste back
 
 ## Git Commits and Branches
 
-- Don't commit every small change - commit at logical checkpoints (meaningful
-chunks of related work, working states after a feature area is complete)
-- During major restructuring, intermediate commits are acceptable as safety
-checkpoints
-- Avoid committing docs updates, small tweaks, and minor fixes individually -
-batch them with related work
-- Branch naming convention:
-  - `feature/short-description` - new features or enhancements
-  - `fix/short-description` - bug fixes
-  - `docs/short-description` - documentation only
-  - `chore/short-description` - maintenance, cleanup, dependency updates
-- Always suggest the correct branch name before starting new work
-- Branches are short-lived: checkout from dev, do the work, PR to dev, branch
-deleted on merge
-- Never work directly on dev or master
+- Work directly off `dev` branch - no feature branches, no PRs
+- Commit and push when it feels right - solo project, no collaborators
 
 ---
 

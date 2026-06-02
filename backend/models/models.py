@@ -1,8 +1,12 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text
-from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from sqlalchemy.orm import declarative_base
+from datetime import datetime, timezone
 
 Base = declarative_base()
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
 
 
 class Bill(Base):
@@ -17,8 +21,8 @@ class Bill(Base):
     recurring = Column(Boolean, default=True)
     active = Column(Boolean, default=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class PaymentHistory(Base):
@@ -31,7 +35,7 @@ class PaymentHistory(Base):
     payment_method = Column(String(255), nullable=True)
     confirmation_number = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
 
 class Credential(Base):
@@ -42,8 +46,8 @@ class Credential(Base):
     username = Column(String(255), nullable=False)
     password_encrypted = Column(String(500), nullable=False)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class PaymentMethod(Base):
@@ -55,8 +59,8 @@ class PaymentMethod(Base):
     last_four = Column(String(4), nullable=False)
     expiration_date = Column(String(10), nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class TransactionCategory(Base):
@@ -64,7 +68,7 @@ class TransactionCategory(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False, unique=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
 
 class Income(Base):
@@ -76,5 +80,5 @@ class Income(Base):
     frequency = Column(String(50), nullable=False)
     next_expected_date = Column(DateTime, nullable=False)
     active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
