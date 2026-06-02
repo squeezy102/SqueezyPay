@@ -22,8 +22,8 @@ function StatusBadge({ status, daysUntil }) {
   );
 }
 
-export default function BillCard({ bill }) {
-  const status    = getBillStatus(bill.dayOfMonth);
+export default function BillCard({ bill, dueSoonDays = 7 }) {
+  const status    = getBillStatus(bill.dayOfMonth, dueSoonDays);
   const daysUntil = getDaysUntilDue(bill.dayOfMonth);
   const dueDate   = formatDueDate(bill.dayOfMonth);
   const [showModal, setShowModal] = useState(false);

@@ -8,6 +8,9 @@ from api.credentials import router as credentials_router
 from api.payment_methods import router as payment_methods_router
 from api.payment_history import router as payment_history_router
 from api.frontend_log import router as frontend_log_router
+from api.income import router as income_router
+from api.settings import router as settings_router
+from api.categories import router as categories_router
 
 configure_logging()
 logger = get_logger("squeezypay.main")
@@ -35,6 +38,9 @@ app.include_router(credentials_router)
 app.include_router(payment_methods_router)
 app.include_router(payment_history_router)
 app.include_router(frontend_log_router)
+app.include_router(income_router)
+app.include_router(settings_router)
+app.include_router(categories_router)
 
 
 @app.get("/health")

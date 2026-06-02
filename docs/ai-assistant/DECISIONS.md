@@ -92,9 +92,6 @@ architectural decision should leave room for that growth without requiring a rew
 
 | Item | Description | Priority |
 |---|---|---|
-| `BillRepository` missing | `BillService` queries the ORM directly instead of going through a repository, violating the pattern used by every other service. Create `BillRepository` to match. | Before Phase 2 |
-| `Income` model unused | Model defined and migration-ready but no API, service, or UI. Placeholder for Phase 1 income tracking (REQ-010). | Resolve when building REQ-010 |
-| `TransactionCategory` model unused | Seeded in `db.py` but never exposed. Will be wired up in Settings screen (REQ-015). | Resolve when building REQ-015 |
 | Mobile payment history table | Payment history table scrolls off-screen on mobile - not usable. Needs card-based or condensed layout for small screens. Deferred by user. | Phase 1 quality pass |
 | Mobile bill management table | Bill management table likely has the same mobile scrolling issue as payment history - not yet tested on mobile. | Phase 1 quality pass |
 | LF/CRLF line endings | Git warns on LF→CRLF conversion for every new file on Windows. Add `.gitattributes` with `* text=auto` to silence permanently. | Low - cosmetic |

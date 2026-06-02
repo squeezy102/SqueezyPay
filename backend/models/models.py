@@ -71,6 +71,13 @@ class TransactionCategory(Base):
     created_at = Column(DateTime, default=_utcnow)
 
 
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key = Column(String(100), primary_key=True)
+    value = Column(String(500), nullable=False)
+
+
 class Income(Base):
     __tablename__ = "income"
 

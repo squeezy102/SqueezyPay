@@ -4,6 +4,8 @@ import { Sidebar, MobileTopBar } from "./components/NavBar";
 import BillDashboard from "./components/BillDashboard";
 import BillManagement from "./components/BillManagement";
 import PaymentHistory from "./components/PaymentHistory";
+import IncomeManagement from "./components/IncomeManagement";
+import Settings from "./components/Settings";
 
 function AppShell() {
   const [activeTab, setActiveTab] = useState("home");
@@ -18,6 +20,8 @@ function AppShell() {
         {activeTab === "home"    && <BillDashboard />}
         {activeTab === "bills"   && <BillManagement />}
         {activeTab === "history" && <PaymentHistory />}
+        {activeTab === "income"   && <IncomeManagement />}
+        {activeTab === "settings" && <Settings />}
       </div>
     </div>
   );

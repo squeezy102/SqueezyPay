@@ -46,3 +46,26 @@ export const statusTokens = {
 export const actionTokens = {
   primary: "bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white",
 };
+
+export const alertThresholds = {
+  dueSoonDays: 7,
+  largePaymentAmount: 500,
+};
+
+export const alertBannerTokens = {
+  overdue: {
+    bar:  "bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-800",
+    icon: "text-red-500 dark:text-red-400",
+    text: "text-red-800 dark:text-red-300",
+  },
+  "due-soon": {
+    bar:  "bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800",
+    icon: "text-amber-500 dark:text-amber-400",
+    text: "text-amber-800 dark:text-amber-300",
+  },
+  "large-payment": {
+    bar:  "bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800",
+    icon: "text-blue-500 dark:text-blue-400",
+    text: "text-blue-800 dark:text-blue-300",
+  },
+};

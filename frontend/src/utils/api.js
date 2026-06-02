@@ -198,3 +198,181 @@ export async function reactivateBill(billId) {
     return null;
   }
 }
+
+// ── Income ────────────────────────────────────────────────────────────────────
+
+function mapIncome(raw) {
+  return {
+    id:               raw.id,
+    sourceName:       raw.source_name,
+    amount:           raw.amount,
+    frequency:        raw.frequency,
+    nextExpectedDate: raw.next_expected_date,
+    active:           raw.active,
+  };
+}
+
+export async function getIncome(includeInactive = false) {
+  try {
+    const qs = includeInactive ? "?include_inactive=true" : "";
+    const response = await fetch(`${API_BASE}/api/income/${qs}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    return data.map(mapIncome);
+  } catch (error) {
+    console.error("Failed to fetch income:", error);
+    return [];
+  }
+}
+
+export async function createIncome(payload) {
+  try {
+    const response = await fetch(`${API_BASE}/api/income/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_name:        payload.sourceName,
+        amount:             payload.amount,
+        frequency:          payload.frequency,
+        next_expected_date: payload.nextExpectedDate,
+      }),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapIncome(await response.json());
+  } catch (error) {
+    console.error("Failed to create income:", error);
+    return null;
+  }
+}
+
+export async function updateIncome(id, payload) {
+  try {
+    const response = await fetch(`${API_BASE}/api/income/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_name:        payload.sourceName,
+        amount:             payload.amount,
+        frequency:          payload.frequency,
+        next_expected_date: payload.nextExpectedDate,
+      }),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapIncome(await response.json());
+  } catch (error) {
+    console.error("Failed to update income:", error);
+    return null;
+  }
+}
+
+export async function deactivateIncome(id) {
+  try {
+    const response = await fetch(`${API_BASE}/api/income/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    // 204 No Content — nothing to return
+  } catch (error) {
+    console.error("Failed to deactivate income:", error);
+    return null;
+  }
+}
+
+export async function reactivateIncome(id) {
+  try {
+    const response = await fetch(`${API_BASE}/api/income/${id}/reactivate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return mapIncome(await response.json());
+  } catch (error) {
+    console.error("Failed to reactivate income:", error);
+    return null;
+  }
+}
+
+export async function getMonthlyTotal() {
+  try {
+    const response = await fetch(`${API_BASE}/api/income/monthly-total`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    return data.monthly_total;
+  } catch (error) {
+    console.error("Failed to fetch monthly total:", error);
+    return null;
+  }
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+
+export async function getSettings() {
+  try {
+    const response = await fetch(`${API_BASE}/api/settings/`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    return {
+      dueSoonDays:            data.due_soon_days,
+      largePaymentThreshold:  data.large_payment_threshold,
+    };
+  } catch (error) {
+    console.error("Failed to fetch settings:", error);
+    return null;
+  }
+}
+
+export async function updateSettings(payload) {
+  try {
+    const response = await fetch(`${API_BASE}/api/settings/`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        due_soon_days:           payload.dueSoonDays,
+        large_payment_threshold: payload.largePaymentThreshold,
+      }),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    return {
+      dueSoonDays:            data.due_soon_days,
+      largePaymentThreshold:  data.large_payment_threshold,
+    };
+  } catch (error) {
+    console.error("Failed to update settings:", error);
+    return null;
+  }
+}
+
+// ── Categories ────────────────────────────────────────────────────────────────
+
+export async function getCategories() {
+  try {
+    const response = await fetch(`${API_BASE}/api/categories/`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return await response.json(); // [{ id, name }, ...]
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    return [];
+  }
+}
+
+export async function createCategory(name) {
+  const response = await fetch(`${API_BASE}/api/categories/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (response.status === 409) return { conflict: true };
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return await response.json(); // { id, name }
+}
+
+export async function updateCategory(id, name) {
+  const response = await fetch(`${API_BASE}/api/categories/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (response.status === 409) return { conflict: true };
+  if (response.status === 404) return { notFound: true };
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return await response.json(); // { id, name }
+}

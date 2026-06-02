@@ -16,7 +16,7 @@ Running notes for AI assistant continuity across sessions.
 
 **Phase 0 (POC):** Complete.
 
-**Phase 1 (Real Foundation):** In progress - ~85% complete.
+**Phase 1 (Real Foundation):** Complete.
 
 **Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
@@ -35,20 +35,29 @@ Running notes for AI assistant continuity across sessions.
   - Payment method dropdown (pulls from vault, falls back to free text if empty)
   - Success banner on save, error message on failure
 - Payment history view - sortable table, compact rows, search by biller/confirmation/method/notes
-- Dashboard filtered to bills due within 7 days + overdue; hidden bill count shown
+- Bill management view (`BillManagement.jsx`) - table of all bills (active + inactive), add/edit/deactivate actions; `BillFormModal.jsx` for add/edit with validation, category dropdown, recurring toggle
+- Income management view (`IncomeManagement.jsx`) - monthly total summary bar, table, show/hide inactive toggle; `IncomeFormModal.jsx` for add/edit
+- Settings page (`Settings.jsx`) - Alert Thresholds card (due-soon days, large payment threshold with save confirmation); Transaction Categories card (inline add/edit, 409 conflict messaging)
+- Dashboard filtered to bills due within N days (configurable via settings) + overdue; hidden bills expand/collapse toggle (chevron button reveals upcoming bills grid)
+- Alert banners on dashboard: overdue (red), due-soon (amber), large payment (blue) - full-width `AlertBanner` components; thresholds loaded from live settings
 - Dark mode toggle - defaults to system preference, persists in localStorage
-- Design token system (`src/theme/tokens.js`) - all colors in one place
+- Design token system (`src/theme/tokens.js`) - all colors in one place, including `alertBannerTokens`
 - API integration layer (`src/utils/api.js`) - snake_case → camelCase mapping, uses `window.location.hostname` so mobile (local IP) works
 - PWA manifest for home screen install
 - Viewport locked (`user-scalable=no`) to prevent mobile wiggle
 - Logo (`frontend/public/logo.png`) in sidebar and mobile top bar
 
 **Backend (FastAPI + SQLite):**
-- SQLAlchemy ORM models: Bill, PaymentHistory, Credential, PaymentMethod, TransactionCategory, Income
+- SQLAlchemy ORM models: Bill, PaymentHistory, Credential, PaymentMethod, TransactionCategory, Income, Setting
 - Bills API: `/api/bills/` - full CRUD
 - Credentials API: `/api/credentials/` and `/api/credentials/by-bill/{bill_id}`
 - Payment Methods API: `/api/payment-methods/`
 - Payment History API: `/api/payment-history/` - GET all, GET by bill, POST to log, DELETE
+- Income API: `/api/income/` - full CRUD + `/monthly-total` endpoint
+- Settings API: `GET /PUT /api/settings/` - key/value store, defaults seeded at startup (`due_soon_days=7`, `large_payment_threshold=500.0`)
+- Categories API: `GET/POST/PUT /api/categories/` - no delete endpoint, 409 on duplicate name
+- Repository layer: `BillRepository`, `IncomeRepository`, `SettingsRepository`, `CategoryRepository` (joins existing credential/payment method/payment history repositories)
+- `IncomeService` with `get_monthly_total` computing estimated monthly income from frequency
 - Encryption service (`services/encryption_service.py`) - Fernet, lazy-init, reads `SQUEEZYPAY_ENCRYPTION_KEY` env var
 - Structured logging (`core/logging_config.py`) - console (plain) + rotating JSON file at `backend/logs/squeezypay.log`
 - Health check endpoint: `/health`
@@ -76,66 +85,60 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
-**Bill Management UI (REQ-002):**
-- `BillManagement.jsx` - table of all bills (active + inactive), add/edit/deactivate actions
-- `BillFormModal.jsx` - add/edit form modal with validation, category dropdown, recurring toggle
-- Bills tab added to sidebar nav and App.jsx routing
-- Backend: `GET /api/bills/?include_inactive=true` query param added
-- `api.js`: `getAllBills`, `createBill`, `updateBill`, `deactivateBill`, `reactivateBill`
-- `MoneyInput` fixed to respond to external value changes (edit mode was broken)
+**REQ-013: Due Date Alerts:**
+- Fixed overdue detection bug in `billUtils.js` — `getDueDate` was rolling past-due bills to next month, so overdue was never triggered. Now uses `getCurrentCycleDueDate` (no rollover) for status, `getDueDate` (with rollover) only for display.
+- `getBillStatus` now accepts a `dueSoonDays` param (default 7).
+- Redesigned alert bar on `BillDashboard` — replaced orphaned pills + plain text with cohesive full-width `AlertBanner` components (overdue = red, due-soon = amber, large payment = blue). Tokens in `alertBannerTokens` in `tokens.js`.
+- Added expand/collapse toggle for hidden bills — chevron button reveals/hides the upcoming bills grid.
+- Large payment alert wired up — uses `largePaymentThreshold` from live settings.
 
-**Testing infrastructure:**
-- pytest + httpx installed, `backend/tests/` created with `conftest.py`
-- `conftest.py` uses StaticPool in-memory SQLite - fully isolated per test, no disk DB touched
-- `test_bills.py` - 11 tests, full CRUD coverage including inactive filter
-- `test_payment_history.py` - 9 tests, log/list/delete coverage
-- `test_frontend_log.py` - 3 tests for error reporting endpoint
-- All 23 tests passing
+**BillRepository (tech debt resolved):**
+- Created `backend/repositories/bill_repository.py` — `BillRepository` with get_all, get_by_id, create, update, deactivate, reactivate.
+- Refactored `backend/services/bill_service.py` to delegate all ORM access to `BillRepository`. Public interface unchanged.
 
-**Deprecation warnings resolved:**
-- `declarative_base` moved from `sqlalchemy.ext.declarative` to `sqlalchemy.orm`
-- `datetime.utcnow()` replaced with `datetime.now(timezone.utc)` via `_utcnow()` helper
-- `@app.on_event("startup")` replaced with `lifespan` context manager
+**REQ-010: Income Tracking:**
+- `backend/repositories/income_repository.py` — `IncomeRepository`
+- `backend/services/income_service.py` — `IncomeService` with `get_monthly_total` computing estimated monthly income from frequency
+- `backend/api/income.py` — full CRUD + `/monthly-total` endpoint (defined before `/{id}` to avoid routing collision)
+- Registered in `main.py`
+- `frontend/src/components/IncomeManagement.jsx` — income page with monthly total summary bar, table, show/hide inactive toggle
+- `frontend/src/components/IncomeFormModal.jsx` — add/edit modal
+- Wired into `App.jsx` and `NavBar.jsx` (Income tab)
 
-**Admin dashboard log panel redesign:**
-- Default view: live event ticker - messages fade in at bottom, fade out after 8s (INFO) / 20s (WARN/ERROR)
-- Idle state: animated "Listening for events..." dots when quiet
-- INFO/WARN/ERROR checkboxes filter both ticker and full log pane
-- "Expand Logs" toggle reveals full scrollable history
-- "To Site →" link in admin header opens the app at localhost:5173
+**REQ-015: Settings:**
+- Added `Setting` model to `models.py` (key/value store, key is primary key)
+- `backend/repositories/settings_repository.py` — `SettingsRepository` with get, set (upsert), get_all
+- `backend/services/settings_service.py` — `SettingsService`, returns typed dict, defaults if key missing
+- `backend/api/settings.py` — GET/PUT `/api/settings/`
+- `backend/repositories/category_repository.py` — `CategoryRepository` (get_all, get_by_id, get_by_name, create, update — no delete)
+- `backend/services/category_service.py` — `CategoryService`, rejects duplicate names with ValueError, no delete
+- `backend/api/categories.py` — GET/POST/PUT `/api/categories/` (409 on duplicate, no delete endpoint)
+- Default settings seeded in `db.py` `_seed_default_settings()`: `due_soon_days=7`, `large_payment_threshold=500.0`
+- Registered both routers in `main.py`
+- `frontend/src/components/Settings.jsx` — two-section settings page: Alert Thresholds card + Transaction Categories card
+- Wired into `App.jsx` and `NavBar.jsx` (Settings tab, gear icon)
+- `BillDashboard.jsx` now fetches live settings on load; passes `dueSoonDays` to `filterActionableBills` and `getBillStatus`, and `largePaymentThreshold` to the large payment filter. `BillCard` accepts `dueSoonDays` prop.
 
-**Cross-linking:**
-- Sidebar "Admin dashboard →" link with live status dot (green/red/gray) - shows "Admin offline" instead of dead link when admin isn't running
-- Uses `AbortController` + `setTimeout` for timeout (not `AbortSignal.timeout` which crashed older Edge)
-
-**Frontend error boundary:**
-- `ErrorBoundary.jsx` wraps the full app in `main.jsx`
-- Catches React render crashes - shows error message + "Reload app" instead of white screen
-- POSTs crash details to `/api/frontend-log/` → lands in `squeezypay.log` → surfaces in admin ticker
-- `frontend_log.py` API endpoint + backend route registered
-
-**Warnings policy established:**
-- All warnings (any type) must be explicitly addressed - never ignored silently
-- Exception: third-party library internals we cannot modify
-- One known outstanding: `StarletteDeprecationWarning` from `starlette.testclient` re: httpx/httpx2 - not our code, requires FastAPI version upgrade to resolve
+**Tests added:**
+- `backend/tests/test_income.py` — 12 tests, full coverage of Income API including monthly total calculation
+- `backend/tests/test_bill_repository.py` — 2 smoke tests
+- `backend/tests/test_settings.py` — Settings API coverage
+- `backend/tests/test_categories.py` — Categories API coverage including duplicate/rename edge cases
+- `api.js` additions: `getIncome`, `createIncome`, `updateIncome`, `deactivateIncome`, `reactivateIncome`, `getMonthlyTotal`, `getSettings`, `updateSettings`, `getCategories`, `createCategory`, `updateCategory`
 
 ---
 
 ## What Has NOT Been Built (Phase 1 remaining)
 
-- Due date alerts on dashboard (REQ-013)
-- Income tracking API and UI (REQ-010)
-- Settings screen (REQ-015)
+Phase 1 is complete. All REQs have been built.
 
 ---
 
 ## Next Session Priorities
 
-1. **Due date alerts** - banner/badge on dashboard for overdue and due-soon bills (REQ-013)
-2. **Income tracking** - API and UI (REQ-010)
-3. **Settings screen** - alert thresholds, category management (REQ-015)
-4. **Known tech debt** - BillService bypasses repository pattern (queries DB directly). A `BillRepository` should be created to match the pattern used by Credential, PaymentMethod, and PaymentHistory. Not urgent but should be done before Phase 2.
-5. **Mobile history view** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
+1. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
+2. **Phase 2 planning: Plaid** - verify Example Credit Union Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+3. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 
@@ -176,19 +179,24 @@ squeezypay/
 │   │   ├── main.jsx
 │   │   ├── index.css
 │   │   ├── components/
-│   │   │   ├── NavBar.jsx          Sidebar (desktop) + MobileTopBar (mobile)
-│   │   │   ├── BillDashboard.jsx   Home tab - bill cards, status badges
-│   │   │   ├── BillCard.jsx        Individual bill card + Start Workflow button
-│   │   │   ├── LogPaymentModal.jsx Payment workflow modal (2-panel)
-│   │   │   ├── MoneyInput.jsx      Currency input component
-│   │   │   └── PaymentHistory.jsx  History tab - sortable payment table
+│   │   │   ├── NavBar.jsx              Sidebar (desktop) + MobileTopBar (mobile)
+│   │   │   ├── BillDashboard.jsx       Home tab - bill cards, alert banners, expand/collapse
+│   │   │   ├── BillCard.jsx            Individual bill card + Start Workflow button
+│   │   │   ├── BillManagement.jsx      Bills tab - manage all bills (active + inactive)
+│   │   │   ├── BillFormModal.jsx       Add/edit bill modal
+│   │   │   ├── LogPaymentModal.jsx     Payment workflow modal (2-panel)
+│   │   │   ├── MoneyInput.jsx          Currency input component
+│   │   │   ├── PaymentHistory.jsx      History tab - sortable payment table
+│   │   │   ├── IncomeManagement.jsx    Income tab - monthly total + income list
+│   │   │   ├── IncomeFormModal.jsx     Add/edit income modal
+│   │   │   └── Settings.jsx            Settings tab - alert thresholds + categories
 │   │   ├── context/
 │   │   │   └── ThemeContext.jsx
 │   │   ├── theme/
-│   │   │   └── tokens.js           All colors/design tokens live here
+│   │   │   └── tokens.js               All colors/design tokens, including alertBannerTokens
 │   │   └── utils/
-│   │       ├── api.js              All API calls + snake_case→camelCase mapping
-│   │       └── billUtils.js        Date/status calculations, filterActionableBills
+│   │       ├── api.js                  All API calls + snake_case→camelCase mapping
+│   │       └── billUtils.js            Date/status calculations, filterActionableBills
 │   ├── vite.config.js
 │   └── package.json
 └── backend/
@@ -201,20 +209,39 @@ squeezypay/
     ├── models/
     │   └── models.py
     ├── repositories/
+    │   ├── bill_repository.py
     │   ├── credential_repository.py
+    │   ├── income_repository.py
     │   ├── payment_method_repository.py
-    │   └── payment_history_repository.py
+    │   ├── payment_history_repository.py
+    │   ├── settings_repository.py
+    │   └── category_repository.py
     ├── services/
     │   ├── bill_service.py
+    │   ├── category_service.py
     │   ├── credential_service.py
     │   ├── encryption_service.py
+    │   ├── income_service.py
     │   ├── payment_method_service.py
-    │   └── payment_history_service.py
-    └── api/
-        ├── bills.py
-        ├── credentials.py
-        ├── payment_methods.py
-        └── payment_history.py
+    │   ├── payment_history_service.py
+    │   └── settings_service.py
+    ├── api/
+    │   ├── bills.py
+    │   ├── categories.py
+    │   ├── credentials.py
+    │   ├── income.py
+    │   ├── payment_methods.py
+    │   ├── payment_history.py
+    │   └── settings.py
+    └── tests/
+        ├── conftest.py
+        ├── test_bills.py
+        ├── test_bill_repository.py
+        ├── test_categories.py
+        ├── test_frontend_log.py
+        ├── test_income.py
+        ├── test_payment_history.py
+        └── test_settings.py
 ```
 
 ---
@@ -226,7 +253,7 @@ squeezypay/
 - **snake_case ↔ camelCase:** Backend speaks snake_case. Frontend speaks camelCase. `api.js` is the only translator.
 - **Encryption key:** `SQUEEZYPAY_ENCRYPTION_KEY` Windows user environment variable. Lose it = lose all vault data.
 - **API base URL:** `window.location.hostname` - works on both localhost and mobile via local IP.
-- **Dashboard filter:** `filterActionableBills()` in `billUtils.js` - shows bills due within 7 days + overdue. Configurable later via settings.
+- **Dashboard filter:** `filterActionableBills()` in `billUtils.js` - shows bills due within N days + overdue. Threshold driven by `due_soon_days` setting (default 7), fetched from backend on load.
 - **Design tokens:** All frontend colors in `src/theme/tokens.js`. Never hardcode colors in components.
 - **Logging:** JSON logs at `backend/logs/squeezypay.log`. Never log passwords, keys, or credential data.
 - **Platform targets:** Desktop (Windows) first. iOS parity. Android out of scope.

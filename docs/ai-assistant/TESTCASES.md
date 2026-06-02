@@ -206,12 +206,147 @@ Mark each with current status when running: ✅ Pass | ❌ Fail | ⏳ Not yet te
 
 ---
 
+## TC-014: Add a Bill via Bill Management UI
+
+**What it tests:** BillManagement add flow — form modal saves to backend, table updates
+
+**Steps:**
+1. Open the Bills tab
+2. Click "Add Bill"
+3. Fill in biller name, category, day of month, amount
+4. Click Save
+
+**Expected:** Modal closes, new bill appears in the table
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-015: Edit a Bill via Bill Management UI
+
+**What it tests:** BillManagement edit flow — existing values pre-populate, changes persist
+
+**Steps:**
+1. Open the Bills tab
+2. Click Edit on any existing bill
+3. Change the amount
+4. Click Save
+
+**Expected:** Modal closes, updated amount shows in the table
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-016: Deactivate a Bill
+
+**What it tests:** Deactivate action removes bill from dashboard and marks inactive in Bills tab
+
+**Steps:**
+1. Open the Bills tab
+2. Click Deactivate on any active bill
+3. Confirm the action
+4. Navigate to Dashboard
+
+**Expected:** Bill no longer appears on dashboard; still visible in Bills tab as inactive
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-017: Add an Income Source
+
+**What it tests:** IncomeManagement add flow and monthly total recalculation
+
+**Steps:**
+1. Open the Income tab
+2. Click "Add Income"
+3. Enter a source name, amount, and frequency (e.g. bi-weekly)
+4. Click Save
+
+**Expected:** New income source appears in the list; monthly total bar updates to reflect the new entry
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-018: Edit Alert Threshold in Settings
+
+**What it tests:** Settings save + live dashboard behavior driven by updated threshold
+
+**Steps:**
+1. Open the Settings tab
+2. Change "Due Soon Days" to 3
+3. Click Save — verify confirmation flash appears
+4. Navigate to Dashboard
+
+**Expected:** Dashboard only shows due-soon alert banners for bills due within 3 days (not 7)
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-019: Add a Transaction Category
+
+**What it tests:** Settings category add flow + category appears in bill form dropdown
+
+**Steps:**
+1. Open the Settings tab
+2. In the Transaction Categories card, type a new category name and click Add
+3. Open the Bills tab and click "Add Bill"
+4. Open the category dropdown
+
+**Expected:** New category appears in the dropdown list
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-020: Dashboard Shows Overdue Alert Banner
+
+**What it tests:** Overdue detection in `billUtils.js` and red AlertBanner rendering
+
+**Steps:**
+1. Ensure at least one bill has a due date in the past (day of month already passed this cycle)
+2. Open the Dashboard tab
+
+**Expected:** Red "Overdue" alert banner appears at the top of the dashboard listing the overdue bill(s)
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-021: Dashboard Shows Due-Soon Alert Banner
+
+**What it tests:** Due-soon detection and amber AlertBanner rendering
+
+**Steps:**
+1. Ensure at least one bill is due within the configured due-soon threshold (default 7 days)
+2. Open the Dashboard tab
+
+**Expected:** Amber "Due Soon" alert banner appears listing the upcoming bill(s)
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-022: Hidden Bills Expand/Collapse Toggle
+
+**What it tests:** Expand/collapse chevron button reveals and hides the upcoming bills grid
+
+**Steps:**
+1. Open the Dashboard tab when more bills exist than are shown in the action area
+2. Click the chevron/expand button below the main bill cards
+
+**Expected:** Hidden bills grid expands to show remaining bills; clicking again collapses it
+
+**Last result:** ⏳ Not yet tested
+
+---
+
 ## Future Test Cases (not yet testable)
 
-- TC-014: Add a bill via bill management UI
-- TC-015: Edit a bill via bill management UI
-- TC-016: Deactivate a bill - verify it disappears from dashboard
-- TC-017: Credential vault - store and retrieve biller credentials
-- TC-018: Payment method vault - store and retrieve payment method
-- TC-019: PWA installs on iPhone home screen
-- TC-020: Show credentials in workflow modal - copy username and password
+- TC-023: Credential vault - store and retrieve biller credentials
+- TC-024: Payment method vault - store and retrieve payment method
+- TC-025: PWA installs on iPhone home screen
+- TC-026: Show credentials in workflow modal - copy username and password
