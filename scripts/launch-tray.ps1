@@ -10,12 +10,12 @@ $adminRequirements = Join-Path $root "admin\requirements.txt"
 # Install dependencies silently if needed (covers pystray, Pillow, requests)
 & $python -m pip install -q -r $adminRequirements
 
-# If the tray is already running (port 9000 listening), just open the dashboard
-$listening = Get-NetTCPConnection -LocalPort 9000 -State Listen -ErrorAction SilentlyContinue
-if ($listening) {
-    Start-Process "http://localhost:9000"
-    exit
-}
+# If tray.py is already running, do nothing — tray.py enforces single-instance
+# via a named Windows mutex, so a second launch will exit immediately anyway.
+# This check avoids the brief double-flash in the tray on rapid re-clicks.
+$running = Get-Process -Name python -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -like "*tray.py*" }
+if ($running) { exit }
 
 # Launch the tray icon hidden (no console window)
 Start-Process -FilePath $python `

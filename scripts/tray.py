@@ -8,6 +8,7 @@ delegated to the admin API so process tracking stays in one place.
 Run via launch-tray.ps1 or registered as a login auto-start task.
 """
 
+import ctypes
 import os
 import sys
 import time
@@ -335,5 +336,19 @@ def main():
     _stop_admin()
 
 
+_MUTEX_NAME = "Global\\SqueezyPayTray"
+_mutex_handle = None
+
+
+def _acquire_single_instance() -> bool:
+    """Create a named Windows mutex. Returns True if this is the first instance."""
+    global _mutex_handle
+    _mutex_handle = ctypes.windll.kernel32.CreateMutexW(None, True, _MUTEX_NAME)
+    # ERROR_ALREADY_EXISTS = 183
+    return ctypes.windll.kernel32.GetLastError() != 183
+
+
 if __name__ == "__main__":
+    if not _acquire_single_instance():
+        sys.exit(0)
     main()
