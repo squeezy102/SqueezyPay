@@ -43,6 +43,17 @@ non-obvious decisions
 
 ---
 
+## Agent Usage
+
+- Spawn subagents to parallelize independent work whenever possible
+- Good candidates: exploring multiple files simultaneously, running analysis
+  while writing code, read-only research while a build runs, any multi-part
+  task where steps don't depend on each other
+- Use the Explore subagent for broad codebase research spanning multiple files
+- Don't do sequentially what can be done in parallel
+
+---
+
 ## Warnings Policy
 
 - All warnings must be explicitly addressed - never silently ignored
