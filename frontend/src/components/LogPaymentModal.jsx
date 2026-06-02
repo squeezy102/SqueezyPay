@@ -49,8 +49,9 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
     paymentMethod:      "",
     notes:              "",
   });
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState(null);
+  const [saving, setSaving]   = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError]     = useState(null);
 
   useEffect(() => {
     getCredentialByBill(bill.id).then(setCredential);
@@ -86,7 +87,8 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
       setError("Failed to save. Please try again.");
       return;
     }
-    onLogged(result);
+    setSuccess(true);
+    setTimeout(() => onLogged(result), 1500);
   }
 
   return (
@@ -249,22 +251,31 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Skip documentation
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold py-2.5 transition-colors"
-            >
-              {saving ? "Saving…" : "Save Payment"}
-            </button>
-          </div>
+          {success ? (
+            <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-semibold">Payment saved!</span>
+            </div>
+          ) : (
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Skip documentation
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold py-2.5 transition-colors"
+              >
+                {saving ? "Saving…" : "Save Payment"}
+              </button>
+            </div>
+          )}
         </form>
 
       </div>

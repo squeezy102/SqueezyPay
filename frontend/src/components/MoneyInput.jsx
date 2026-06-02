@@ -1,52 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-function centsToDisplay(cents) {
-  const dollars = Math.floor(cents / 100);
-  const c = cents % 100;
-  return `$${dollars.toLocaleString()}.${String(c).padStart(2, "0")}`;
-}
+export default function MoneyInput({ value, onChange, required, className = "" }) {
+  const [raw, setRaw] = useState(() => value > 0 ? value.toFixed(2) : "");
 
-export default function MoneyInput({ value, onChange, placeholder = "$0.00", required, className = "" }) {
-  // value is a float (dollars). internally we work in integer cents.
-  const [cents, setCents] = useState(() => Math.round((value ?? 0) * 100));
-  const [focused, setFocused] = useState(false);
+  function handleChange(e) {
+    const val = e.target.value;
+    setRaw(val);
+    const parsed = parseFloat(val);
+    onChange(!isNaN(parsed) && parsed >= 0 ? parsed : 0);
+  }
 
-  useEffect(() => {
-    setCents(Math.round((value ?? 0) * 100));
-  }, [value]);
-
-  function handleKeyDown(e) {
-    if (e.key >= "0" && e.key <= "9") {
-      e.preventDefault();
-      const next = Math.min(cents * 10 + Number(e.key), 9999999); // max ~$99,999.99
-      setCents(next);
-      onChange(next / 100);
-    } else if (e.key === "Backspace") {
-      e.preventDefault();
-      const next = Math.floor(cents / 10);
-      setCents(next);
-      onChange(next / 100);
-    } else if (e.key === "Delete") {
-      e.preventDefault();
-      setCents(0);
-      onChange(0);
+  function handleBlur() {
+    const parsed = parseFloat(raw);
+    if (!isNaN(parsed) && parsed >= 0) {
+      setRaw(parsed.toFixed(2));
+    } else {
+      setRaw("");
     }
   }
 
-  const display = focused || cents > 0 ? centsToDisplay(cents) : "";
-
   return (
-    <input
-      type="text"
-      inputMode="numeric"
-      value={display}
-      placeholder={placeholder}
-      required={required}
-      readOnly
-      onKeyDown={handleKeyDown}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      className={`rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-text ${className}`}
-    />
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400 pointer-events-none">$</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="0.01"
+        value={raw}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder="0.00"
+        required={required}
+        className={`rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm pl-7 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${className}`}
+      />
+    </div>
   );
 }

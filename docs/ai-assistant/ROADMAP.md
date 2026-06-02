@@ -174,6 +174,8 @@ architectural change if the data model wasn't designed for it. When building
 Phase 1, ensure bill and transaction records have an optional `created_by` field
 even if it isn't used yet. This prevents a painful migration later.
 
+- **Phase 1 - Concurrent bill editing:** SQLite serializes all writes so simultaneous payment logging is safe - both writes succeed and queue correctly. The one edge case is two users editing the same bill record simultaneously - last write wins silently. Acceptable for a two-person household but worth adding a `updated_at` check (optimistic locking) before bill management UI ships if this becomes a concern.
+
 - **Phase 1+ - Local DNS naming:** Users should not have to remember an IP address
 to access the app. Implement local DNS (e.g., `squeezypay.local` or `squeezypay`
 via .local mDNS or router DNS config). This is a UX priority for household use
