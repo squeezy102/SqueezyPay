@@ -33,8 +33,7 @@ with real data.
 - No login
 - Bills are hardcoded for the demo
 
-**Done when:** Wife installs it on her phone and pays at least one bill
-through it tonight.
+**Done when:** A household member installs it on their phone and navigates to a biller's payment page.
 
 ---
 
@@ -51,7 +50,9 @@ are encrypted. Payment history is logged.
 | Payment history log with confirmation numbers | REQ-003 | REQUIRED |
 | Secure credential vault (encrypted) | REQ-004 | REQUIRED |
 | Payment method storage (encrypted) | REQ-004 | REQUIRED |
+| Authentication (household passphrase) | REQ-016 | REQUIRED |
 | Due date alerts on dashboard | REQ-013 | GOOD START |
+| Notification infrastructure (SendGrid + SMS gateway setup) | REQ-017 | GOOD NEXT STEP |
 | Income tracking | REQ-010 | GOOD START |
 | Transaction categories | REQ-009 | REQUIRED |
 | Settings screen (basic) | REQ-015 | GOOD NEXT STEP |
@@ -78,6 +79,8 @@ Spending data flows automatically.
 | Transaction search and filter | REQ-006 | GOOD NEXT STEP |
 | Manual category override per transaction | REQ-009 | NICE TO HAVE |
 | Merchant category override rules | REQ-009 | NICE TO HAVE |
+| Spend and deposit notifications | REQ-017 | GOOD NEXT STEP |
+| Recurring transaction detection - auto-suggest bills from Plaid data | REQ-018 | GOOD NEXT STEP |
 
 **Done when:** The blame graph is live with real ECU transaction data
 and the household can have an honest spending conversation backed by numbers.
@@ -97,6 +100,9 @@ and the household can have an honest spending conversation backed by numbers.
 | Over-budget visual indicators | REQ-008 | NICE TO HAVE |
 | Net worth snapshot | REQ-011 | NICE TO HAVE |
 | Historical net worth line chart | REQ-011 | NICE TO HAVE |
+| Blame and spend report notifications | REQ-017 | GOOD NEXT STEP |
+| Custom report notifications | REQ-017 | NICE TO HAVE |
+| Cash flow calendar view (income + bills on a calendar) | REQ-005 | NICE TO HAVE |
 
 **Done when:** The household has a monthly budget set per category and
 can see at a glance how they're tracking against it.
@@ -115,11 +121,15 @@ spending insights, and a polished experience.
 | Shared vs. personal expense tagging | - | NICE TO HAVE |
 | User accounts / household member profiles | - | STRETCH GOAL |
 | External asset / liability tracking | REQ-011 | STRETCH GOAL |
-| External push notifications (bill reminders) | REQ-013 | STRETCH GOAL - wife specifically requested |
+| ~~External push notifications (bill reminders)~~ | ~~REQ-013~~ | Covered by REQ-017 |
 | ~~Dark mode~~ | - | ~~STRETCH GOAL~~ DONE |
 | Export data to CSV | - | STRETCH GOAL |
+| Card scanning for payment method entry (camera + client-side OCR) | REQ-004 | STRETCH GOAL |
+| Community-maintained OAuth biller catalog | - | STRETCH GOAL |
+| Companion browser extension - Edge, Chrome, Safari (seamless biller login from vault) | - | STRETCH GOAL |
+| Streamlined setup / installer script | - | GOOD NEXT STEP |
 | ~~Local admin dashboard (service management)~~ | - | ~~STRETCH GOAL~~ PULLED FORWARD - BASIC VERSION DONE |
-| ~~Auto-start on Windows login~~ | - | ~~REQUIRED (next session)~~ DONE |
+| Auto-start on Windows login | - | REQUIRED (next session) |
 | Admin dashboard - metrics and graphs | - | GOOD NEXT STEP |
 | Admin dashboard - CPU/memory monitoring | - | NICE TO HAVE |
 
@@ -173,8 +183,6 @@ this clearly - projections are approximations, not guarantees.
 architectural change if the data model wasn't designed for it. When building
 Phase 1, ensure bill and transaction records have an optional `created_by` field
 even if it isn't used yet. This prevents a painful migration later.
-
-- **Phase 1 - Concurrent bill editing:** SQLite serializes all writes so simultaneous payment logging is safe - both writes succeed and queue correctly. The one edge case is two users editing the same bill record simultaneously - last write wins silently. Acceptable for a two-person household but worth adding a `updated_at` check (optimistic locking) before bill management UI ships if this becomes a concern.
 
 - **Phase 1+ - Local DNS naming:** Users should not have to remember an IP address
 to access the app. Implement local DNS (e.g., `squeezypay.local` or `squeezypay`

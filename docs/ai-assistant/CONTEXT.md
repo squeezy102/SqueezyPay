@@ -39,9 +39,9 @@ Running notes for AI assistant continuity across sessions.
 - Income management view (`IncomeManagement.jsx`) - monthly total summary bar, table, show/hide inactive toggle; `IncomeFormModal.jsx` for add/edit
 - Settings page (`Settings.jsx`) - Alert Thresholds card (due-soon days, large payment threshold with save confirmation); Transaction Categories card (inline add/edit, 409 conflict messaging)
 - Dashboard filtered to bills due within N days (configurable via settings) + overdue; hidden bills expand/collapse toggle (chevron button reveals upcoming bills grid)
-- Alert banners on dashboard: overdue (red), due-soon (amber), large payment (blue) - full-width `AlertBanner` components; thresholds loaded from live settings
+- Alert banners on dashboard: overdue, due-soon, large payment - neutral card style, colored icon conveys criticality; thresholds loaded from live settings
 - Dark mode toggle - defaults to system preference, persists in localStorage
-- Design token system (`src/theme/tokens.js`) - all colors in one place, including `alertBannerTokens`
+- Design token system (`src/theme/tokens.js`) - all colors in one place; `cardClass` for uniform card backgrounds, `alertBannerTokens` for banner styling, `actionTokens` for buttons
 - API integration layer (`src/utils/api.js`) - snake_case → camelCase mapping, uses `window.location.hostname` so mobile (local IP) works
 - PWA manifest for home screen install
 - Viewport locked (`user-scalable=no`) to prevent mobile wiggle
@@ -85,46 +85,18 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
-**REQ-013: Due Date Alerts:**
-- Fixed overdue detection bug in `billUtils.js` — `getDueDate` was rolling past-due bills to next month, so overdue was never triggered. Now uses `getCurrentCycleDueDate` (no rollover) for status, `getDueDate` (with rollover) only for display.
-- `getBillStatus` now accepts a `dueSoonDays` param (default 7).
-- Redesigned alert bar on `BillDashboard` — replaced orphaned pills + plain text with cohesive full-width `AlertBanner` components (overdue = red, due-soon = amber, large payment = blue). Tokens in `alertBannerTokens` in `tokens.js`.
-- Added expand/collapse toggle for hidden bills — chevron button reveals/hides the upcoming bills grid.
-- Large payment alert wired up — uses `largePaymentThreshold` from live settings.
-
-**BillRepository (tech debt resolved):**
-- Created `backend/repositories/bill_repository.py` — `BillRepository` with get_all, get_by_id, create, update, deactivate, reactivate.
-- Refactored `backend/services/bill_service.py` to delegate all ORM access to `BillRepository`. Public interface unchanged.
-
-**REQ-010: Income Tracking:**
-- `backend/repositories/income_repository.py` — `IncomeRepository`
-- `backend/services/income_service.py` — `IncomeService` with `get_monthly_total` computing estimated monthly income from frequency
-- `backend/api/income.py` — full CRUD + `/monthly-total` endpoint (defined before `/{id}` to avoid routing collision)
-- Registered in `main.py`
-- `frontend/src/components/IncomeManagement.jsx` — income page with monthly total summary bar, table, show/hide inactive toggle
-- `frontend/src/components/IncomeFormModal.jsx` — add/edit modal
-- Wired into `App.jsx` and `NavBar.jsx` (Income tab)
-
-**REQ-015: Settings:**
-- Added `Setting` model to `models.py` (key/value store, key is primary key)
-- `backend/repositories/settings_repository.py` — `SettingsRepository` with get, set (upsert), get_all
-- `backend/services/settings_service.py` — `SettingsService`, returns typed dict, defaults if key missing
-- `backend/api/settings.py` — GET/PUT `/api/settings/`
-- `backend/repositories/category_repository.py` — `CategoryRepository` (get_all, get_by_id, get_by_name, create, update — no delete)
-- `backend/services/category_service.py` — `CategoryService`, rejects duplicate names with ValueError, no delete
-- `backend/api/categories.py` — GET/POST/PUT `/api/categories/` (409 on duplicate, no delete endpoint)
-- Default settings seeded in `db.py` `_seed_default_settings()`: `due_soon_days=7`, `large_payment_threshold=500.0`
-- Registered both routers in `main.py`
-- `frontend/src/components/Settings.jsx` — two-section settings page: Alert Thresholds card + Transaction Categories card
-- Wired into `App.jsx` and `NavBar.jsx` (Settings tab, gear icon)
-- `BillDashboard.jsx` now fetches live settings on load; passes `dueSoonDays` to `filterActionableBills` and `getBillStatus`, and `largePaymentThreshold` to the large payment filter. `BillCard` accepts `dueSoonDays` prop.
-
-**Tests added:**
-- `backend/tests/test_income.py` — 12 tests, full coverage of Income API including monthly total calculation
-- `backend/tests/test_bill_repository.py` — 2 smoke tests
-- `backend/tests/test_settings.py` — Settings API coverage
-- `backend/tests/test_categories.py` — Categories API coverage including duplicate/rename edge cases
-- `api.js` additions: `getIncome`, `createIncome`, `updateIncome`, `deactivateIncome`, `reactivateIncome`, `getMonthlyTotal`, `getSettings`, `updateSettings`, `getCategories`, `createCategory`, `updateCategory`
+**Frontend retheme - SNES-inspired design system:**
+- Full color scheme overhaul across all frontend components
+- Sidebar: deep SNES violet (`violet-900`) with violet-tinted nav states; teal action buttons (`teal-600`) throughout
+- Page backgrounds: `violet-50` light / `slate-950` dark
+- All `gray-*` replaced with `slate-*`; all `indigo-*` replaced with `violet-*` (accents) or `teal-*` (buttons)
+- `cardClass` token added to `tokens.js` — single uniform card style (`white / slate-800`) used everywhere
+- Bill cards: removed status-driven colored backgrounds; all cards now same neutral color; status conveyed by badge only
+- Category badges removed from bill dashboard cards — reduced visual noise
+- Alert banners: removed colored backgrounds; neutral card style with colored icons only (red=overdue, amber=due-soon, violet=large payment)
+- `statusTokens.card` removed — no component reads card background from status tokens anymore
+- All modal components (`LogPaymentModal`, `BillFormModal`, `IncomeFormModal`) updated to slate palette
+- Mobile top bar matches sidebar violet treatment
 
 ---
 
@@ -137,8 +109,9 @@ Phase 1 is complete. All REQs have been built.
 ## Next Session Priorities
 
 1. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Needs a card-based or condensed layout for small screens. Deferred by user.
-2. **Phase 2 planning: Plaid** - verify Example Credit Union Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
-3. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
+2. **Tech debt: mobile bill management table** - likely same issue as payment history, not yet tested on mobile.
+3. **Phase 2 planning: Plaid** - verify Example Credit Union Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+4. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 

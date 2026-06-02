@@ -26,7 +26,7 @@ export default function MoneyInput({ value, onChange, required, className = "" }
 
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400 pointer-events-none">$</span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400 pointer-events-none">$</span>
       <input
         type="number"
         inputMode="decimal"
@@ -37,7 +37,7 @@ export default function MoneyInput({ value, onChange, required, className = "" }
         onBlur={handleBlur}
         placeholder="0.00"
         required={required}
-        className={`rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm pl-7 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${className}`}
+        className={`rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm pl-7 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 ${className}`}
       />
     </div>
   );

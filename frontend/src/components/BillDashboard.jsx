@@ -72,7 +72,7 @@ export default function BillDashboard() {
   const hasAlerts = overdue.length > 0 || dueSoon.length > 0 || largePending.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">
       <main className="px-6 py-5 flex flex-col gap-4">
 
         {hasAlerts && (
@@ -113,14 +113,14 @@ export default function BillDashboard() {
               onClick={() => setShowAll((v) => !v)}
               className="group w-full flex items-center gap-3 py-1"
             >
-              <span className="flex-1 h-px bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 transition-colors" />
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 group-hover:border-indigo-400 dark:group-hover:border-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-colors text-xs font-medium text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+              <span className="flex-1 h-px bg-violet-200 dark:bg-slate-700 group-hover:bg-violet-300 dark:group-hover:bg-slate-600 transition-colors" />
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-200 dark:border-slate-700 bg-white dark:bg-slate-800 group-hover:border-violet-400 dark:group-hover:border-violet-500 group-hover:bg-violet-50 dark:group-hover:bg-violet-900/20 transition-colors text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-violet-700 dark:group-hover:text-violet-400">
                 <ChevronIcon open={showAll} />
                 {showAll
                   ? "Hide upcoming bills"
                   : `${upcoming.length} upcoming ${upcoming.length === 1 ? "bill" : "bills"}`}
               </span>
-              <span className="flex-1 h-px bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 transition-colors" />
+              <span className="flex-1 h-px bg-violet-200 dark:bg-slate-700 group-hover:bg-violet-300 dark:group-hover:bg-slate-600 transition-colors" />
             </button>
 
             {showAll && (

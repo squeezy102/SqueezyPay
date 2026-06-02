@@ -29,7 +29,7 @@ function CopyButton({ text }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+      className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
     >
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -93,7 +93,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md flex flex-col">
 
         {/* ── TOP HALF - GO PAY ───────────────────────────────────── */}
         <div className="px-6 pt-5 pb-6 flex flex-col gap-4">
@@ -101,14 +101,13 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
           {/* Header row */}
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">Step 1 — Go pay</p>
-
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mt-0.5">{bill.name}</h2>
+              <p className="text-xs font-semibold uppercase tracking-wide text-violet-500 dark:text-violet-400">Step 1 — Go pay</p>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">{bill.name}</h2>
               {bill.amountLabel && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{bill.amountLabel} expected</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{bill.amountLabel} expected</p>
               )}
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors mt-0.5" aria-label="Close">
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors mt-0.5" aria-label="Close">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
@@ -116,35 +115,35 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
           </div>
 
           {/* Credentials */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             <button
               type="button"
               onClick={() => setShowCreds((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
             >
               <span className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
                 </svg>
                 {credential ? "Show credentials" : "No credentials stored"}
               </span>
               {credential && (
-                <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-gray-400 transition-transform ${showCreds ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-slate-400 transition-transform ${showCreds ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               )}
             </button>
 
             {showCreds && credential && (
-              <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-col gap-2 bg-gray-50 dark:bg-gray-900/40">
+              <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3 flex flex-col gap-2 bg-slate-50 dark:bg-slate-900/40">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">Username</span>
-                  <span className="flex-1 text-sm text-gray-900 dark:text-white font-mono truncate">{credential.username}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 w-20 shrink-0">Username</span>
+                  <span className="flex-1 text-sm text-slate-900 dark:text-white font-mono truncate">{credential.username}</span>
                   <CopyButton text={credential.username} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">Password</span>
-                  <span className="flex-1 text-sm text-gray-900 dark:text-white font-mono">••••••••</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 w-20 shrink-0">Password</span>
+                  <span className="flex-1 text-sm text-slate-900 dark:text-white font-mono">••••••••</span>
                   <CopyButton text={credential.password} />
                 </div>
               </div>
@@ -155,7 +154,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
           <button
             type="button"
             onClick={handleGoToBiller}
-            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold py-3 flex items-center justify-center gap-2 transition-colors"
+            className="w-full rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-sm font-semibold py-3 flex items-center justify-center gap-2 transition-colors"
           >
             Go to {bill.name}
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -166,8 +165,8 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
 
         {/* ── DIVIDER ─────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 px-6">
-          <span className="text-xs font-semibold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">Step 2 — Log it</span>
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-violet-500 dark:text-violet-400">Step 2 — Log it</span>
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
         </div>
 
         {/* ── BOTTOM HALF - LOG PAYMENT ───────────────────────────── */}
@@ -175,17 +174,17 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Date Paid</label>
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Date Paid</label>
               <input
                 type="date"
                 value={form.paymentDate}
                 onChange={(e) => set("paymentDate", e.target.value)}
                 required
-                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Amount Paid</label>
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Amount Paid</label>
               <MoneyInput
                 value={form.amountPaid}
                 onChange={(v) => set("amountPaid", v)}
@@ -196,27 +195,27 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Confirmation Number <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Confirmation Number <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={form.confirmationNumber}
               onChange={(e) => set("confirmationNumber", e.target.value)}
               placeholder="Enter after paying"
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Payment Method <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Payment Method <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             {paymentMethods.length > 0 ? (
               <select
                 value={form.paymentMethod}
                 onChange={(e) => set("paymentMethod", e.target.value)}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
                 <option value="">Select a payment method</option>
                 {paymentMethods.map((m) => (
@@ -231,21 +230,21 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
                 value={form.paymentMethod}
                 onChange={(e) => set("paymentMethod", e.target.value)}
                 placeholder="e.g. ECU Visa, Joint Checking"
-                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Notes <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Notes <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <textarea
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
               rows={2}
               placeholder="Anything worth noting"
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
             />
           </div>
 
@@ -263,14 +262,14 @@ export default function LogPaymentModal({ bill, onClose, onLogged }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="flex-1 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-300 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
               >
                 Skip documentation
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold py-2.5 transition-colors"
+                className="flex-1 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-semibold py-2.5 transition-colors"
               >
                 {saving ? "Saving…" : "Save Payment"}
               </button>

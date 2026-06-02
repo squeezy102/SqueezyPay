@@ -76,7 +76,7 @@ function DarkModeToggle() {
     <button
       onClick={toggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="rounded-full p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition-colors"
+      className="rounded-full p-2 text-violet-200 hover:text-white hover:bg-violet-700 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition-colors"
     >
       {dark ? (
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -94,8 +94,8 @@ function DarkModeToggle() {
 // ── Desktop sidebar ───────────────────────────────────────────────────────────
 export function Sidebar({ active, onChange }) {
   return (
-    <aside className="hidden lg:flex flex-col w-56 shrink-0 fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40">
-      <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+    <aside className="hidden lg:flex flex-col w-56 shrink-0 fixed top-0 left-0 h-full bg-violet-900 dark:bg-slate-900 z-40">
+      <div className="px-4 py-4 border-b border-violet-800 dark:border-slate-700">
         <img src="/logo.png" alt="SqueezyPay" className="w-full object-contain" />
       </div>
 
@@ -110,24 +110,24 @@ export function Sidebar({ active, onChange }) {
               title={tab.disabled ? "Coming soon" : undefined}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left
                 ${tab.disabled
-                  ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                  ? "text-violet-600 dark:text-slate-600 cursor-not-allowed"
                   : isActive
-                    ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200"
+                    ? "bg-violet-700 dark:bg-violet-900/50 text-white dark:text-violet-300"
+                    : "text-violet-200 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white dark:hover:text-slate-200"
                 }`}
             >
               {tab.icon}
               {tab.label}
               {tab.disabled && (
-                <span className="ml-auto text-xs text-gray-300 dark:text-gray-600">Soon</span>
+                <span className="ml-auto text-xs text-violet-600 dark:text-slate-600">Soon</span>
               )}
             </button>
           );
         })}
       </nav>
 
-      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <span className="text-xs text-gray-400 dark:text-gray-500">Theme</span>
+      <div className="px-4 py-3 border-t border-violet-800 dark:border-slate-700 flex items-center justify-between">
+        <span className="text-xs text-violet-300 dark:text-slate-500">Theme</span>
         <DarkModeToggle />
       </div>
       <AdminLink />
@@ -154,13 +154,13 @@ function AdminLink() {
   }, []);
 
   return (
-    <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
+    <div className="px-4 py-2.5 border-t border-violet-800 dark:border-slate-700 flex items-center gap-2">
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-        up === true  ? "bg-green-500" :
-        up === false ? "bg-red-400"   : "bg-gray-400"
+        up === true  ? "bg-green-400" :
+        up === false ? "bg-red-400"   : "bg-violet-500"
       }`} />
       {up === false ? (
-        <span className="text-xs text-gray-400 dark:text-gray-500" title="Admin server not running">
+        <span className="text-xs text-violet-400 dark:text-slate-500" title="Admin server not running">
           Admin offline
         </span>
       ) : (
@@ -168,7 +168,7 @@ function AdminLink() {
           href="http://localhost:9000"
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-gray-400 dark:text-gray-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          className="text-xs text-violet-300 dark:text-slate-500 hover:text-white dark:hover:text-violet-400 transition-colors"
         >
           Admin dashboard →
         </a>
@@ -183,13 +183,13 @@ export function MobileTopBar({ active, onChange }) {
 
   return (
     <>
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 h-14">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-violet-900 dark:bg-slate-900 border-b border-violet-800 dark:border-slate-700 flex items-center justify-between px-4 h-14">
         <img src="/logo.png" alt="SqueezyPay" className="h-8 object-contain" />
         <div className="flex items-center gap-1">
           <DarkModeToggle />
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="rounded-full p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="rounded-full p-2 text-violet-200 hover:text-white hover:bg-violet-800 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition-colors"
             aria-label="Menu"
           >
             {menuOpen ? (
@@ -207,7 +207,7 @@ export function MobileTopBar({ active, onChange }) {
 
       {/* Dropdown menu */}
       {menuOpen && (
-        <div className="lg:hidden fixed top-14 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2 flex flex-col gap-1 shadow-lg">
+        <div className="lg:hidden fixed top-14 left-0 right-0 z-40 bg-violet-900 dark:bg-slate-900 border-b border-violet-800 dark:border-slate-700 px-3 py-2 flex flex-col gap-1 shadow-lg">
           {tabs.map((tab) => {
             const isActive = active === tab.id;
             return (
@@ -217,15 +217,15 @@ export function MobileTopBar({ active, onChange }) {
                 disabled={tab.disabled}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left
                   ${tab.disabled
-                    ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                    ? "text-violet-600 dark:text-slate-600 cursor-not-allowed"
                     : isActive
-                      ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                      : "text-gray-600 dark:text-gray-400"
+                      ? "bg-violet-700 dark:bg-violet-900/50 text-white dark:text-violet-300"
+                      : "text-violet-200 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white"
                   }`}
               >
                 {tab.icon}
                 {tab.label}
-                {tab.disabled && <span className="ml-auto text-xs text-gray-300 dark:text-gray-600">Coming soon</span>}
+                {tab.disabled && <span className="ml-auto text-xs text-violet-600 dark:text-slate-600">Coming soon</span>}
               </button>
             );
           })}

@@ -49,19 +49,19 @@ export default function BillManagement() {
   const inactive = bills.filter((b) => !b.active);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors px-6 py-5">
+    <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors px-6 py-5">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bills</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Bills</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             {active.length} active{inactive.length > 0 ? `, ${inactive.length} inactive` : ""}
           </p>
         </div>
         <button
           onClick={() => setModalBill(null)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -82,7 +82,7 @@ export default function BillManagement() {
       {/* Inactive bills */}
       {inactive.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
             Inactive
           </h2>
           <BillTable bills={inactive} onEdit={setModalBill} onToggle={handleToggleActive} dimmed />
@@ -105,10 +105,10 @@ function BillTable({ bills, onEdit, onToggle, dimmed = false }) {
   if (!bills.length) return null;
 
   return (
-    <div className={`rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ${dimmed ? "opacity-60" : ""}`}>
+    <div className={`rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden ${dimmed ? "opacity-60" : ""}`}>
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-100 dark:bg-gray-800 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <tr className="bg-slate-50 dark:bg-slate-800/80 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
             <th className="px-4 py-3">Biller</th>
             <th className="px-4 py-3 hidden sm:table-cell">Category</th>
             <th className="px-4 py-3 hidden md:table-cell">Due</th>
@@ -117,13 +117,13 @@ function BillTable({ bills, onEdit, onToggle, dimmed = false }) {
             <th className="px-4 py-3 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
           {bills.map((bill) => (
-            <tr key={bill.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-              <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
+            <tr key={bill.id} className="hover:bg-violet-50/60 dark:hover:bg-slate-700/50 transition-colors">
+              <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                 {bill.name}
                 {bill.notes && (
-                  <span className="block text-xs text-gray-400 dark:text-gray-500 font-normal mt-0.5 truncate max-w-[180px]">
+                  <span className="block text-xs text-slate-400 dark:text-slate-500 font-normal mt-0.5 truncate max-w-[180px]">
                     {bill.notes}
                   </span>
                 )}
@@ -131,13 +131,13 @@ function BillTable({ bills, onEdit, onToggle, dimmed = false }) {
               <td className="px-4 py-3 hidden sm:table-cell">
                 <CategoryBadge category={bill.category} />
               </td>
-              <td className="px-4 py-3 hidden md:table-cell text-gray-600 dark:text-gray-400">
+              <td className="px-4 py-3 hidden md:table-cell text-slate-600 dark:text-slate-400">
                 Day {bill.dayOfMonth}
               </td>
-              <td className="px-4 py-3 hidden md:table-cell text-gray-600 dark:text-gray-400">
+              <td className="px-4 py-3 hidden md:table-cell text-slate-600 dark:text-slate-400">
                 {bill.amountLabel}
               </td>
-              <td className="px-4 py-3 hidden lg:table-cell text-gray-500 dark:text-gray-400">
+              <td className="px-4 py-3 hidden lg:table-cell text-slate-500 dark:text-slate-400">
                 {bill.recurring ? "Yes" : "No"}
               </td>
               <td className="px-4 py-3">
@@ -145,7 +145,7 @@ function BillTable({ bills, onEdit, onToggle, dimmed = false }) {
                   <button
                     onClick={() => onEdit(bill)}
                     title="Edit"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/30 transition-colors"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/30 transition-colors"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
@@ -156,8 +156,8 @@ function BillTable({ bills, onEdit, onToggle, dimmed = false }) {
                     title={bill.active ? "Deactivate" : "Reactivate"}
                     className={`p-1.5 rounded-lg transition-colors ${
                       bill.active
-                        ? "text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30"
-                        : "text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/30"
+                        ? "text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30"
+                        : "text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/30"
                     }`}
                   >
                     {bill.active ? (

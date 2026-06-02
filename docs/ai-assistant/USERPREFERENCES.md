@@ -16,18 +16,6 @@ not a developer
 
 ---
 
-## Permission Prompts
-
-Never ask for confirmation before making code changes, running CLI commands, git
-commands, Python, PowerShell, or any other operation. Just do it.
-
-The only exceptions - always prompt before:
-- Installing or uninstalling packages or dependencies (npm, pip, etc.)
-- Large sweeping changes that could break multiple areas of the app
-- Destructive operations: deleting files, dropping data, force-push, hard reset
-
----
-
 ## Communication Style
 
 - One instruction at a time - give one step, wait for confirmation, then give
@@ -43,30 +31,6 @@ non-obvious decisions
 
 ---
 
-## Agent Usage
-
-- Spawn subagents to parallelize independent work whenever possible
-- Good candidates: exploring multiple files simultaneously, running analysis
-  while writing code, read-only research while a build runs, any multi-part
-  task where steps don't depend on each other
-- Use the Explore subagent for broad codebase research spanning multiple files
-- Don't do sequentially what can be done in parallel
-
----
-
-## Warnings Policy
-
-- All warnings must be explicitly addressed - never silently ignored
-- This applies to every warning type: deprecation, runtime, compiler, linter,
-  test runner output, anything
-- Fix immediately when possible
-- If a fix must be deferred, call it out explicitly: what the warning is, why
-  it's being deferred, and log it as a known issue
-- The only exception: warnings originating inside third-party library code we
-  cannot modify - confirm they are not ours, note them, move on
-
----
-
 ## Technical Standards
 
 - Correct, scalable, industry-standard solutions - not quick hacks or band-aids
@@ -78,23 +42,6 @@ scripts
 what purpose they serve - e.g. `BillPaymentRepository` not `db_helper`
 - Structure code with testability in mind from the start
 - No unnecessary comments - only add a comment when the WHY is non-obvious
-
----
-
-## Testing Standards
-
-- **All code written must be tested.** Backend API tests are written alongside
-the code, in the same session, not deferred.
-- **Backend:** pytest + FastAPI TestClient against an in-memory SQLite database.
-Tests live in `backend/tests/`. Run with: `cd backend && .\venv\Scripts\pytest.exe -v`
-- **Test isolation:** Each test gets a fresh in-memory database via the `client`
-fixture in `conftest.py`. No test should depend on data from another test.
-- **Coverage target:** Every API endpoint must have a test. At minimum: happy
-path, not-found / 404 path, and any meaningful edge cases (optional fields, filters).
-- **Do not mock the database.** Tests hit real SQL against in-memory SQLite.
-Mocking the database was explicitly ruled out - it lets mock/real divergence hide bugs.
-- **Frontend:** Vitest for component logic, Playwright for E2E. Not yet
-implemented - add when frontend complexity warrants it.
 
 ---
 
@@ -120,8 +67,17 @@ tab to click, what the output looks like, and what to copy/paste back
 
 ## Git Commits and Branches
 
-- Work directly off `dev` branch - no feature branches, no PRs
-- Commit and push when it feels right - solo project, no collaborators
+**The one non-negotiable: never commit untested code. Anywhere. Ever.** If it hasn't been run and verified, it doesn't get committed - not to dev, not to master, not to a feature branch.
+
+**master** - tested, complete, meaningful, ready-to-ship code only. Never commit directly. Only receives merges from dev at real milestones.
+
+**dev** - where all work happens. Commit when it makes sense naturally - when a coherent chunk is done and working. Do not commit minor changes, one-liners, or in-progress work. Batch related changes together.
+
+- No PRs required for dev work - once changes are discussed and approved, push directly to dev
+- Merging dev to master does require confirmation - check with the user first, then do it. No formal GitHub PR needed, just explicit approval.
+- Short-lived feature/fix/docs/chore branches are optional for larger efforts - branch from dev, merge back when done
+- During major restructuring, intermediate commits are acceptable as safety checkpoints
+- Branch naming: `feature/`, `fix/`, `docs/`, `chore/` + short description
 
 ---
 

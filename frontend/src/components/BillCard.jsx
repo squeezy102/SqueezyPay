@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getBillStatus, getDaysUntilDue, formatDueDate } from "../utils/billUtils";
-import { categoryTokens, defaultCategoryToken, statusTokens, actionTokens } from "../theme/tokens";
+import { statusTokens, actionTokens, cardClass } from "../theme/tokens";
 import LogPaymentModal from "./LogPaymentModal";
 
 function StatusBadge({ status, daysUntil }) {
@@ -28,9 +28,6 @@ export default function BillCard({ bill, dueSoonDays = 7 }) {
   const dueDate   = formatDueDate(bill.dayOfMonth);
   const [showModal, setShowModal] = useState(false);
 
-  const cardClass     = statusTokens[status]?.card ?? statusTokens.upcoming.card;
-  const categoryClass = categoryTokens[bill.category] ?? defaultCategoryToken;
-
   function handlePayClick(e) {
     e.preventDefault();
     setShowModal(true);
@@ -38,20 +35,17 @@ export default function BillCard({ bill, dueSoonDays = 7 }) {
 
   return (
     <>
-      <div className={`rounded-2xl border ${cardClass} p-5 flex flex-col gap-3 shadow-sm transition-shadow hover:shadow-md`}>
+      <div className={`rounded-2xl ${cardClass} p-5 flex flex-col gap-3 shadow-sm transition-shadow hover:shadow-md`}>
         <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white leading-tight">{bill.name}</h2>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit ${categoryClass}`}>
-              {bill.category}
-            </span>
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white leading-tight">{bill.name}</h2>
           </div>
           <StatusBadge status={status} daysUntil={daysUntil} />
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
           <span>Due {dueDate}</span>
-          <span className="font-medium text-gray-700 dark:text-gray-200">{bill.amountLabel}</span>
+          <span className="font-medium text-slate-700 dark:text-slate-200">{bill.amountLabel}</span>
         </div>
 
         <button

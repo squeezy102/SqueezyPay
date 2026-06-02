@@ -11,7 +11,7 @@ function AppShell() {
   const [activeTab, setActiveTab] = useState("home");
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">
       <Sidebar active={activeTab} onChange={setActiveTab} />
       <MobileTopBar active={activeTab} onChange={setActiveTab} />
 

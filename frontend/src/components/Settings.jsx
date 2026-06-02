@@ -50,21 +50,21 @@ function AlertThresholdsCard() {
   }
 
   return (
-    <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Alert Thresholds</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+    <section className="rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+      <div className="px-5 py-4 border-b border-violet-100 dark:border-slate-700">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Alert Thresholds</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           Controls when warnings appear on your dashboard
         </p>
       </div>
 
       <form onSubmit={handleSave} className="px-5 py-5 space-y-5">
         {loading ? (
-          <p className="text-sm text-gray-400 dark:text-gray-500">Loading…</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">Loading…</p>
         ) : (
           <>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <label className="w-52 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
                 Due Soon Warning
               </label>
               <div className="flex items-center gap-2">
@@ -75,25 +75,25 @@ function AlertThresholdsCard() {
                   required
                   value={dueSoonDays}
                   onChange={(e) => setDueSoonDays(e.target.value)}
-                  className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  className="w-20 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
                 />
-                <span className="text-sm text-gray-500 dark:text-gray-400">days before due date</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">days before due date</span>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <label className="w-52 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
                 Large Payment Alert
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Flag payments over $</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">Flag payments over $</span>
                 <input
                   type="number"
                   min="1"
                   required
                   value={largePaymentThreshold}
                   onChange={(e) => setLargePayment(e.target.value)}
-                  className="w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  className="w-24 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
                 />
               </div>
             </div>
@@ -106,7 +106,7 @@ function AlertThresholdsCard() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white transition-colors disabled:opacity-60"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-60"
               >
                 {saving ? "Saving…" : "Save"}
               </button>
@@ -133,7 +133,6 @@ function CategoryRow({ category, onSaved }) {
     setDraft(category.name);
     setError(null);
     setEditing(true);
-    // Focus after render
     setTimeout(() => inputRef.current?.focus(), 0);
   }
 
@@ -167,7 +166,7 @@ function CategoryRow({ category, onSaved }) {
 
   if (editing) {
     return (
-      <li className="px-4 py-3 flex flex-col gap-1.5 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+      <li className="px-4 py-3 flex flex-col gap-1.5 border-b border-violet-100 dark:border-slate-700 last:border-b-0">
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -175,18 +174,18 @@ function CategoryRow({ category, onSaved }) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+            className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
           />
           <button
             onClick={save}
             disabled={saving}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white transition-colors disabled:opacity-60"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-60"
           >
             {saving ? "Saving…" : "Save"}
           </button>
           <button
             onClick={cancel}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             Cancel
           </button>
@@ -199,12 +198,12 @@ function CategoryRow({ category, onSaved }) {
   }
 
   return (
-    <li className="px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 last:border-b-0 group">
-      <span className="text-sm text-gray-800 dark:text-gray-200">{category.name}</span>
+    <li className="px-4 py-3 flex items-center justify-between border-b border-violet-100 dark:border-slate-700 last:border-b-0 group">
+      <span className="text-sm text-slate-800 dark:text-slate-200">{category.name}</span>
       <button
         onClick={startEdit}
         title="Edit category"
-        className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/30 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+        className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/30 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
       >
         <PencilIcon />
       </button>
@@ -244,7 +243,7 @@ function AddCategoryForm({ onSaved, onCancel }) {
   }
 
   return (
-    <li className="px-4 py-3 flex flex-col gap-1.5 border-b border-gray-100 dark:border-gray-700">
+    <li className="px-4 py-3 flex flex-col gap-1.5 border-b border-violet-100 dark:border-slate-700">
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
@@ -253,18 +252,18 @@ function AddCategoryForm({ onSaved, onCancel }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+          className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
         />
         <button
           onClick={save}
           disabled={saving || !name.trim()}
-          className="px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white transition-colors disabled:opacity-60"
+          className="px-3 py-1.5 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save"}
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
         >
           Cancel
         </button>
@@ -297,18 +296,18 @@ function CategoriesCard() {
   }
 
   return (
-    <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+    <section className="rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+      <div className="px-5 py-4 border-b border-violet-100 dark:border-slate-700 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Transaction Categories</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Transaction Categories</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Used to classify bills and payments
           </p>
         </div>
         {!adding && (
           <button
             onClick={() => setAdding(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -319,16 +318,16 @@ function CategoriesCard() {
       </div>
 
       {loading ? (
-        <p className="px-5 py-4 text-sm text-gray-400 dark:text-gray-500">Loading…</p>
+        <p className="px-5 py-4 text-sm text-slate-400 dark:text-slate-500">Loading…</p>
       ) : (
         <ul>
           {adding && (
             <AddCategoryForm onSaved={handleSaved} onCancel={() => setAdding(false)} />
           )}
           {categories.length === 0 && !adding ? (
-            <li className="px-5 py-6 text-sm text-gray-400 dark:text-gray-500 text-center">
+            <li className="px-5 py-6 text-sm text-slate-400 dark:text-slate-500 text-center">
               No categories yet.{" "}
-              <button onClick={() => setAdding(true)} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+              <button onClick={() => setAdding(true)} className="text-violet-600 dark:text-violet-400 hover:underline">
                 Add the first one
               </button>
             </li>
@@ -346,10 +345,10 @@ function CategoriesCard() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Settings() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors px-6 py-5">
+    <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors px-6 py-5">
       <div className="mb-6">
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
           App configuration and reference data
         </p>
       </div>

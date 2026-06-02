@@ -17,10 +17,10 @@ const EMPTY_FORM = {
 
 function fieldClass(hasError) {
   const base =
-    "w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors";
+    "w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors";
   return hasError
     ? `${base} border-red-400 dark:border-red-500`
-    : `${base} border-gray-300 dark:border-gray-600`;
+    : `${base} border-slate-300 dark:border-slate-600`;
 }
 
 export default function IncomeFormModal({ income, onSave, onClose }) {
@@ -91,16 +91,16 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             {isEdit ? "Edit Income Source" : "Add Income Source"}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -119,7 +119,7 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
 
           {/* Source Name */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Source Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -135,11 +135,11 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
           {/* Amount + Frequency row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Amount <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-gray-500 pointer-events-none">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 dark:text-slate-500 pointer-events-none">
                   $
                 </span>
                 <input
@@ -156,7 +156,7 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Frequency <span className="text-red-500">*</span>
               </label>
               <select
@@ -174,7 +174,7 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
 
           {/* Next Expected Date */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Next Expected Date <span className="text-red-500">*</span>
             </label>
             <input
@@ -189,18 +189,18 @@ export default function IncomeFormModal({ income, onSave, onClose }) {
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2 shrink-0">
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-50"
           >
             {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Income Source"}
           </button>

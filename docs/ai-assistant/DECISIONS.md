@@ -58,7 +58,21 @@ architectural decision should leave room for that growth without requiring a rew
 | React (frontend) | Component model is well-suited to a dashboard. Runs in any browser. PWA support for mobile home screen install. Large ecosystem. |
 | Fernet encryption (cryptography library) | Industry-standard symmetric encryption for credentials and payment methods at rest. Simple API, well-audited. |
 | Plaid API | Industry-standard bank data aggregator. Powers Venmo, Cash App, Robinhood. Free developer tier covers personal use. Supports Example Credit Union. Legal, stable, designed for this use case. |
+| SendGrid (email notifications) | Free tier (100 emails/day) is sufficient for household use. Each household configures their own account and API key - no shared infrastructure. Allows "SqueezyPay" display name on outbound email without requiring a custom domain. |
+| Email-to-SMS gateway | Carrier email gateway addresses (e.g. @txt.att.net) deliver SMS at no cost - no Twilio account, no API, no per-message fees. User configures their phone number and carrier once in settings. |
 | PWA (Progressive Web App) | Enables "Add to Home Screen" on iPhone and Android - looks and feels like a native app. No App Store, no install, no maintenance. Works on any browser. |
+| Platform target: Windows + iPhone | The app is designed, tested, and optimized for a Windows host machine and iPhone as the primary mobile client. Cross-platform support is not a goal. The code is open - other platforms can adapt it. |
+| Alembic | Database migration tool for SQLAlchemy. Schema will evolve throughout development - audit columns, new features, auth. Without Alembic, migrations on a live database with real data are manual and risky. Industry standard for SQLAlchemy projects. |
+| React Query (TanStack Query) | Industry standard for server state management in React. Handles caching, loading/error states, background refresh, and retries. Replaces manual useState + useEffect API call patterns. Added early before the codebase grows around the manual pattern. |
+| React Hook Form | Form state management library. Bill management, payment history, vault entry, and settings are all form-heavy. Add before the first form is written. |
+| Recharts | React-native charting library for the blame graph and budget visualizations (Phase 2+). Selected early so component design can account for it. |
+| pytest + pytest-asyncio | Backend testing stack. FastAPI async endpoints require pytest-asyncio. Required before Phase 1 ships given the "never commit untested code" rule. |
+| Vitest | Frontend unit testing, built for Vite. Fast, compatible with the existing toolchain. |
+| Playwright | End-to-end testing against the running app. For critical user flows (pay bill, log payment, vault access). Phase 1+ priority. |
+| GitHub Actions CI | Automated test gate on every push to dev and every PR to master. Runs pytest (backend) and Vitest (frontend). Coverage threshold enforced (80% target) - build fails if new code drops coverage, which is the enforcement mechanism for "never commit untested code." Branch protection on master requires CI to pass before merge. |
+| TypeScript (under consideration) | The frontend is currently plain JavaScript. TypeScript would catch type errors at compile time - the snake_case → camelCase mapping bug in api.js is exactly the kind of error TS prevents. Migration is feasible while the codebase is small. Decision deferred but the window is closing. |
+| PyJWT | JWT session token management for REQ-016 (authentication). Add when auth is implemented. |
+| slowapi | Rate limiting for FastAPI. Applied to the login endpoint when auth lands to prevent brute force. |
 
 ---
 
@@ -85,17 +99,7 @@ architectural decision should leave room for that growth without requiring a rew
 | Plaid integration as an isolated service | PlaidIntegrationService owns all Plaid API communication. Nothing else in the app knows about Plaid. Swapping or removing it later requires changing only one class. |
 | React component-per-feature structure | Each major feature (dashboard, bills, vault, transactions, blame graph) is its own component tree. Features don't bleed into each other. |
 | Environment variables for all secrets | Encryption key, Plaid credentials, and any future API keys live in a .env file that is gitignored. Never committed. |
-
----
-
-## Known Tech Debt
-
-| Item | Description | Priority |
-|---|---|---|
-| Mobile payment history table | Payment history table scrolls off-screen on mobile - not usable. Needs card-based or condensed layout for small screens. Deferred by user. | Phase 1 quality pass |
-| Mobile bill management table | Bill management table likely has the same mobile scrolling issue as payment history - not yet tested on mobile. | Phase 1 quality pass |
-| LF/CRLF line endings | Git warns on LF→CRLF conversion for every new file on Windows. Add `.gitattributes` with `* text=auto` to silence permanently. | Low - cosmetic |
-| Starlette httpx warning | `StarletteDeprecationWarning` from `starlette.testclient` - not our code. Requires FastAPI upgrade to resolve. | Low - third-party |
+| Audit columns on all tables | Every table carries `created_at`, `updated_at`, and `created_by`. Provides traceability and future-proofs for auth (REQ-016). `created_by` is nullable until auth is implemented. Last-accessed tracking is omitted - updating a row on every read is expensive and not useful at this scale. Compound correlation IDs are omitted - a UUID primary key is sufficient for a single-service app. |
 
 ---
 
@@ -146,10 +150,10 @@ These govern every UI decision. Non-negotiable.
 
 | Principle | Rule |
 |---|---|
-| Wife test | Every screen must be usable by a non-technical person with zero explanation. If it needs a label, add the label. If it needs a tooltip, add the tooltip. Assume nothing. |
+| Household usability test | Every screen must be usable by a non-technical household member with zero explanation. If it needs a label, add the label. If it needs a tooltip, add the tooltip. Assume nothing. |
 | One-click to action | The most common task (paying a bill) must never require more than two screens. The dashboard is the launchpad. |
 | Dark mode | The app supports light and dark mode. Dark mode is toggled by the user and the preference is persisted in localStorage. Default is system preference. |
-| Desktop first, iOS parity | Design for desktop first. Maintain as much parity with iOS as possible. Android is out of scope. Features that only work on desktop (browser extension, etc.) are acceptable but must be clearly scoped as desktop-only. |
+| Mobile first | Design for phone first. The app is primarily used on mobile devices by household members. Desktop is secondary. |
 | No jargon | Labels, buttons, and messages use plain English. No technical terms visible to end users. |
 | Forgiving UI | Destructive actions (delete, deactivate) require a confirmation step. No accidental data loss. |
 
@@ -179,7 +183,14 @@ Plaid flow:
 
 ## Branching Strategy
 
-Solo project, no collaborators. Work directly off `dev`. No feature branches, no PRs. Commit and push when it feels right.
+| Branch | Purpose |
+|---|---|
+| `master` | Tested, complete, ready-to-ship code only. Never commit directly. Receives merges from dev at real milestones. |
+| `dev` | Where all work happens. Commit at natural checkpoints. No PRs - push directly once changes are approved. |
+| `feature/short-description` | New features or enhancements |
+| `fix/short-description` | Bug fixes |
+| `docs/short-description` | Documentation changes only |
+| `chore/short-description` | Maintenance, cleanup, dependency updates |
 
 ---
 
@@ -187,18 +198,18 @@ Solo project, no collaborators. Work directly off `dev`. No feature branches, no
 
 | Decision | Why |
 |---|---|
-| Friction removal hierarchy for bill payment | The primary job of the app is to remove friction. There are four levels, in priority order:
-1. **Ideal:** Automated payment - user clicks "pay" and the app handles everything (requires biller API - Phase 1+ skip).
-2. **Fallback 1:** Auto-login - app opens biller login page and injects credentials automatically (requires desktop browser extension - planned, not yet built).
-3. **Fallback 2:** Assisted login - app opens the biller's payment page URL and displays stored credentials (username + password) with copy buttons so the user can paste manually. This is the current implemented behavior.
-4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces credentials. Used when no payment URL is stored.
-
-**Current credential UX (Phase 1):** The payment workflow modal shows a "Show Credentials" toggle. When expanded, username and password are each shown in their own field with a copy button. User copies one, switches tab, pastes, comes back, copies the other. Acknowledged as poor UX - a second-pass design discussion is explicitly wanted before this is considered final.
-
-**Mobile (iOS) credential limitation:** iOS clipboard holds one item at a time. There is no path to auto-fill credentials from a PWA into another Safari tab. The copy-paste flow requires two round trips between tabs. This is an open known issue with no good solution at the PWA layer. A native iOS app with Credential Provider Extension could solve it but that is out of scope. |
-| Platform targets | Desktop (Windows PC/laptop) first. iOS (iPhone/iPad) second. Android explicitly out of scope - no household members use Android. Browser extension features are desktop-only and should be clearly marked as such. PWA features should work on both desktop and iOS. |
+| Friction removal hierarchy for bill payment | Four-level priority order for how the app reduces friction when paying a bill. See below. |
 | PWA for mobile | A home screen icon that opens the app directly is the closest thing to a native app without an App Store submission. Essential for the "pay bills from your phone" use case. |
 | Blame graph by card, not by person | Cards are objective facts in the transaction data. Assigning blame by person requires a mapping that could cause friction. Card-level data is accurate and still tells the story. Users can draw their own conclusions about whose card is whose. |
 | Automatic Plaid categorization | Plaid returns merchant category codes with every transaction. Using these as the default category saves enormous manual effort and makes the blame graph useful from day one. Users can override categories. |
 | Bill amount: expected vs. actual | Fixed bills (Netflix) always match. Variable bills (Example Electric Co, electric) never do. Tracking both gives an accurate picture of projected vs. real cash flow. |
 | Income tracked alongside expenses | Spending percentages are meaningless without income context. Budget targets require knowing what the total is. Income is a first-class data point, not an afterthought. |
+
+## Bill Payment Friction Hierarchy
+
+The primary job of the app is to remove friction from bill payment. These four levels are in priority order - the app implements the highest level each biller supports.
+
+1. **Ideal:** Automated payment via biller API. **Out of scope.** No public biller payment API standard exists. Each integration would be hand-built per biller with no generalizable solution.
+2. **Fallback 1:** Seamless login - app navigates user directly to the biller's payment page already authenticated. Achievable for billers that support OAuth (OpenID Connect). Requires a community-maintained catalog of OAuth-capable billers; each entry is a per-biller integration. Browser autofill cannot be leveraged - browsers sandbox autofill by origin and a page at `localhost` cannot inject credentials into a biller's domain. A companion browser extension is the only architectural path to truly seamless cross-site credential fill (see roadmap - stretch goal).
+3. **Fallback 2:** One-click navigation - app opens the biller's payment URL, user logs in manually. Works for every biller with a website. Current default.
+4. **Last resort:** Home page + credentials - app opens the biller's home page and surfaces stored credentials for manual copy/paste. Vault copy-to-clipboard (REQ-004) supports this.
