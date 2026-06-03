@@ -24,7 +24,7 @@ These are infrastructure and tooling items that must be in place before Phase 2 
 | ~~React Query (TanStack Query)~~ | ~~Add before more API call patterns accumulate~~ DONE | ~~REQUIRED~~ |
 | ~~React Hook Form~~ | ~~Add before more forms are written~~ DONE | ~~REQUIRED~~ |
 | pytest + pytest-asyncio | Backend test infrastructure | REQUIRED |
-| ~~Vitest~~ | ~~Frontend unit test infrastructure~~ 16 tests for billUtils.ts; expand to api.ts next DONE | ~~REQUIRED~~ |
+| ~~Vitest~~ | ~~Frontend unit test infrastructure~~ 38 tests: 16 billUtils.ts + 22 api.ts DONE | ~~REQUIRED~~ |
 | ~~Ruff (Python linter)~~ | ~~pyproject.toml configured, all violations fixed, wired into CI~~ DONE | ~~REQUIRED~~ |
 | ~~ESLint + typescript-eslint~~ | ~~Frontend linter configured for .ts/.tsx, wired into CI~~ DONE | ~~REQUIRED~~ |
 | Recharts | Needed for Phase 2+ charts; add before Phase 2 begins | GOOD NEXT STEP |
