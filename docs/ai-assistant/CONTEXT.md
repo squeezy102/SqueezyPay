@@ -101,10 +101,10 @@ Running notes for AI assistant continuity across sessions.
 ## What Was Built This Session
 
 **Frontend start fix (admin dashboard):**
-- Root cause diagnosed: when admin server is launched via tray (shortcut/scheduled task), `os.environ` PATH is stripped. `_load_user_env()` reads the registry but the combined PATH still failed `where node` PATH resolution — Windows PATH search stops working past ~7 entries in a stripped-env subprocess chain.
-- Fix: `_find_nodejs_dir()` hardcodes search for `node.exe` at known install paths (`C:\Program Files\nodejs`). Frontend start now calls `node.exe vite.js` directly instead of the `cmd.exe → npm.cmd → vite.cmd → node` batch chain that failed.
-- `_find_npm()` similarly searches registry PATH + well-known fallbacks directly, bypassing `os.environ`.
-- `/api/debug/env` endpoint added (GET) — returns npm_resolved, node_exe, node_version, nodejs PATH entries. Useful for future debugging.
+- Root cause: `os.environ` on Windows has both `"PATH"` and `"Path"` as separate dict keys (Python dicts are case-sensitive; Windows env vars are not). `_load_user_env()` was building a dict with both keys present. `CreateProcess` passes both to the child and uses the last one — which was the original stripped `"Path"` value, silently discarding the reconstructed `"PATH"`.
+- Fix: uppercase all keys when building the env dict (`{k.upper(): v for k, v in ...}`). One canonical `"PATH"`, no duplicates, PATH search works correctly in all subprocesses.
+- Frontend launch stays as `cmd.exe /c npm run dev` — no hardcoded paths.
+- `/api/debug/env` endpoint added (GET) — returns npm_where, duplicate_path_keys, path_entry_count, nodejs PATH entries. Useful for future debugging.
 - Tested: 3/3 start/stop cycles pass via admin dashboard.
 
 **Tray icon tooltip:**

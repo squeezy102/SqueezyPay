@@ -55,9 +55,13 @@ def _load_user_env() -> dict:
     both the system PATH (HKLM) and user env vars (HKCU) such as
     SQUEEZYPAY_SECRET_KEY and SQUEEZYPAY_ENCRYPTION_KEY. Read both explicitly
     and merge them so child processes get a complete environment.
-    """
-    env = dict(os.environ)
 
+    All keys are uppercased. Windows env vars are case-insensitive at the OS
+    level but Python dicts are case-sensitive — without normalization, both
+    "PATH" and "Path" can exist in the dict. CreateProcess passes both to the
+    child, which uses the last one and ignores the earlier one, silently
+    discarding our constructed PATH.
+    """
     def _read_reg_env(hive, subkey: str) -> dict:
         result = {}
         try:
@@ -66,7 +70,7 @@ def _load_user_env() -> dict:
                 while True:
                     try:
                         name, value, _ = winreg.EnumValue(key, i)
-                        result[name] = os.path.expandvars(str(value))
+                        result[name.upper()] = os.path.expandvars(str(value))
                         i += 1
                     except OSError:
                         break
@@ -78,81 +82,20 @@ def _load_user_env() -> dict:
                              r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment")
     user_env = _read_reg_env(winreg.HKEY_CURRENT_USER, "Environment")
 
+    # Start from os.environ with all keys uppercased to eliminate duplicates.
+    env = {k.upper(): v for k, v in os.environ.items()}
+
     # Merge order: os.environ < system registry < user registry.
-    # PATH is special: combine all three deduplicated sources rather than letting one win.
-    # Read raw PATH values from registry directly to avoid expandvars misses.
-    def _reg_path_raw(hive, subkey: str) -> str:
-        try:
-            with winreg.OpenKey(hive, subkey) as key:
-                value, _ = winreg.QueryValueEx(key, "PATH")
-                return os.path.expandvars(str(value))
-        except OSError:
-            return ""
-
-    sys_path_raw  = _reg_path_raw(winreg.HKEY_LOCAL_MACHINE,
-                                  r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment")
-    user_path_raw = _reg_path_raw(winreg.HKEY_CURRENT_USER, "Environment")
-
     env.update(sys_env)
     env.update(user_env)
 
-    # Build PATH: start with system and user registry paths, then append current process PATH.
-    # Put nodejs dir first to ensure node resolves even if PATH search order is truncated.
-    nodejs_dir = _find_nodejs_dir()
-    base_paths = [nodejs_dir] if nodejs_dir else []
-    base_paths += [sys_path_raw, user_path_raw, os.environ.get("PATH", "")]
-    env["PATH"] = ";".join(p for p in base_paths if p)
+    # PATH is special: combine all three sources so nothing is lost.
+    orig_path = {k.upper(): v for k, v in os.environ.items()}.get("PATH", "")
+    sys_path  = sys_env.get("PATH", "")
+    user_path = user_env.get("PATH", "")
+    env["PATH"] = ";".join(p for p in [orig_path, sys_path, user_path] if p)
 
     return env
-
-
-def _find_nodejs_dir() -> str:
-    """Return the nodejs install directory (containing node.exe), or empty string."""
-    candidates = [
-        r"C:\Program Files\nodejs",
-        r"C:\Program Files (x86)\nodejs",
-    ]
-    for c in candidates:
-        if Path(c, "node.exe").exists():
-            return c
-    return ""
-
-
-def _find_npm() -> str:
-    """Locate npm.cmd by searching all PATH sources directly from the registry.
-
-    Reads system and user PATH from registry without relying on os.environ,
-    because the admin process may be launched with a stripped environment
-    that doesn't include the system PATH. Falls back to well-known locations
-    before giving up.
-    """
-    def _reg_path(hive, subkey: str) -> str:
-        try:
-            with winreg.OpenKey(hive, subkey) as key:
-                value, _ = winreg.QueryValueEx(key, "PATH")
-                return str(value)
-        except OSError:
-            return ""
-
-    sys_path = _reg_path(winreg.HKEY_LOCAL_MACHINE,
-                         r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment")
-    user_path = _reg_path(winreg.HKEY_CURRENT_USER, "Environment")
-    all_path = ";".join(p for p in [os.environ.get("PATH", ""), sys_path, user_path] if p)
-
-    for directory in all_path.split(";"):
-        candidate = Path(directory.strip()) / "npm.cmd"
-        if candidate.exists():
-            return str(candidate)
-
-    # Well-known fallback locations
-    for fallback in [
-        r"C:\Program Files\nodejs\npm.cmd",
-        r"C:\Program Files (x86)\nodejs\npm.cmd",
-    ]:
-        if Path(fallback).exists():
-            return fallback
-
-    return "npm.cmd"
 
 
 def _is_port_in_use(port: int) -> bool:
@@ -237,21 +180,10 @@ def start_service(service: str):
     if service == "frontend":
         if _process_alive("frontend") or _is_port_in_use(5173):
             return {"ok": False, "message": "Frontend is already running"}
-        nodejs_dir = _find_nodejs_dir()
-        if not nodejs_dir:
-            return {"ok": False, "message": "Node.js not found — install Node.js and try again"}
-        node_exe = str(Path(nodejs_dir) / "node.exe")
-        vite_js = str(FRONTEND_DIR / "node_modules" / "vite" / "bin" / "vite.js")
         env = _load_user_env()
-        # Ensure user profile vars are set so node can expand %USERPROFILE% in its cache path.
-        for var in ("USERPROFILE", "APPDATA", "LOCALAPPDATA", "TEMP", "TMP"):
-            if var not in env and var in os.environ:
-                env[var] = os.environ[var]
         log = _open_log("frontend")
-        # Invoke node directly to run vite — bypasses the batch-file PATH inheritance chain
-        # (npm.cmd → vite.cmd → node) that fails when the admin has a stripped environment.
         proc = subprocess.Popen(
-            [node_exe, vite_js],
+            ["cmd.exe", "/c", "npm", "run", "dev"],
             cwd=str(FRONTEND_DIR),
             env=env,
             stdout=log,
@@ -259,7 +191,7 @@ def start_service(service: str):
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
         )
         _processes["frontend"] = proc
-        return {"ok": True, "message": f"Frontend started (node: {node_exe})"}
+        return {"ok": True, "message": "Frontend started"}
 
     return {"ok": False, "message": f"Unknown service: {service}"}
 
@@ -351,29 +283,20 @@ def recent_logs(lines: int = 100):
 
 @app.get("/api/debug/env")
 def debug_env():
-    """Return resolved tool paths and key environment info for the admin server process."""
+    """Return key PATH info as seen by the admin server process."""
     env = _load_user_env()
-    npm_cmd = _find_npm()
-    nodejs_dir = _find_nodejs_dir()
-    node_exe = str(Path(nodejs_dir) / "node.exe") if nodejs_dir else None
+    path_entries = [p for p in env.get("PATH", "").split(";") if p.strip()]
     try:
         result = subprocess.run(
-            [node_exe, "--version"] if node_exe else ["node", "--version"],
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=5,
+            [r"C:\Windows\System32\where.exe", "npm"],
+            env=env, capture_output=True, text=True, timeout=5,
         )
-        node_version = result.stdout.strip() or result.stderr.strip()
+        npm_where = result.stdout.strip() or result.stderr.strip()
     except Exception as e:
-        node_version = f"error: {e}"
-    path_entries = [p for p in env.get("PATH", "").split(";") if p.strip()]
+        npm_where = f"error: {e}"
     return {
-        "npm_resolved": npm_cmd,
-        "npm_cmd_exists": Path(npm_cmd).exists() if npm_cmd != "npm.cmd" else False,
-        "node_exe": node_exe,
-        "node_exe_exists": Path(node_exe).exists() if node_exe else False,
-        "node_version": node_version,
+        "npm_where": npm_where,
+        "duplicate_path_keys": [k for k in env if k.upper() == "PATH"],
         "path_entry_count": len(path_entries),
         "nodejs_entries": [p for p in path_entries if "node" in p.lower() or "npm" in p.lower()],
     }
