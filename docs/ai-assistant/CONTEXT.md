@@ -100,6 +100,21 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
+**Codebase cleanup (no behaviour changes):**
+- `backend/core/constants.py` (new) — single source of truth for `DEFAULT_DUE_SOON_DAYS` and `DEFAULT_LARGE_PAYMENT_THRESHOLD`; consumed by `settings_service.py` and `db.py`
+- `ALGORITHM = "HS256"` deduplicated — lives only in `core/auth.py`, imported in `auth_service.py`
+- `_get_secret_key()` helper extracted in `auth_service.py` — removes repeated env lookups
+- `LOG_FILENAME`, `MAX_LOG_BYTES`, `LOG_BACKUP_COUNT` extracted in `logging_config.py`
+- `BACKEND_PORT = 8000`, `FRONTEND_PORT = 5173` extracted in `admin/main.py`; `/api/debug/env` endpoint removed (served its purpose)
+- `Bill.active == True` → `Bill.active.is_(True)` in both repositories
+- Frontend: `API_BASE` exported from `api.ts`, duplicate removed from `ErrorBoundary.tsx`
+- Frontend: `logApiError()` helper in `api.ts` replaces 20 inline `console.error` calls
+- Frontend: `TOKEN_STORAGE_KEY`, `UNAUTHORIZED_EVENT` extracted in `AuthContext.tsx`
+- Frontend: `THEME_STORAGE_KEY` extracted in `ThemeContext.tsx`
+- Frontend: `MS_PER_DAY` extracted in `billUtils.ts`
+- Scripts: `$maxRetries`/`$retryDelayMs` extracted in `launch-admin.ps1`; `_load_user_env` duplication in `tray.py` noted for future consolidation
+- Linter evaluation logged in `DECISIONS.md` (Ruff + ESLint, deferred to dedicated session)
+
 **Frontend start fix (admin dashboard):**
 - Root cause: `os.environ` on Windows has both `"PATH"` and `"Path"` as separate dict keys (Python dicts are case-sensitive; Windows env vars are not). `_load_user_env()` was building a dict with both keys present. `CreateProcess` passes both to the child and uses the last one — which was the original stripped `"Path"` value, silently discarding the reconstructed `"PATH"`.
 - Fix: uppercase all keys when building the env dict (`{k.upper(): v for k, v in ...}`). One canonical `"PATH"`, no duplicates, PATH search works correctly in all subprocesses.
@@ -235,6 +250,7 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 ## Next Session Priorities
 
 1. **React Hook Form** - add before more forms are written. Migrate BillFormModal, IncomeFormModal, LogPaymentModal, Settings.
+2. **Linter setup** - Ruff (Python) + ESLint/typescript-eslint (frontend). Dedicated session: configure rules, fix all violations, wire into CI. See DECISIONS.md for rationale.
 3. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
 5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
 6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.
