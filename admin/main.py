@@ -25,32 +25,72 @@ logging.getLogger("uvicorn.access").addFilter(_SuppressHealthPolling())
 ROOT = Path(__file__).parent.parent
 BACKEND_DIR = ROOT / "backend"
 FRONTEND_DIR = ROOT / "frontend"
-LOG_FILE = BACKEND_DIR / "logs" / "squeezypay.log"
+LOG_DIR = BACKEND_DIR / "logs"
+LOG_FILE = LOG_DIR / "squeezypay.log"
 VENV_PYTHON = BACKEND_DIR / "venv" / "Scripts" / "python.exe"
 
 _processes: dict[str, subprocess.Popen] = {}
+_log_handles: dict[str, object] = {}
+
+
+def _open_log(name: str):
+    """Open (or reopen) a rotating log file for a service subprocess."""
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    path = LOG_DIR / f"{name}.log"
+    # Close any previous handle before reopening
+    old = _log_handles.get(name)
+    if old:
+        try:
+            old.close()
+        except Exception:
+            pass
+    handle = open(path, "a", encoding="utf-8", buffering=1)
+    _log_handles[name] = handle
+    return handle
 
 
 def _load_user_env() -> dict:
-    """Read Windows user environment variables from the registry and merge with os.environ.
+    """Build a full environment by combining system + user registry env vars.
 
-    Start-Process does not guarantee user env vars are visible to child processes
-    when launched from a shortcut context. SQUEEZYPAY_SECRET_KEY and
-    SQUEEZYPAY_ENCRYPTION_KEY live in HKCU\Environment and must be explicitly loaded.
+    When launched from a shortcut or scheduled task, os.environ may be missing
+    both the system PATH (HKLM) and user env vars (HKCU) such as
+    SQUEEZYPAY_SECRET_KEY and SQUEEZYPAY_ENCRYPTION_KEY. Read both explicitly
+    and merge them so child processes get a complete environment.
     """
     env = dict(os.environ)
-    try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
-            i = 0
-            while True:
-                try:
-                    name, value, _ = winreg.EnumValue(key, i)
-                    env[name] = value
-                    i += 1
-                except OSError:
-                    break
-    except OSError:
-        pass
+
+    def _read_reg_env(hive, subkey: str) -> dict:
+        result = {}
+        try:
+            with winreg.OpenKey(hive, subkey) as key:
+                i = 0
+                while True:
+                    try:
+                        name, value, _ = winreg.EnumValue(key, i)
+                        result[name] = os.path.expandvars(str(value))
+                        i += 1
+                    except OSError:
+                        break
+        except OSError:
+            pass
+        return result
+
+    sys_env  = _read_reg_env(winreg.HKEY_LOCAL_MACHINE,
+                             r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment")
+    user_env = _read_reg_env(winreg.HKEY_CURRENT_USER, "Environment")
+
+    # Merge order: os.environ < system registry < user registry.
+    # PATH is special: combine all three rather than letting one win.
+    env.update(sys_env)
+    env.update(user_env)
+
+    paths = [
+        env.get("PATH", ""),
+        sys_env.get("PATH", ""),
+        user_env.get("PATH", ""),
+    ]
+    env["PATH"] = ";".join(p for p in paths if p)
+
     return env
 
 
@@ -121,11 +161,14 @@ def start_service(service: str):
         if _process_alive("backend") or _is_port_in_use(8000):
             return {"ok": False, "message": "Backend is already running"}
         env = {**_load_user_env(), "PYTHONUNBUFFERED": "1"}
+        log = _open_log("backend")
         proc = subprocess.Popen(
             [str(VENV_PYTHON), "main.py"],
             cwd=str(BACKEND_DIR),
             env=env,
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+            stdout=log,
+            stderr=log,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
         )
         _processes["backend"] = proc
         return {"ok": True, "message": "Backend started"}
@@ -133,10 +176,13 @@ def start_service(service: str):
     if service == "frontend":
         if _process_alive("frontend") or _is_port_in_use(5173):
             return {"ok": False, "message": "Frontend is already running"}
+        log = _open_log("frontend")
         proc = subprocess.Popen(
             ["cmd.exe", "/c", "npm", "run", "dev"],
             cwd=str(FRONTEND_DIR),
             env=_load_user_env(),
+            stdout=log,
+            stderr=log,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
         )
         _processes["frontend"] = proc
