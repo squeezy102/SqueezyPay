@@ -100,6 +100,13 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
+**Frontend start fix (admin dashboard):**
+- Root cause diagnosed: when admin server is launched via tray (shortcut/scheduled task), `os.environ` PATH is stripped. `_load_user_env()` reads the registry but the combined PATH still failed `where node` PATH resolution — Windows PATH search stops working past ~7 entries in a stripped-env subprocess chain.
+- Fix: `_find_nodejs_dir()` hardcodes search for `node.exe` at known install paths (`C:\Program Files\nodejs`). Frontend start now calls `node.exe vite.js` directly instead of the `cmd.exe → npm.cmd → vite.cmd → node` batch chain that failed.
+- `_find_npm()` similarly searches registry PATH + well-known fallbacks directly, bypassing `os.environ`.
+- `/api/debug/env` endpoint added (GET) — returns npm_resolved, node_exe, node_version, nodejs PATH entries. Useful for future debugging.
+- Tested: 3/3 start/stop cycles pass via admin dashboard.
+
 **Tray icon tooltip:**
 - Hover over tray icon now shows per-service status (Admin / Backend / Frontend with ●/○ indicators)
 - Updates every 4 seconds with the poll cycle
@@ -110,14 +117,6 @@ Running notes for AI assistant continuity across sessions.
 - `_is_port_in_use` now verifies owning pid is alive (avoids Windows stale socket false positives)
 - Subprocess stdout/stderr now piped to `backend/logs/backend.log` and `backend/logs/frontend.log`
 - `_load_user_env()` expanded to read both HKLM system env and HKCU user env and combine all PATH sources
-
-**KNOWN BROKEN - MUST FIX NEXT SESSION:**
-- Frontend still does not start from admin dashboard / tray
-- `frontend.log` shows: `'npm' is not recognized as an internal or external command`
-- Root cause: `cmd.exe` subprocess launched by the admin server is not inheriting PATH correctly even though nodejs IS in `os.environ` PATH when tested directly
-- Confirmed: `subprocess.run(['cmd.exe', '/c', 'where npm'], env=os.environ)` finds npm when run from terminal. Same call fails when admin server launches it as a subprocess.
-- Hypothesis: the admin server itself is launched by the tray with a stripped environment, and `os.environ` inside the admin process does not have the full PATH. `_load_user_env()` should fix this but something is still wrong.
-- Next session: add a debug endpoint to `/api/debug/env` that returns the PATH the admin server sees, compare with what terminal sees, and trace from there.
 
 **React Query (TanStack Query v5):**
 - `@tanstack/react-query@5.101.0` + `@tanstack/react-query-devtools@5.101.0` installed in `frontend/`
@@ -235,8 +234,7 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **BLOCKER: Fix frontend start from admin dashboard** - npm not found in subprocess PATH. Add `/api/debug/env` endpoint to the admin server, call it and compare PATH to what a terminal sees. Fix `_load_user_env()` or the subprocess launch so npm resolves. Test by starting/stopping frontend 3 times via the dashboard before declaring fixed.
-2. **React Hook Form** - add before more forms are written. Migrate BillFormModal, IncomeFormModal, LogPaymentModal, Settings.
+1. **React Hook Form** - add before more forms are written. Migrate BillFormModal, IncomeFormModal, LogPaymentModal, Settings.
 3. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
 5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
 6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.

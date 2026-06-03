@@ -23,6 +23,9 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Node compile cache artifacts (created if %USERPROFILE% is not expanded)
+frontend/%USERPROFILE%/
+
 # IDE
 .vscode/
 .idea/
