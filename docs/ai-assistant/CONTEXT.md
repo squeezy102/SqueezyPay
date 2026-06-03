@@ -100,13 +100,21 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
-**Admin dashboard — SMS-style activity log:**
-- Replaced ticker/idle/expand-collapse pattern with a single scrollable chat-style view
-- Frontend log entries bubble left (blue-tinted), backend log entries bubble right (green-tinted)
-- Date separators between days; auto-scroll pauses on manual scroll, resumes at bottom
-- Level filter checkboxes (INFO/WARN/ERROR) re-render full history when toggled
+**App tour findings — bugs fixed and UX improvements:**
+
+- **Hard delete for billers** — soft delete (activate/deactivate) removed entirely. Bills are hard-deleted with a confirmation dialog. No inactive state, no hidden rows, no toggle. `BillRepository.deactivate/reactivate` → `BillRepository.delete`. `active` field removed from `_to_dict`, `RawBill`, `Bill` type, and all API surfaces.
+- **204 parse crash fixed** — `deactivateBill` was calling `.json()` on a 204 No Content response. Renamed to `deleteBill`, returns `boolean`, no JSON parse.
+- **Verbose change logging** — `update_bill` now logs before/after values for every changed field (e.g. `name: 'Old' → 'New'`).
+- **Notes popover on bill management** — notepad icon in actions column: lit (violet) if note exists, dim if not. Click to open portal popover. Note text is click-to-edit inline (textarea + save/cancel). No separate modal. Notes field also retained in the full bill edit form.
+- **Loading state guards** — `Spinner` component added. `BillDashboard`, `PaymentHistory`, `IncomeManagement` block render until data is ready. No more mid-render flash.
+- **Browser password save prompt suppressed** — `autoComplete="off"` added to both auth forms.
+- **Docs updated** — CONTEXT, DECISIONS, ROADMAP, REQUIREMENTS all reflect tour decisions (hard delete, unified logging decision, light mode tech debt, etc.).
+
+**Previous session (RHF migration + admin dashboard chat log redesign):**
+
+**Admin dashboard — standard log view:**
+- Standard scrollable log view with level filter checkboxes (INFO/WARN/ERROR)
 - "View raw log" link opens `/api/logs/raw` (new endpoint) in a new tab — plain text, no styling
-- Idle state and animated ellipsis removed
 - `admin/main.py`: added `GET /api/logs/raw` endpoint
 
 **React Hook Form migration:**
@@ -260,8 +268,10 @@ Running notes for AI assistant continuity across sessions.
 
 ## Known Issues / Outstanding Bugs
 
-- **Rate limiter CORS bug (TOP PRIORITY next session):** slowapi returns a 429 when the login endpoint is hit more than 10 times/minute. FastAPI does not attach CORS headers to rate-limit error responses, so the browser sees a CORS failure instead of the actual 429. This is confusing and blocks debugging. Fix: either add CORS headers to slowapi error responses, or increase/remove the rate limit in dev mode. Discovered during debugging this session — pre-existing, not caused by RHF migration.
-- **App not smoke-tested end-to-end this session.** RHF migration completed and typecheck passed (0 errors), but login was blocked by the rate limiter bug during verification. Next session: confirm login works and core workflows function after the rate limiter fix.
+- **Rate limiter CORS bug:** slowapi returns a 429 when the login endpoint is hit more than 10 times/minute. FastAPI does not attach CORS headers to rate-limit error responses, so the browser sees a CORS failure instead of the actual 429. Fix: add CORS headers to slowapi error responses, or increase/remove the rate limit in dev mode.
+- **Deactivate bill — 204 parse crash:** `DELETE /api/bills/{id}` returns 204 No Content but `api.ts:deactivateBill` calls `.json()` on the empty response, throwing `SyntaxError: Unexpected end of JSON input`. Fix: skip `.json()` on 204.
+- **Mid-render flash:** Components render empty skeletons before data arrives. React Query `isLoading` state not guarded in most components — content draws itself on screen. Fix: add loading spinner/skeleton guards across all data-fetching components.
+- **Browser password save prompt:** Auth forms may trigger browser "save password" dialogs. Fix: `autoComplete="off"` on form element + `autoComplete="new-password"` on passphrase inputs.
 
 ---
 
@@ -277,11 +287,11 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 2. **Smoke test** - after rate limiter fix, confirm login works and core workflows function end-to-end.
 3. **Linter setup** - Ruff (Python) + ESLint/typescript-eslint (frontend). Dedicated session: configure rules, fix all violations, wire into CI. See DECISIONS.md for rationale.
 4. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
-5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
-6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.
-7. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings when doing the Settings pass.
-8. **Tech debt: mobile payment history table** - payment history table is not usable on mobile (scrolls off screen). Payment history is a core mobile workflow - needs a card-based or condensed layout for small screens.
-9. **Tech debt: mobile bill management table** - bill management (add/edit/deactivate) is desktop-only scope. Mobile only needs to view and pay bills, not manage them. Low priority.
+5. **Unified logging** - all surfaces (FastAPI request layer, backend services, frontend errors) feed one log. Add FastAPI request logging middleware writing to the same JSON log with `[REQUEST]` label. Add filter chip in admin dashboard. See DECISIONS.md.
+6. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
+7. **Tech debt: light mode UI overhaul** - Light mode is visually broken. Full design pass needed. Blocked on branding refactor above.
+8. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings.
+9. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
 10. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
 11. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 

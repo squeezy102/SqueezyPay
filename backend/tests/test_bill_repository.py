@@ -3,8 +3,8 @@ Smoke tests confirming BillRepository is correctly wired into BillService
 and accessible through the /api/bills endpoints.
 
 Coverage:
-- POST /api/bills/ then GET /api/bills/{id}          - data round-trips through repository
-- POST then DELETE then GET / vs GET /?include_inactive=true - deactivation visible correctly
+- POST /api/bills/ then GET /api/bills/{id}     - data round-trips through repository
+- POST then DELETE then GET /                   - deletion confirmed, bill gone from list
 """
 
 BILL_PAYLOAD = {
@@ -33,26 +33,21 @@ def test_bill_repository_create_and_retrieve(client):
     assert data["expected_amount"] == 79.99
     assert data["day_of_month"] == 15
     assert data["recurring"] is True
-    assert data["active"] is True
     assert data["notes"] == "Cable/internet"
 
 
-def test_bill_repository_deactivate(client):
+def test_bill_repository_delete(client):
     created = client.post("/api/bills/", json=BILL_PAYLOAD).json()
     bill_id = created["id"]
 
-    # Deactivate the bill
     delete_response = client.delete(f"/api/bills/{bill_id}")
     assert delete_response.status_code == 204
 
-    # Active-only list should NOT include the deactivated bill
-    active_response = client.get("/api/bills/")
-    assert active_response.status_code == 200
-    active_ids = [b["id"] for b in active_response.json()]
-    assert bill_id not in active_ids
-
-    # include_inactive=true SHOULD include the deactivated bill
-    all_response = client.get("/api/bills/?include_inactive=true")
+    # Bill should be gone from list
+    all_response = client.get("/api/bills/")
     assert all_response.status_code == 200
     all_ids = [b["id"] for b in all_response.json()]
-    assert bill_id in all_ids
+    assert bill_id not in all_ids
+
+    # Direct GET should 404
+    assert client.get(f"/api/bills/{bill_id}").status_code == 404

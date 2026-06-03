@@ -45,7 +45,7 @@ export default function SetupScreen() {
           Create a household passphrase to secure your financial data.
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col gap-4">
           <div>
             <label
               htmlFor="setup-passphrase"

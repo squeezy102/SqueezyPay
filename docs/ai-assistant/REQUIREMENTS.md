@@ -43,7 +43,7 @@ CRUD operations for managing the household bill list.
 
 ### Behavior
 
-- Bills can be added, edited, and deactivated (not hard-deleted)
+- Bills can be added, edited, and deleted
 - Recurring bills auto-generate the next due date after a payment is logged
 - One-time bills are marked complete after payment and removed from the active
 dashboard view

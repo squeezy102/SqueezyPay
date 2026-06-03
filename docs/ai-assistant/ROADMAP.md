@@ -67,7 +67,7 @@ are encrypted. Payment history is logged.
 | Feature | Requirement | Priority |
 |---|---|---|
 | FastAPI backend + SQLite database | - | REQUIRED |
-| Bill management (add, edit, deactivate) | REQ-002 | REQUIRED |
+| Bill management (add, edit, delete) | REQ-002 | REQUIRED |
 | Payment history log with confirmation numbers | REQ-003 | REQUIRED |
 | Secure credential vault (encrypted) | REQ-004 | REQUIRED |
 | Payment method storage (encrypted) | REQ-004 | REQUIRED |
@@ -154,6 +154,11 @@ spending insights, and a polished experience.
 | Auto-start on Windows login | - | REQUIRED (next session) |
 | Admin dashboard - metrics and graphs | - | GOOD NEXT STEP |
 | Admin dashboard - CPU/memory monitoring | - | NICE TO HAVE |
+| Unified logging — FastAPI request middleware + admin filter chip | - | GOOD NEXT STEP |
+| Light mode UI overhaul | - | TECH DEBT (blocked on branding) |
+| Notes popover on bill cards (replace inline truncated text) | - | TECH DEBT |
+| Passphrase change UI in Settings | - | TECH DEBT |
+| Mobile payment history — card layout for small screens | - | TECH DEBT |
 
 **Admin Dashboard** - A browser-based operations console (pinned tab at localhost:9000).
 Vision: one-stop shop for monitoring, debugging, troubleshooting, logging, diagnostics, and graphs.
@@ -166,6 +171,7 @@ Current state (basic):
 
 Planned additions (in order):
 - Auto-start on Windows login (next session - high priority)
+- Unified logging: FastAPI request middleware, `[REQUEST]` label, filter chip in log viewer
 - Uptime tracking per service
 - CPU and memory usage graphs
 - Request rate and error rate metrics

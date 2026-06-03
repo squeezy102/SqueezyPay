@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getIncome, deactivateIncome, reactivateIncome, getMonthlyTotal } from "../utils/api";
 import type { Income, IncomeFrequency } from "../types";
 import IncomeFormModal from "./IncomeFormModal";
+import Spinner from "./Spinner";
 
 const FREQUENCY_LABELS: Record<IncomeFrequency, string> = {
   "weekly":       "Weekly",
@@ -73,6 +74,10 @@ export default function IncomeManagement() {
   const active   = sources.filter((s) => s.active);
   const inactive = sources.filter((s) => !s.active);
   const visible  = showInactive ? sources : active;
+
+  if (incomeQuery.isLoading || mtQuery.isLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors px-6 py-5">

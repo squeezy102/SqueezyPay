@@ -5,6 +5,7 @@ import { getBills, getSettings } from "../utils/api";
 import { alertBannerTokens } from "../theme/tokens";
 import type { Bill, AppSettings } from "../types";
 import BillCard from "./BillCard";
+import Spinner from "./Spinner";
 
 type AlertType = "overdue" | "due-soon" | "large-payment";
 
@@ -60,15 +61,19 @@ function ChevronIcon({ open }: { open: boolean }) {
 export default function BillDashboard() {
   const [showAll, setShowAll] = useState(false);
 
-  const { data: bills } = useQuery<Bill[]>({
+  const { data: bills, isLoading: billsLoading } = useQuery<Bill[]>({
     queryKey: ["bills"],
     queryFn: getBills,
   });
 
-  const { data: settings } = useQuery<AppSettings | null>({
+  const { data: settings, isLoading: settingsLoading } = useQuery<AppSettings | null>({
     queryKey: ["settings"],
     queryFn: getSettings,
   });
+
+  if (billsLoading || settingsLoading) {
+    return <Spinner />;
+  }
 
   const thresholds: AppSettings = settings ?? { dueSoonDays: 7, largePaymentThreshold: 500 };
 

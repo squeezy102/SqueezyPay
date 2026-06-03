@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database.db import get_db
@@ -14,7 +14,6 @@ class BillCreate(BaseModel):
     day_of_month: int
     url: str
     recurring: bool = True
-    active: bool = True
     notes: str | None = None
 
 
@@ -25,13 +24,12 @@ class BillUpdate(BaseModel):
     day_of_month: int | None = None
     url: str | None = None
     recurring: bool | None = None
-    active: bool | None = None
     notes: str | None = None
 
 
 @router.get("/")
-def get_bills(include_inactive: bool = Query(False), db: Session = Depends(get_db)):
-    return BillService.get_all_bills(db, include_inactive=include_inactive)
+def get_bills(db: Session = Depends(get_db)):
+    return BillService.get_all_bills(db)
 
 
 @router.get("/{bill_id}")
@@ -56,7 +54,6 @@ def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{bill_id}", status_code=204)
-def deactivate_bill(bill_id: int, db: Session = Depends(get_db)):
-    result = BillService.deactivate_bill(db, bill_id)
-    if not result:
+def delete_bill(bill_id: int, db: Session = Depends(get_db)):
+    if not BillService.delete_bill(db, bill_id):
         raise HTTPException(status_code=404, detail="Bill not found")

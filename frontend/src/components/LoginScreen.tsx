@@ -34,7 +34,7 @@ export default function LoginScreen() {
           Enter your household passphrase to continue.
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col gap-4">
           <div>
             <label
               htmlFor="login-passphrase"

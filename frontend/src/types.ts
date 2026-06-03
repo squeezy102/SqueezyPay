@@ -9,7 +9,6 @@ export interface Bill {
   amountLabel: string;
   url: string;
   recurring: boolean;
-  active: boolean;
   notes: string | null;
 }
 

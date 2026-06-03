@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAllPayments } from "../utils/api";
 import type { Payment } from "../types";
+import Spinner from "./Spinner";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "-";
@@ -68,6 +69,8 @@ export default function PaymentHistory() {
     }
   }
 
+  if (query.isLoading) return <Spinner />;
+
   const payments = query.data ?? [];
 
   const filtered = payments.filter((p) => {
@@ -120,9 +123,7 @@ export default function PaymentHistory() {
 
         {/* Table */}
         <div className="rounded-xl border border-violet-100 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
-          {query.isLoading ? (
-            <p className="text-center text-sm text-slate-400 py-16">Loading...</p>
-          ) : sorted.length === 0 ? (
+          {sorted.length === 0 ? (
             <p className="text-center text-sm text-slate-400 py-16">
               {search ? "No payments match your search." : "No payments logged yet."}
             </p>

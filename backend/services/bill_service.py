@@ -8,9 +8,9 @@ logger = get_logger("squeezypay.services.bills")
 
 class BillService:
     @staticmethod
-    def get_all_bills(db: Session, include_inactive: bool = False) -> list[dict]:
-        bills = BillRepository.get_all(db, include_inactive=include_inactive)
-        logger.info(f"Retrieved {len(bills)} bills (include_inactive={include_inactive})")
+    def get_all_bills(db: Session) -> list[dict]:
+        bills = BillRepository.get_all(db)
+        logger.info(f"Retrieved {len(bills)} bills")
         return [BillService._to_dict(b) for b in bills]
 
     @staticmethod
@@ -28,21 +28,34 @@ class BillService:
 
     @staticmethod
     def update_bill(db: Session, bill_id: int, bill_data: dict) -> dict | None:
-        bill = BillRepository.update(db, bill_id, bill_data)
-        if not bill:
+        existing = BillRepository.get_by_id(db, bill_id)
+        if not existing:
             logger.warning(f"Update attempted on non-existent bill id={bill_id}")
             return None
-        logger.info(f"Updated bill id={bill.id}")
+        changes = {
+            k: {"from": getattr(existing, k), "to": v}
+            for k, v in bill_data.items()
+            if getattr(existing, k) != v
+        }
+        bill = BillRepository.update(db, bill_id, bill_data)
+        if changes:
+            changes_str = ", ".join(f"{k}: {c['from']!r} → {c['to']!r}" for k, c in changes.items())
+            logger.info(f"Updated bill id={bill_id} name='{existing.name}' — {changes_str}")
+        else:
+            logger.info(f"Updated bill id={bill_id} name='{existing.name}' (no field changes)")
         return BillService._to_dict(bill)
 
     @staticmethod
-    def deactivate_bill(db: Session, bill_id: int) -> dict | None:
-        bill = BillRepository.deactivate(db, bill_id)
+    def delete_bill(db: Session, bill_id: int) -> bool:
+        bill = BillRepository.get_by_id(db, bill_id)
         if not bill:
-            logger.warning(f"Deactivate attempted on non-existent bill id={bill_id}")
-            return None
-        logger.info(f"Deactivated bill id={bill.id} name='{bill.name}'")
-        return BillService._to_dict(bill)
+            logger.warning(f"Delete attempted on non-existent bill id={bill_id}")
+            return False
+        name = bill.name
+        result = BillRepository.delete(db, bill_id)
+        if result:
+            logger.info(f"Deleted bill id={bill_id} name='{name}'")
+        return result
 
     @staticmethod
     def _to_dict(bill: Bill) -> dict:
@@ -54,6 +67,5 @@ class BillService:
             "day_of_month": bill.day_of_month,
             "url": bill.url,
             "recurring": bill.recurring,
-            "active": bill.active,
             "notes": bill.notes,
         }

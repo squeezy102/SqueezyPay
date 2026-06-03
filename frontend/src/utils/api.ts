@@ -82,7 +82,6 @@ interface RawBill {
   expected_amount: number | null;
   url: string;
   recurring: boolean;
-  active: boolean;
   notes: string | null;
 }
 
@@ -96,7 +95,6 @@ function mapBill(raw: RawBill): Bill {
     amountLabel:    formatAmount(raw.expected_amount),
     url:            raw.url,
     recurring:      raw.recurring,
-    active:         raw.active,
     notes:          raw.notes,
   };
 }
@@ -189,7 +187,7 @@ export async function getBills(): Promise<Bill[]> {
 
 export async function getAllBills(): Promise<Bill[]> {
   try {
-    const response = handle401(await fetch(`${API_BASE}/api/bills/?include_inactive=true`, { headers: { ...authHeaders() } }));
+    const response = handle401(await fetch(`${API_BASE}/api/bills/`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json() as RawBill[];
     return data.map(mapBill);
@@ -245,29 +243,14 @@ export async function updateBill(billId: number, payload: BillPayload): Promise<
   }
 }
 
-export async function deactivateBill(billId: number): Promise<Bill | null> {
+export async function deleteBill(billId: number): Promise<boolean> {
   try {
     const response = handle401(await fetch(`${API_BASE}/api/bills/${billId}`, { method: "DELETE", headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
-    return mapBill(await response.json() as RawBill);
+    return true;
   } catch (error) {
-    logApiError("Failed to deactivate bill", error);
-    return null;
-  }
-}
-
-export async function reactivateBill(billId: number): Promise<Bill | null> {
-  try {
-    const response = handle401(await fetch(`${API_BASE}/api/bills/${billId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ active: true }),
-    }));
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    return mapBill(await response.json() as RawBill);
-  } catch (error) {
-    logApiError("Failed to reactivate bill", error);
-    return null;
+    logApiError("Failed to delete bill", error);
+    return false;
   }
 }
 
