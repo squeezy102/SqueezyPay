@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { createIncome, updateIncome } from "../utils/api";
 import type { Income, IncomeFrequency } from "../types";
@@ -9,22 +10,6 @@ const FREQUENCIES: { value: IncomeFrequency; label: string }[] = [
   { value: "semi-monthly", label: "Semi-Monthly" },
   { value: "monthly",      label: "Monthly" },
 ];
-
-interface FormState {
-  sourceName: string;
-  amount: string;
-  frequency: IncomeFrequency;
-  nextExpectedDate: string;
-}
-
-const EMPTY_FORM: FormState = {
-  sourceName:       "",
-  amount:           "",
-  frequency:        "monthly",
-  nextExpectedDate: "",
-};
-
-type FormErrors = Partial<Record<keyof FormState, string>>;
 
 function fieldClass(hasError: string | undefined) {
   const base =
@@ -40,23 +25,41 @@ interface Props {
   onClose: () => void;
 }
 
+interface FormFields {
+  sourceName: string;
+  amount: string;
+  frequency: string;
+  nextExpectedDate: string;
+}
+
 export default function IncomeFormModal({ income, onSave, onClose }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!income;
 
-  const [form, setForm]     = useState<FormState>(EMPTY_FORM);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormFields>({
+    defaultValues: {
+      sourceName: "",
+      amount: "",
+      frequency: "monthly",
+      nextExpectedDate: "",
+    },
+  });
 
   useEffect(() => {
     if (income) {
-      setForm({
+      reset({
         sourceName:       income.sourceName,
         amount:           income.amount != null ? String(income.amount) : "",
         frequency:        income.frequency,
         nextExpectedDate: income.nextExpectedDate,
       });
     }
-  }, [income]);
+  }, [income, reset]);
 
   const saveMutation = useMutation({
     mutationFn: (payload: { sourceName: string; amount: number; frequency: IncomeFrequency; nextExpectedDate: string }) =>
@@ -70,31 +73,12 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
     },
   });
 
-  function set<K extends keyof FormState>(field: K, value: FormState[K]) {
-    setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
-  }
-
-  function validate(): FormErrors {
-    const e: FormErrors = {};
-    if (!form.sourceName.trim()) e.sourceName = "Required";
-    const amt = Number(form.amount);
-    if (!form.amount || isNaN(amt) || amt <= 0) e.amount = "Enter a positive amount";
-    if (!form.frequency) e.frequency = "Required";
-    if (!form.nextExpectedDate) e.nextExpectedDate = "Required";
-    return e;
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-
+  function onSubmit(data: FormFields) {
     saveMutation.mutate({
-      sourceName:       form.sourceName.trim(),
-      amount:           Number(form.amount),
-      frequency:        form.frequency,
-      nextExpectedDate: form.nextExpectedDate,
+      sourceName:       data.sourceName.trim(),
+      amount:           Number(data.amount),
+      frequency:        data.frequency as IncomeFrequency,
+      nextExpectedDate: data.nextExpectedDate,
     });
   }
 
@@ -129,7 +113,7 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
 
           {apiError && (
             <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm">
@@ -144,12 +128,11 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
             </label>
             <input
               type="text"
-              value={form.sourceName}
-              onChange={(e) => set("sourceName", e.target.value)}
               placeholder="e.g. Main Job, Freelance, Side Business"
-              className={fieldClass(errors.sourceName)}
+              className={fieldClass(errors.sourceName?.message)}
+              {...register("sourceName", { required: "Required" })}
             />
-            {errors.sourceName && <p className="mt-1 text-xs text-red-500">{errors.sourceName}</p>}
+            {errors.sourceName && <p className="mt-1 text-xs text-red-500">{errors.sourceName.message}</p>}
           </div>
 
           {/* Amount + Frequency row */}
@@ -166,13 +149,15 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
                   type="number"
                   min="0.01"
                   step="0.01"
-                  value={form.amount}
-                  onChange={(e) => set("amount", e.target.value)}
                   placeholder="0.00"
-                  className={`${fieldClass(errors.amount)} pl-7`}
+                  className={`${fieldClass(errors.amount?.message)} pl-7`}
+                  {...register("amount", {
+                    required: "Enter a positive amount",
+                    validate: (v) => Number(v) > 0 || "Enter a positive amount",
+                  })}
                 />
               </div>
-              {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount}</p>}
+              {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount.message}</p>}
             </div>
 
             <div>
@@ -180,15 +165,14 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
                 Frequency <span className="text-red-500">*</span>
               </label>
               <select
-                value={form.frequency}
-                onChange={(e) => set("frequency", e.target.value as IncomeFrequency)}
-                className={fieldClass(errors.frequency)}
+                className={fieldClass(errors.frequency?.message)}
+                {...register("frequency", { required: "Required" })}
               >
                 {FREQUENCIES.map((f) => (
                   <option key={f.value} value={f.value}>{f.label}</option>
                 ))}
               </select>
-              {errors.frequency && <p className="mt-1 text-xs text-red-500">{errors.frequency}</p>}
+              {errors.frequency && <p className="mt-1 text-xs text-red-500">{errors.frequency.message}</p>}
             </div>
           </div>
 
@@ -199,11 +183,10 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
             </label>
             <input
               type="date"
-              value={form.nextExpectedDate}
-              onChange={(e) => set("nextExpectedDate", e.target.value)}
-              className={fieldClass(errors.nextExpectedDate)}
+              className={fieldClass(errors.nextExpectedDate?.message)}
+              {...register("nextExpectedDate", { required: "Required" })}
             />
-            {errors.nextExpectedDate && <p className="mt-1 text-xs text-red-500">{errors.nextExpectedDate}</p>}
+            {errors.nextExpectedDate && <p className="mt-1 text-xs text-red-500">{errors.nextExpectedDate.message}</p>}
           </div>
 
         </form>
@@ -218,7 +201,7 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
+            onClick={handleSubmit(onSubmit)}
             disabled={saving}
             className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-50"
           >

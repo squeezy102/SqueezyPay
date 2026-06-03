@@ -100,6 +100,23 @@ Running notes for AI assistant continuity across sessions.
 
 ## What Was Built This Session
 
+**Admin dashboard — SMS-style activity log:**
+- Replaced ticker/idle/expand-collapse pattern with a single scrollable chat-style view
+- Frontend log entries bubble left (blue-tinted), backend log entries bubble right (green-tinted)
+- Date separators between days; auto-scroll pauses on manual scroll, resumes at bottom
+- Level filter checkboxes (INFO/WARN/ERROR) re-render full history when toggled
+- "View raw log" link opens `/api/logs/raw` (new endpoint) in a new tab — plain text, no styling
+- Idle state and animated ellipsis removed
+- `admin/main.py`: added `GET /api/logs/raw` endpoint
+
+**React Hook Form migration:**
+- `react-hook-form` installed in `frontend/`
+- `BillFormModal.tsx` — migrated to `useForm` + `register` + `Controller` (MoneyInput, recurring toggle); `reset()` on edit; `isSubmitting` drives button state
+- `IncomeFormModal.tsx` — migrated to `useForm` + `register`; `reset()` on edit; frequency cast to `IncomeFrequency` in submit handler
+- `LogPaymentModal.tsx` — migrated to `useForm` + `register` + `Controller` (MoneyInput); API errors stay in separate `useState`; `success` state unchanged
+- `Settings.tsx` — intentionally skipped; inline category forms too small to benefit from RHF
+- TypeScript typecheck: 0 errors after migration
+
 **Codebase cleanup (no behaviour changes):**
 - `backend/core/constants.py` (new) — single source of truth for `DEFAULT_DUE_SOON_DAYS` and `DEFAULT_LARGE_PAYMENT_THRESHOLD`; consumed by `settings_service.py` and `db.py`
 - `ALGORITHM = "HS256"` deduplicated — lives only in `core/auth.py`, imported in `auth_service.py`
@@ -243,7 +260,8 @@ Running notes for AI assistant continuity across sessions.
 
 ## Known Issues / Outstanding Bugs
 
-- **Handoff checklist item: app not verified functional after cleanup commit.** The test suite was run and passed (55/55), but the running app was not manually confirmed in the browser before declaring handoff complete. Warnings visible in the admin log during the test run were confirmed to be test fixtures (test_frontend_log.py posts fake error payloads), not real runtime errors. Next session: start full stack and confirm app loads and core workflows function before doing any new work.
+- **Rate limiter CORS bug (TOP PRIORITY next session):** slowapi returns a 429 when the login endpoint is hit more than 10 times/minute. FastAPI does not attach CORS headers to rate-limit error responses, so the browser sees a CORS failure instead of the actual 429. This is confusing and blocks debugging. Fix: either add CORS headers to slowapi error responses, or increase/remove the rate limit in dev mode. Discovered during debugging this session — pre-existing, not caused by RHF migration.
+- **App not smoke-tested end-to-end this session.** RHF migration completed and typecheck passed (0 errors), but login was blocked by the rate limiter bug during verification. Next session: confirm login works and core workflows function after the rate limiter fix.
 
 ---
 
@@ -255,9 +273,10 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **React Hook Form** - add before more forms are written. Migrate BillFormModal, IncomeFormModal, LogPaymentModal, Settings.
-2. **Linter setup** - Ruff (Python) + ESLint/typescript-eslint (frontend). Dedicated session: configure rules, fix all violations, wire into CI. See DECISIONS.md for rationale.
-3. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
+1. **CRITICAL: Rate limiter CORS bug** - slowapi 429 responses don't carry CORS headers; browser sees a spurious CORS error instead. Fix before any other work. See Known Issues above.
+2. **Smoke test** - after rate limiter fix, confirm login works and core workflows function end-to-end.
+3. **Linter setup** - Ruff (Python) + ESLint/typescript-eslint (frontend). Dedicated session: configure rules, fix all violations, wire into CI. See DECISIONS.md for rationale.
+4. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
 5. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
 6. **Tech debt: UI/theming overhaul** - Current color scheme is jarring and clashing. The SNES-inspired violet/teal theme needs a full design pass. Blocked on branding refactor above.
 7. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings when doing the Settings pass.

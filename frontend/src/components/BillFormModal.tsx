@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { categoryTokens } from "../theme/tokens";
 import type { Bill } from "../types";
 import type { BillPayload } from "../utils/api";
@@ -6,27 +7,15 @@ import MoneyInput from "./MoneyInput";
 
 const CATEGORIES = Object.keys(categoryTokens);
 
-interface FormState {
+interface FormValues {
   name: string;
   category: string;
   url: string;
-  expectedAmount: number | "";
+  expectedAmount: number;
   dayOfMonth: number | "";
   recurring: boolean;
   notes: string;
 }
-
-const EMPTY_FORM: FormState = {
-  name:           "",
-  category:       CATEGORIES[0] ?? "",
-  url:            "",
-  expectedAmount: "",
-  dayOfMonth:     "",
-  recurring:      true,
-  notes:          "",
-};
-
-type FormErrors = Partial<Record<keyof FormState, string>>;
 
 function fieldClass(error: string | undefined) {
   const base =
@@ -45,57 +34,49 @@ interface Props {
 export default function BillFormModal({ bill, onSave, onClose }: Props) {
   const isEdit = !!bill;
 
-  const [form, setForm]     = useState<FormState>(EMPTY_FORM);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [saving, setSaving] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    defaultValues: {
+      name: "",
+      category: CATEGORIES[0] ?? "",
+      url: "",
+      expectedAmount: 0,
+      dayOfMonth: "",
+      recurring: true,
+      notes: "",
+    },
+  });
 
   useEffect(() => {
     if (bill) {
-      setForm({
+      reset({
         name:           bill.name,
         category:       bill.category || CATEGORIES[0] || "",
         url:            bill.url,
-        expectedAmount: bill.expectedAmount ?? "",
+        expectedAmount: bill.expectedAmount ?? 0,
         dayOfMonth:     bill.dayOfMonth,
         recurring:      bill.recurring,
         notes:          bill.notes ?? "",
       });
     }
-  }, [bill]);
+  }, [bill, reset]);
 
-  function set<K extends keyof FormState>(field: K, value: FormState[K]) {
-    setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
-  }
-
-  function validate(): FormErrors {
-    const e: FormErrors = {};
-    if (!form.name.trim())  e.name     = "Required";
-    if (!form.category)     e.category = "Required";
-    if (!form.url.trim())   e.url      = "Required";
-    const day = Number(form.dayOfMonth);
-    if (form.dayOfMonth === "" || isNaN(day) || day < 1 || day > 31)
-      e.dayOfMonth = "Enter a day 1-31";
-    return e;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-
-    setSaving(true);
+  async function onValid(data: FormValues) {
     const payload: BillPayload = {
-      name:           form.name,
-      category:       form.category,
-      url:            form.url,
-      expectedAmount: form.expectedAmount === "" ? null : Number(form.expectedAmount),
-      dayOfMonth:     Number(form.dayOfMonth),
-      recurring:      form.recurring,
-      notes:          form.notes || null,
+      name:           data.name,
+      category:       data.category,
+      url:            data.url,
+      expectedAmount: data.expectedAmount === 0 ? null : Number(data.expectedAmount),
+      dayOfMonth:     Number(data.dayOfMonth),
+      recurring:      data.recurring,
+      notes:          data.notes || null,
     };
     await onSave(payload);
-    setSaving(false);
   }
 
   return (
@@ -118,7 +99,7 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onValid)} className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
 
           {/* Name */}
           <div>
@@ -127,12 +108,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
             </label>
             <input
               type="text"
-              value={form.name}
-              onChange={(e) => set("name", e.target.value)}
               placeholder="e.g. Example Electric Co"
-              className={fieldClass(errors.name)}
+              className={fieldClass(errors.name?.message)}
+              {...register("name", { required: "Required" })}
             />
-            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
           </div>
 
           {/* Category */}
@@ -141,15 +121,14 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
               Category <span className="text-red-500">*</span>
             </label>
             <select
-              value={form.category}
-              onChange={(e) => set("category", e.target.value)}
-              className={fieldClass(errors.category)}
+              className={fieldClass(errors.category?.message)}
+              {...register("category", { required: "Required" })}
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
+            {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category.message}</p>}
           </div>
 
           {/* Payment URL */}
@@ -159,12 +138,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
             </label>
             <input
               type="url"
-              value={form.url}
-              onChange={(e) => set("url", e.target.value)}
               placeholder="https://..."
-              className={fieldClass(errors.url)}
+              className={fieldClass(errors.url?.message)}
+              {...register("url", { required: "Required" })}
             />
-            {errors.url && <p className="mt-1 text-xs text-red-500">{errors.url}</p>}
+            {errors.url && <p className="mt-1 text-xs text-red-500">{errors.url.message}</p>}
           </div>
 
           {/* Amount + Day row */}
@@ -173,9 +151,15 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
               <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Expected Amount
               </label>
-              <MoneyInput
-                value={form.expectedAmount === "" ? 0 : form.expectedAmount}
-                onChange={(v) => set("expectedAmount", v)}
+              <Controller
+                name="expectedAmount"
+                control={control}
+                render={({ field }) => (
+                  <MoneyInput
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
             </div>
             <div>
@@ -186,30 +170,41 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
                 type="number"
                 min={1}
                 max={31}
-                value={form.dayOfMonth}
-                onChange={(e) => set("dayOfMonth", e.target.value === "" ? "" : Number(e.target.value))}
                 placeholder="1-31"
-                className={fieldClass(errors.dayOfMonth)}
+                className={fieldClass(errors.dayOfMonth?.message)}
+                {...register("dayOfMonth", {
+                  required: "Enter a day 1-31",
+                  min: { value: 1, message: "Enter a day 1-31" },
+                  max: { value: 31, message: "Enter a day 1-31" },
+                  validate: (v) =>
+                    v === "" || Number.isInteger(Number(v)) || "Enter a day 1-31",
+                })}
               />
-              {errors.dayOfMonth && <p className="mt-1 text-xs text-red-500">{errors.dayOfMonth}</p>}
+              {errors.dayOfMonth && <p className="mt-1 text-xs text-red-500">{errors.dayOfMonth.message}</p>}
             </div>
           </div>
 
           {/* Recurring toggle */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={form.recurring}
-              onClick={() => set("recurring", !form.recurring)}
-              className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800
-                ${form.recurring ? "bg-teal-600" : "bg-slate-300 dark:bg-slate-600"}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform
-                  ${form.recurring ? "translate-x-4" : "translate-x-0"}`}
-              />
-            </button>
+            <Controller
+              name="recurring"
+              control={control}
+              render={({ field }) => (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={field.value}
+                  onClick={() => field.onChange(!field.value)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800
+                    ${field.value ? "bg-teal-600" : "bg-slate-300 dark:bg-slate-600"}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform
+                      ${field.value ? "translate-x-4" : "translate-x-0"}`}
+                  />
+                </button>
+              )}
+            />
             <span className="text-sm text-slate-700 dark:text-slate-300">Recurring bill</span>
           </div>
 
@@ -219,11 +214,10 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
               Notes
             </label>
             <textarea
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
               placeholder="Optional notes..."
               rows={2}
               className={`${fieldClass(undefined)} resize-none`}
+              {...register("notes")}
             />
           </div>
         </form>
@@ -238,11 +232,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
-            disabled={saving}
+            onClick={handleSubmit(onValid)}
+            disabled={isSubmitting}
             className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-50"
           >
-            {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Bill"}
+            {isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Add Bill"}
           </button>
         </div>
       </div>

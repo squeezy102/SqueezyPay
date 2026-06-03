@@ -283,6 +283,15 @@ def recent_logs(lines: int = 100):
     return parsed
 
 
+@app.get("/api/logs/raw")
+def raw_log():
+    if not LOG_FILE.exists():
+        return HTMLResponse("No log file found yet.", media_type="text/plain")
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        content = f.read()
+    return HTMLResponse(content, media_type="text/plain; charset=utf-8")
+
+
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
     with open(Path(__file__).parent / "dashboard.html", "r", encoding="utf-8") as f:

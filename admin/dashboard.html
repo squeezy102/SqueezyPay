@@ -8,17 +8,23 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface2: #273549;
-      --border: #334155;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --green: #22c55e;
-      --red: #ef4444;
-      --amber: #f59e0b;
-      --indigo: #6366f1;
-      --indigo-hover: #4f46e5;
+      --bg:          #0f172a;
+      --surface:     #1e293b;
+      --surface2:    #273549;
+      --border:      #334155;
+      --text:        #f1f5f9;
+      --text-muted:  #94a3b8;
+      --green:       #22c55e;
+      --red:         #ef4444;
+      --amber:       #f59e0b;
+      --indigo:      #6366f1;
+      --indigo-hover:#4f46e5;
+
+      /* Bubble colours */
+      --bubble-fe:   #1d3a5f;   /* frontend — left, blue-tinted */
+      --bubble-be:   #1e3a2f;   /* backend  — right, green-tinted */
+      --bubble-fe-border: #2d5a9e;
+      --bubble-be-border: #2d6a4a;
     }
 
     body {
@@ -27,23 +33,26 @@
       color: var(--text);
       min-height: 100vh;
       padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
     }
 
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 32px;
     }
 
     header h1 { font-size: 1.25rem; font-weight: 700; }
     header p  { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
 
+    /* ── Service cards ───────────────────────────────────────────────────── */
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 16px;
-      margin-bottom: 32px;
     }
 
     .card {
@@ -60,21 +69,19 @@
       margin-bottom: 16px;
     }
 
-    .card-title { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-title {
+      font-size: 0.875rem; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+    }
 
     .status-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      min-height: 42px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; min-height: 42px;
     }
 
     .dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      flex-shrink: 0;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--text-muted); flex-shrink: 0;
     }
     .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
     .dot.stopped { background: var(--red); }
@@ -85,12 +92,8 @@
     .btn-row { display: flex; gap: 8px; }
 
     button {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      cursor: pointer;
+      padding: 8px 16px; border-radius: 8px; border: none;
+      font-size: 0.8125rem; font-weight: 600; cursor: pointer;
       transition: background 0.15s, opacity 0.15s;
     }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -98,115 +101,143 @@
     .btn-start { background: var(--indigo); color: #fff; }
     .btn-start:hover:not(:disabled) { background: var(--indigo-hover); }
     .btn-stop  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-stop:hover:not(:disabled) { background: var(--border); }
+    .btn-stop:hover:not(:disabled)  { background: var(--border); }
     .btn-link  { background: transparent; color: var(--indigo); padding: 0; font-size: 0.75rem; text-decoration: underline; }
     .btn-link:hover { color: #818cf8; }
 
-    /* Log panel */
-    .log-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-    .log-header {
+    /* ── Chat panel ──────────────────────────────────────────────────────── */
+
+    .chat-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .chat-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 20px;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
-    .log-header h2 { font-size: 0.875rem; font-weight: 600; }
-    .log-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .log-filter {
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 0.75rem;
-    }
+
+    .chat-header h2 { font-size: 0.875rem; font-weight: 600; }
+
+    .chat-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
     .level-checks { display: flex; gap: 12px; align-items: center; }
     .level-check  {
       display: flex; align-items: center; gap: 5px;
-      font-size: 0.75rem; font-weight: 600; cursor: pointer;
-      user-select: none;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer; user-select: none;
     }
     .level-check input[type=checkbox] { accent-color: currentColor; cursor: pointer; width: 14px; height: 14px; }
     .level-check.info    { color: var(--green); }
     .level-check.warning { color: var(--amber); }
     .level-check.error   { color: var(--red); }
 
-    /* ── Ticker ──────────────────────────────────────────────────────── */
-    #ticker {
-      height: 220px;
-      overflow: hidden;
+    .chat-legend {
+      display: flex; gap: 16px; font-size: 0.7rem; color: var(--text-muted);
+    }
+    .chat-legend span { display: flex; align-items: center; gap: 5px; }
+    .legend-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .legend-dot.fe { background: #2d5a9e; }
+    .legend-dot.be { background: #2d6a4a; }
+
+    /* Chat body */
+    #chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
-      padding: 12px 20px;
-      gap: 4px;
-      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
-      font-size: 0.75rem;
+      gap: 6px;
+      min-height: 400px;
+      max-height: 600px;
+      scroll-behavior: smooth;
+    }
+
+    /* Date separators */
+    .chat-date-sep {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin: 8px 0 4px;
       position: relative;
     }
-
-    .ticker-entry {
-      display: flex;
-      gap: 10px;
-      align-items: baseline;
-      animation: fadeIn 0.25s ease;
-      transition: opacity 0.6s ease;
-    }
-    .ticker-entry.fading { opacity: 0; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .ticker-ts      { color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
-    .ticker-level   { font-weight: 700; flex-shrink: 0; width: 54px; }
-    .ticker-msg     { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Idle state */
-    #ticker-idle {
+    .chat-date-sep::before, .chat-date-sep::after {
+      content: '';
       position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
-      font-size: 0.8125rem;
-      pointer-events: none;
-      transition: opacity 0.4s ease;
+      top: 50%; width: 30%;
+      height: 1px; background: var(--border);
     }
-    #ticker-idle.hidden { opacity: 0; }
+    .chat-date-sep::before { left: 0; }
+    .chat-date-sep::after  { right: 0; }
 
-    /* ── Full log pane ───────────────────────────────────────────────── */
-    #log-body {
-      height: 400px;
-      overflow-y: auto;
-      padding: 12px 0;
+    /* Bubble rows */
+    .bubble-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 72%;
+    }
+    .bubble-row.fe { align-self: flex-start; flex-direction: row; }
+    .bubble-row.be { align-self: flex-end;   flex-direction: row-reverse; }
+
+    /* Sender label */
+    .bubble-sender {
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* The bubble itself */
+    .bubble {
+      border-radius: 16px;
+      padding: 8px 13px;
       font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
       font-size: 0.75rem;
-      display: none;
+      line-height: 1.5;
+      word-break: break-word;
+      max-width: 100%;
+    }
+    .bubble.fe {
+      background: var(--bubble-fe);
+      border: 1px solid var(--bubble-fe-border);
+      border-bottom-left-radius: 4px;
+    }
+    .bubble.be {
+      background: var(--bubble-be);
+      border: 1px solid var(--bubble-be-border);
+      border-bottom-right-radius: 4px;
     }
 
-    .log-line {
-      display: grid;
-      grid-template-columns: 160px 60px 180px 1fr;
-      gap: 8px;
-      padding: 2px 20px;
-      line-height: 1.6;
+    .bubble-ts {
+      font-size: 0.65rem; color: var(--text-muted);
+      display: block; margin-top: 3px;
     }
-    .log-line:hover { background: var(--surface2); }
+    .bubble-row.be .bubble-ts { text-align: right; }
 
-    .log-ts      { color: var(--text-muted); white-space: nowrap; }
-    .log-level   { font-weight: 700; }
-    .log-service { color: #7dd3fc; }
-    .log-msg     { color: var(--text); }
-
+    .bubble-level {
+      font-weight: 700; margin-right: 6px;
+    }
     .level-INFO    { color: var(--green); }
     .level-WARNING { color: var(--amber); }
     .level-ERROR   { color: var(--red); }
 
-    .empty-log { padding: 32px 20px; text-align: center; color: var(--text-muted); font-size: 0.875rem; }
+    .bubble-msg { color: var(--text); }
+
+    /* Empty state */
+    #chat-empty {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 0.875rem;
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+    }
 
     /* Toast */
     #toast {
@@ -216,8 +247,7 @@
       font-size: 0.875rem; font-weight: 500;
       opacity: 0; transform: translateY(8px);
       transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none;
-      max-width: 320px;
+      pointer-events: none; max-width: 320px;
     }
     #toast.show { opacity: 1; transform: translateY(0); }
   </style>
@@ -234,7 +264,7 @@
        style="font-size:0.75rem; color:var(--indigo); text-decoration:none; font-weight:600;">
       To Site →
     </a>
-    <button class="btn-stop" onclick="refreshStatus()" style="font-size:0.75rem;">Refresh</button>
+    <button class="btn-stop" onclick="refreshStatus()" style="font-size:0.75rem; padding:6px 12px;">Refresh</button>
   </div>
 </header>
 
@@ -242,52 +272,151 @@
   <!-- Populated by JS -->
 </div>
 
-<div class="log-panel">
-  <div class="log-header">
-    <h2>Application Log</h2>
-    <div class="log-controls">
-      <!-- Level checkboxes - always visible, filter both ticker and full log -->
+<div class="chat-panel">
+  <div class="chat-header">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <h2>Activity</h2>
+      <div class="chat-legend">
+        <span><span class="legend-dot fe"></span> Frontend</span>
+        <span><span class="legend-dot be"></span> Backend</span>
+      </div>
+    </div>
+    <div class="chat-controls">
       <div class="level-checks">
         <label class="level-check info">
-          <input type="checkbox" id="chk-info" checked onchange="updateLevelFilter()"> INFO
+          <input type="checkbox" id="chk-info" checked onchange="applyFilter()"> INFO
         </label>
         <label class="level-check warning">
-          <input type="checkbox" id="chk-warning" checked onchange="updateLevelFilter()"> WARN
+          <input type="checkbox" id="chk-warning" checked onchange="applyFilter()"> WARN
         </label>
         <label class="level-check error">
-          <input type="checkbox" id="chk-error" checked onchange="updateLevelFilter()"> ERROR
+          <input type="checkbox" id="chk-error" checked onchange="applyFilter()"> ERROR
         </label>
       </div>
-      <!-- Full log controls - hidden in ticker mode -->
-      <button class="btn-stop" id="clear-btn" onclick="clearLog()" style="font-size:0.75rem; padding:4px 10px; display:none;">Clear</button>
-      <button class="btn-stop" id="scroll-btn" onclick="toggleAutoScroll()" style="font-size:0.75rem; padding:4px 10px; display:none;">Auto-scroll: ON</button>
-      <!-- Always visible -->
-      <button class="btn-stop" id="expand-btn" onclick="toggleExpanded()" style="font-size:0.75rem; padding:4px 10px;">Expand Logs</button>
+      <a href="/api/logs/raw" target="_blank" rel="noreferrer"
+         style="font-size:0.75rem; color:var(--indigo); text-decoration:underline; font-weight:600; white-space:nowrap;">
+        View raw log
+      </a>
     </div>
   </div>
 
-  <!-- Ticker (default) -->
-  <div id="ticker">
-    <div id="ticker-idle">Listening for events<span id="dots"></span></div>
+  <div id="chat-body">
+    <div id="chat-empty">Waiting for log events…</div>
   </div>
-
-  <!-- Full scrollable log (expanded mode) -->
-  <div id="log-body"></div>
 </div>
 
 <div id="toast"></div>
 
 <script>
   const API = 'http://localhost:9000/api';
-  let autoScroll   = true;
-  let allLogLines  = [];
-  let activeLevels = new Set(['INFO', 'WARNING', 'ERROR']); // checkboxes
-  let expanded     = false;
 
-  // Fade timeout per ticker entry: INFO fades after 8s, WARNING/ERROR after 20s
-  const FADE_DELAY = { INFO: 8000, WARNING: 20000, ERROR: 20000 };
-  const IDLE_DELAY = 6000; // show idle state after this many ms of no activity
-  let idleTimer = null;
+  let allEntries   = [];
+  let activeLevels = new Set(['INFO', 'WARNING', 'ERROR']);
+  let autoScroll   = true;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function isFrontend(entry) {
+    return (entry.service || '').startsWith('squeezypay.frontend');
+  }
+
+  function levelAllowed(entry) {
+    return activeLevels.has((entry.level || 'INFO').toUpperCase());
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    return ts.replace('T', ' ').slice(11, 19);
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '';
+    return ts.slice(0, 10);
+  }
+
+  // ── Rendering ─────────────────────────────────────────────────────────────
+
+  function buildBubble(entry) {
+    const fe    = isFrontend(entry);
+    const side  = fe ? 'fe' : 'be';
+    const label = fe ? 'Frontend' : 'Backend';
+    const level = (entry.level || 'INFO').toUpperCase();
+    const ts    = fmtTime(entry.timestamp);
+    const svc   = (entry.service || '').replace('squeezypay.', '');
+    const msg   = entry.message || '';
+
+    const row = document.createElement('div');
+    row.className     = `bubble-row ${side}`;
+    row.dataset.level = level;
+
+    row.innerHTML = `
+      <span class="bubble-sender">${escHtml(label)}</span>
+      <div class="bubble ${side}">
+        <span class="bubble-level level-${level}">${level} </span><span class="bubble-msg">${escHtml(msg)}</span>
+        <span class="bubble-ts">${escHtml(ts)}${svc ? ' · ' + escHtml(svc) : ''}</span>
+      </div>`;
+    return row;
+  }
+
+  function renderAll() {
+    const body = document.getElementById('chat-body');
+    body.innerHTML = '';
+
+    const filtered = allEntries.filter(levelAllowed);
+    if (filtered.length === 0) {
+      body.innerHTML = '<div id="chat-empty">Waiting for log events…</div>';
+      return;
+    }
+
+    let lastDate = null;
+    for (const entry of filtered) {
+      const d = fmtDate(entry.timestamp);
+      if (d && d !== lastDate) {
+        const sep = document.createElement('div');
+        sep.className = 'chat-date-sep';
+        sep.textContent = d;
+        body.appendChild(sep);
+        lastDate = d;
+      }
+      body.appendChild(buildBubble(entry));
+    }
+
+    if (autoScroll) body.scrollTop = body.scrollHeight;
+  }
+
+  function appendBubble(entry) {
+    if (!levelAllowed(entry)) return;
+
+    const body  = document.getElementById('chat-body');
+    const empty = body.querySelector('#chat-empty');
+    if (empty) empty.remove();
+
+    // Date separator if day changed
+    const d = fmtDate(entry.timestamp);
+    const lastSep = body.querySelector('.chat-date-sep:last-of-type');
+    if (d && (!lastSep || lastSep.textContent !== d)) {
+      const sep = document.createElement('div');
+      sep.className = 'chat-date-sep';
+      sep.textContent = d;
+      body.appendChild(sep);
+    }
+
+    body.appendChild(buildBubble(entry));
+    if (autoScroll) body.scrollTop = body.scrollHeight;
+  }
+
+  function applyFilter() {
+    activeLevels = new Set([
+      document.getElementById('chk-info').checked    ? 'INFO'    : null,
+      document.getElementById('chk-warning').checked ? 'WARNING' : null,
+      document.getElementById('chk-error').checked   ? 'ERROR'   : null,
+    ].filter(Boolean));
+    renderAll();
+  }
 
   // ── Status ────────────────────────────────────────────────────────────────
 
@@ -346,160 +475,17 @@
     setTimeout(refreshStatus, 800);
   }
 
-  // ── Ticker ────────────────────────────────────────────────────────────────
-
-  function updateLevelFilter() {
-    activeLevels = new Set([
-      document.getElementById('chk-info').checked    ? 'INFO'    : null,
-      document.getElementById('chk-warning').checked ? 'WARNING' : null,
-      document.getElementById('chk-error').checked   ? 'ERROR'   : null,
-    ].filter(Boolean));
-    if (expanded) renderLog();
-  }
-
-  function levelAllowed(level) {
-    return activeLevels.has(level || 'INFO');
-  }
-
-  function pushTicker(entry) {
-    if (!levelAllowed(entry.level)) return;
-
-    const ticker = document.getElementById('ticker');
-    const idle   = document.getElementById('ticker-idle');
-
-    // Hide idle state
-    idle.classList.add('hidden');
-    clearTimeout(idleTimer);
-
-    const level = entry.level || 'INFO';
-    const ts    = entry.timestamp ? entry.timestamp.replace('T', ' ').slice(11, 19) : '';
-    const msg   = entry.message || '';
-
-    const el = document.createElement('div');
-    el.className = 'ticker-entry';
-    el.innerHTML = `
-      <span class="ticker-ts">${escHtml(ts)}</span>
-      <span class="ticker-level level-${level}">${level}</span>
-      <span class="ticker-msg">${escHtml(msg)}</span>
-    `;
-    ticker.appendChild(el);
-
-    // Fade out after delay, then remove
-    const delay = FADE_DELAY[level] ?? 8000;
-    setTimeout(() => {
-      el.classList.add('fading');
-      setTimeout(() => {
-        el.remove();
-        if (ticker.querySelectorAll('.ticker-entry').length === 0) {
-          showIdle();
-        }
-      }, 600);
-    }, delay);
-
-    // Reset idle timer
-    idleTimer = setTimeout(showIdle, IDLE_DELAY + delay);
-  }
-
-  function showIdle() {
-    const ticker = document.getElementById('ticker');
-    if (ticker.querySelectorAll('.ticker-entry').length === 0) {
-      document.getElementById('ticker-idle').classList.remove('hidden');
-    }
-  }
-
-  // Animated ellipsis: dot...dot...dot...
-  (function animateDots() {
-    const el     = document.getElementById('dots');
-    const frames = ['', '.', '..', '...'];
-    let i = 0;
-    setInterval(() => {
-      el.textContent = frames[i % frames.length];
-      i++;
-    }, 500);
-  })();
-
-  // ── Full log pane ─────────────────────────────────────────────────────────
-
-  function renderLog() {
-    const body     = document.getElementById('log-body');
-    const filtered = allLogLines.filter(l => levelAllowed(l.level));
-    if (filtered.length === 0) {
-      body.innerHTML = '<div class="empty-log">No log entries yet. Start the backend to begin logging.</div>';
-      return;
-    }
-    body.innerHTML = filtered.map(formatLogLine).join('');
-    if (autoScroll) body.scrollTop = body.scrollHeight;
-  }
-
-  function appendToFullLog(entry) {
-    if (!expanded) return;
-    if (!levelAllowed(entry.level)) return;
-    const body  = document.getElementById('log-body');
-    const empty = body.querySelector('.empty-log');
-    if (empty) body.innerHTML = '';
-    body.insertAdjacentHTML('beforeend', formatLogLine(entry));
-    if (autoScroll) body.scrollTop = body.scrollHeight;
-  }
-
-  function formatLogLine(entry) {
-    const ts      = entry.timestamp ? entry.timestamp.replace('T', ' ').slice(0, 19) : '';
-    const level   = entry.level || 'INFO';
-    const service = (entry.service || '').replace('squeezypay.', '');
-    const msg     = entry.message || '';
-    return `<div class="log-line">
-      <span class="log-ts">${ts}</span>
-      <span class="log-level level-${level}">${level}</span>
-      <span class="log-service">${escHtml(service)}</span>
-      <span class="log-msg">${escHtml(msg)}</span>
-    </div>`;
-  }
-
-  function clearLog() {
-    allLogLines = [];
-    renderLog();
-  }
-
-  function toggleAutoScroll() {
-    autoScroll = !autoScroll;
-    document.getElementById('scroll-btn').textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
-  }
-
-  // ── Expand / collapse ─────────────────────────────────────────────────────
-
-  function toggleExpanded() {
-    expanded = !expanded;
-    const ticker  = document.getElementById('ticker');
-    const logBody = document.getElementById('log-body');
-    const btn     = document.getElementById('expand-btn');
-    const clearB  = document.getElementById('clear-btn');
-    const scrollB = document.getElementById('scroll-btn');
-
-    if (expanded) {
-      ticker.style.display  = 'none';
-      logBody.style.display = 'block';
-      clearB.style.display  = '';
-      scrollB.style.display = '';
-      btn.textContent       = 'Collapse';
-      renderLog();
-    } else {
-      ticker.style.display  = '';
-      logBody.style.display = 'none';
-      clearB.style.display  = 'none';
-      scrollB.style.display = 'none';
-      btn.textContent       = 'Expand Logs';
-    }
-  }
-
   // ── Stream ────────────────────────────────────────────────────────────────
 
   async function loadRecentLogs() {
     try {
-      const res   = await fetch(`${API}/logs/recent?lines=200`);
-      allLogLines = await res.json();
-      startLogStream();
+      const res = await fetch(`${API}/logs/recent?lines=200`);
+      allEntries = await res.json();
+      renderAll();
     } catch {
-      // Backend not yet running - stream will retry on next load
+      // Backend not yet running — SSE stream will populate when it starts
     }
+    startLogStream();
   }
 
   function startLogStream() {
@@ -507,22 +493,20 @@
     es.onmessage = (e) => {
       try {
         const entry = JSON.parse(e.data);
-        allLogLines.push(entry);
-        if (allLogLines.length > 2000) allLogLines.shift();
-        if (!expanded) {
-          pushTicker(entry);
-        } else {
-          appendToFullLog(entry);
-        }
+        allEntries.push(entry);
+        if (allEntries.length > 2000) allEntries.shift();
+        appendBubble(entry);
       } catch {}
     };
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // Pause auto-scroll when user manually scrolls up, resume when they return to bottom
+  document.getElementById('chat-body').addEventListener('scroll', function () {
+    const el = this;
+    autoScroll = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+  });
 
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+  // ── Toast ─────────────────────────────────────────────────────────────────
 
   let toastTimer;
   function showToast(msg) {

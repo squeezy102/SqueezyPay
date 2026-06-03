@@ -2,6 +2,8 @@
 
 Preferences and working style guidance for AI assistant sessions on this project.
 
+**These rules are not suggestions. They must be followed to the letter and as the law unless otherwise specified. They are not to be summarized, they are not to be passed over or perused, they are to be wholly understood and adhered to.**
+
 ---
 
 ## Role Definition

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logPayment, getCredentialByBill, getPaymentMethods } from "../utils/api";
 import type { Bill, Payment, Credential, PaymentMethod } from "../types";
@@ -42,7 +43,7 @@ function CopyButton({ text }: CopyButtonProps) {
   );
 }
 
-interface FormState {
+interface FormValues {
   paymentDate: string;
   amountPaid: number;
   confirmationNumber: string;
@@ -74,16 +75,23 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   const paymentMethods = pmQuery.data ?? [];
 
   const [showCreds, setShowCreds] = useState(false);
-  const [form, setForm] = useState<FormState>({
-    paymentDate:        today,
-    amountPaid:         bill.expectedAmount ?? 0,
-    confirmationNumber: "",
-    paymentMethod:      "",
-    notes:              "",
-  });
-  const [saving, setSaving]   = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError]     = useState<string | null>(null);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { isSubmitting, errors },
+  } = useForm<FormValues>({
+    defaultValues: {
+      paymentDate:        today,
+      amountPaid:         bill.expectedAmount ?? 0,
+      confirmationNumber: "",
+      paymentMethod:      "",
+      notes:              "",
+    },
+  });
 
   const logMutation = useMutation({
     mutationFn: (payload: Parameters<typeof logPayment>[0]) => logPayment(payload),
@@ -93,31 +101,20 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
     },
   });
 
-  function set<K extends keyof FormState>(field: K, value: FormState[K]) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
   function handleGoToBiller() {
     window.open(bill.url, "_blank", "noopener,noreferrer");
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(data: FormValues) {
     setError(null);
-    if (!form.amountPaid || form.amountPaid <= 0) {
-      setError("Please enter the amount paid.");
-      return;
-    }
-    setSaving(true);
     const result = await logMutation.mutateAsync({
       billId:             bill.id,
-      paymentDate:        form.paymentDate,
-      amountPaid:         form.amountPaid,
-      confirmationNumber: form.confirmationNumber || null,
-      paymentMethod:      form.paymentMethod || null,
-      notes:              form.notes || null,
+      paymentDate:        data.paymentDate,
+      amountPaid:         data.amountPaid,
+      confirmationNumber: data.confirmationNumber || null,
+      paymentMethod:      data.paymentMethod || null,
+      notes:              data.notes || null,
     });
-    setSaving(false);
     if (!result) {
       setError("Failed to save. Please try again.");
       return;
@@ -205,26 +202,31 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
         </div>
 
         {/* ── BOTTOM HALF - LOG PAYMENT ───────────────────────────── */}
-        <form onSubmit={handleSubmit} className="px-6 pt-4 pb-5 flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-6 pt-4 pb-5 flex flex-col gap-4">
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Date Paid</label>
               <input
                 type="date"
-                value={form.paymentDate}
-                onChange={(e) => set("paymentDate", e.target.value)}
-                required
+                {...register("paymentDate", { required: true })}
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Amount Paid</label>
-              <MoneyInput
-                value={form.amountPaid}
-                onChange={(v) => set("amountPaid", v)}
-                required
-                className="w-full"
+              <Controller
+                name="amountPaid"
+                control={control}
+                rules={{ validate: (v) => v > 0 || "Please enter the amount paid." }}
+                render={({ field }) => (
+                  <MoneyInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    required
+                    className="w-full"
+                  />
+                )}
               />
             </div>
           </div>
@@ -235,8 +237,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
             </label>
             <input
               type="text"
-              value={form.confirmationNumber}
-              onChange={(e) => set("confirmationNumber", e.target.value)}
+              {...register("confirmationNumber")}
               placeholder="Enter after paying"
               className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
@@ -248,8 +249,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
             </label>
             {paymentMethods.length > 0 ? (
               <select
-                value={form.paymentMethod}
-                onChange={(e) => set("paymentMethod", e.target.value)}
+                {...register("paymentMethod")}
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
                 <option value="">Select a payment method</option>
@@ -262,8 +262,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
             ) : (
               <input
                 type="text"
-                value={form.paymentMethod}
-                onChange={(e) => set("paymentMethod", e.target.value)}
+                {...register("paymentMethod")}
                 placeholder="e.g. Visa, Joint Checking"
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
@@ -275,15 +274,18 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
               Notes <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <textarea
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
+              {...register("notes")}
               rows={2}
               placeholder="Anything worth noting"
               className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {(errors.amountPaid || error) && (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {errors.amountPaid?.message ?? error}
+            </p>
+          )}
 
           {success ? (
             <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
@@ -303,10 +305,10 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
               </button>
               <button
                 type="submit"
-                disabled={saving}
+                disabled={isSubmitting}
                 className="flex-1 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-semibold py-2.5 transition-colors"
               >
-                {saving ? "Saving…" : "Save Payment"}
+                {isSubmitting ? "Saving…" : "Save Payment"}
               </button>
             </div>
           )}
