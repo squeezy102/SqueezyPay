@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
+
 from database.db import get_db
 from services.auth_service import AuthService
 

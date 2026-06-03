@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from models.models import Income
+
 from core.logging_config import get_logger
+from models.models import Income
 
 logger = get_logger("squeezypay.repositories.income")
 

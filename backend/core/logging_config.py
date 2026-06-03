@@ -1,8 +1,8 @@
+import json
 import logging
 import logging.handlers
-import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 LOG_FILENAME = "squeezypay.log"
 MAX_LOG_BYTES = 5 * 1024 * 1024
@@ -12,7 +12,7 @@ LOG_BACKUP_COUNT = 5
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "service": record.name,
             "message": record.getMessage(),

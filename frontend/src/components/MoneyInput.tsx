@@ -12,6 +12,7 @@ export default function MoneyInput({ value, onChange, required, className = "" }
 
   useEffect(() => {
     const parsed = parseFloat(String(value));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRaw(!isNaN(parsed) && parsed > 0 ? parsed.toFixed(2) : "");
   }, [value]);
 

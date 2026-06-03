@@ -1,8 +1,10 @@
 from datetime import datetime
+
 from sqlalchemy.orm import Session
-from models.models import PaymentHistory, Bill
-from repositories.payment_history_repository import PaymentHistoryRepository
+
 from core.logging_config import get_logger
+from models.models import Bill, PaymentHistory
+from repositories.payment_history_repository import PaymentHistoryRepository
 
 logger = get_logger("squeezypay.services.payment_history")
 

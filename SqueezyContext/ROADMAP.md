@@ -22,9 +22,11 @@ These are infrastructure and tooling items that must be in place before Phase 2 
 | ~~GitHub Actions CI gate~~ | ~~Automated test gate on push to dev, PR to master; 80% coverage threshold; branch protection on master~~ DONE | ~~REQUIRED~~ |
 | ~~Playwright~~ | ~~E2E tests for critical flows~~ Scaffolded at repo root; tests/e2e/ ready; full suite to be written as features accumulate DONE | ~~GOOD NEXT STEP~~ |
 | ~~React Query (TanStack Query)~~ | ~~Add before more API call patterns accumulate~~ DONE | ~~REQUIRED~~ |
-| React Hook Form | Add before more forms are written | REQUIRED |
+| ~~React Hook Form~~ | ~~Add before more forms are written~~ DONE | ~~REQUIRED~~ |
 | pytest + pytest-asyncio | Backend test infrastructure | REQUIRED |
-| Vitest | Frontend unit test infrastructure | REQUIRED |
+| ~~Vitest~~ | ~~Frontend unit test infrastructure~~ 16 tests for billUtils.ts; expand to api.ts next DONE | ~~REQUIRED~~ |
+| ~~Ruff (Python linter)~~ | ~~pyproject.toml configured, all violations fixed, wired into CI~~ DONE | ~~REQUIRED~~ |
+| ~~ESLint + typescript-eslint~~ | ~~Frontend linter configured for .ts/.tsx, wired into CI~~ DONE | ~~REQUIRED~~ |
 | Recharts | Needed for Phase 2+ charts; add before Phase 2 begins | GOOD NEXT STEP |
 | PyJWT | Add when authentication is implemented | Add with auth |
 | slowapi | Rate limiting on login endpoint | Add with auth |
@@ -154,7 +156,7 @@ spending insights, and a polished experience.
 | Auto-start on Windows login | - | REQUIRED (next session) |
 | Admin dashboard - metrics and graphs | - | GOOD NEXT STEP |
 | Admin dashboard - CPU/memory monitoring | - | NICE TO HAVE |
-| Unified logging — FastAPI request middleware + admin filter chip | - | GOOD NEXT STEP |
+| Unified logging — FastAPI request middleware + admin filter chip | Request middleware DONE; admin filter chip still pending | GOOD NEXT STEP |
 | Light mode UI overhaul | - | TECH DEBT (blocked on branding) |
 | Notes popover on bill cards (replace inline truncated text) | - | TECH DEBT |
 | Passphrase change UI in Settings | - | TECH DEBT |

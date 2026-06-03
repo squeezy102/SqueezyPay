@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
+
+from core.logging_config import get_logger
 from models.models import Bill
 from repositories.bill_repository import BillRepository
-from core.logging_config import get_logger
 
 logger = get_logger("squeezypay.services.bills")
 

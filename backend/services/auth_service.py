@@ -1,11 +1,13 @@
+import os
+from datetime import UTC, datetime, timedelta
+
 import bcrypt
 import jwt
-import os
-from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
-from models.models import AuthConfig
+
 from core.auth import ALGORITHM
 from core.logging_config import get_logger
+from models.models import AuthConfig
 
 logger = get_logger("squeezypay.services.auth")
 
@@ -44,8 +46,8 @@ class AuthService:
             raise RuntimeError("SQUEEZYPAY_SECRET_KEY environment variable not set")
         payload = {
             "sub": "household",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(hours=TOKEN_EXPIRE_HOURS),
+            "iat": datetime.now(UTC),
         }
         return jwt.encode(payload, secret, algorithm=ALGORITHM)
 

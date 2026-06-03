@@ -1,7 +1,8 @@
 import os
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
+from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("SQUEEZYPAY_ENCRYPTION_KEY", "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXJlc3Q=")
@@ -19,9 +20,9 @@ def client():
     which is the only way to make :memory: databases visible across threads
     (the FastAPI TestClient runs requests in a worker thread).
     """
-    from main import app
-    from database.db import get_db
     from core.auth import require_auth
+    from database.db import get_db
+    from main import app
 
     engine = create_engine(
         "sqlite:///:memory:",

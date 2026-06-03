@@ -115,6 +115,16 @@ Then explore the codebase. All files assume you've read the above.
 
 ## What Was Built This Session
 
+**This session (linters, Vitest, skills, middleware, CORS fix):**
+
+- **Rate limiter CORS bug fixed** — `slowapi` 429 responses bypassed the CORS middleware stack. Replaced `_rate_limit_exceeded_handler` with a custom async handler in `main.py` that manually injects `Access-Control-Allow-Origin` / `Access-Control-Allow-Credentials` headers when the request origin matches the allowlist. Origin constants (`_ALLOWED_ORIGINS`, `_ALLOWED_ORIGIN_REGEX`) extracted and shared between the CORS middleware and the custom handler.
+- **Ruff (Python linter)** — installed in venv, `pyproject.toml` added to `backend/` with E/F/I/UP rules. All violations fixed (import ordering, unused imports, pyupgrade modernization). `ruff check .` wired into CI before the test step. `ruff` added to `requirements.txt`.
+- **ESLint + typescript-eslint** — `eslint.config.js` updated to cover `.ts`/`.tsx` files with `@typescript-eslint/eslint-plugin`, `react-hooks`, and `react-refresh` rules. 11 violations fixed (React import false positives resolved via globals config; intentional `setState-in-effect` in `MoneyInput` suppressed; context files suppressed for `react-refresh/only-export-components`). `npm run lint` wired into CI.
+- **Vitest** — installed (`vitest`, `@vitest/coverage-v8`). Config added to `vite.config.js`. `npm test` script added to `package.json`. 16 unit tests written for `billUtils.ts` covering `getDueDate`, `getBillStatus`, `getDaysUntilDue`, `formatDueDate`, `sortBillsByDueDate`, `filterActionableBills` — all using `vi.setSystemTime` for deterministic date pinning. `npm test` wired into CI.
+- **FastAPI request logging middleware** — `@app.middleware("http")` in `main.py` logs every request as `[REQUEST] METHOD /path STATUS NNms` at INFO level to the same JSON log. `/health` polls suppressed. Feeds the unified log view in the admin dashboard.
+- **Project skills** — `.claude/skills/` directory created. `run-squeezypay.md` (launch primitive) and `verifier-web.md` (Playwright verifier) added. `SQUEEZYPAY_DEV_PASSPHRASE` Windows user env var set for automated login in verify sessions. Skills guidance added to USERPREFERENCES.md.
+- **Testing tiers** — USERPREFERENCES.md updated: pre-commit = run only directly related tests; on push = CI runs full suite; before master merge = full suite + E2E smoke.
+
 **App tour findings — bugs fixed and UX improvements:**
 
 - **Hard delete for billers** — soft delete (activate/deactivate) removed entirely. Bills are hard-deleted with a confirmation dialog. No inactive state, no hidden rows, no toggle. `BillRepository.deactivate/reactivate` → `BillRepository.delete`. `active` field removed from `_to_dict`, `RawBill`, `Bill` type, and all API surfaces.
@@ -283,10 +293,7 @@ Then explore the codebase. All files assume you've read the above.
 
 ## Known Issues / Outstanding Bugs
 
-- **Rate limiter CORS bug:** slowapi returns a 429 when the login endpoint is hit more than 10 times/minute. FastAPI does not attach CORS headers to rate-limit error responses, so the browser sees a CORS failure instead of the actual 429. Fix: add CORS headers to slowapi error responses, or increase/remove the rate limit in dev mode.
-- **Deactivate bill — 204 parse crash:** `DELETE /api/bills/{id}` returns 204 No Content but `api.ts:deactivateBill` calls `.json()` on the empty response, throwing `SyntaxError: Unexpected end of JSON input`. Fix: skip `.json()` on 204.
-- **Mid-render flash:** Components render empty skeletons before data arrives. React Query `isLoading` state not guarded in most components — content draws itself on screen. Fix: add loading spinner/skeleton guards across all data-fetching components.
-- **Browser password save prompt:** Auth forms may trigger browser "save password" dialogs. Fix: `autoComplete="off"` on form element + `autoComplete="new-password"` on passphrase inputs.
+No known bugs at this time.
 
 ---
 
@@ -298,17 +305,14 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **CRITICAL: Rate limiter CORS bug** - slowapi 429 responses don't carry CORS headers; browser sees a spurious CORS error instead. Fix before any other work. See Known Issues above.
-2. **Smoke test** - after rate limiter fix, confirm login works and core workflows function end-to-end.
-3. **Linter setup** - Ruff (Python) + ESLint/typescript-eslint (frontend). Dedicated session: configure rules, fix all violations, wire into CI. See DECISIONS.md for rationale.
-4. **Vitest** - frontend unit test infrastructure. Install, configure, write initial tests for billUtils and api utilities.
-5. **Unified logging** - all surfaces (FastAPI request layer, backend services, frontend errors) feed one log. Add FastAPI request logging middleware writing to the same JSON log with `[REQUEST]` label. Add filter chip in admin dashboard. See DECISIONS.md.
-6. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
-7. **Tech debt: light mode UI overhaul** - Light mode is visually broken. Full design pass needed. Blocked on branding refactor above.
-8. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings.
-9. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
-10. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
-11. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
+1. **Admin dashboard - `[REQUEST]` filter chip** - request logging middleware is now live; the admin log viewer needs a filter chip for `[REQUEST]` lines to complete unified logging. Low-effort follow-on.
+2. **Vitest - expand coverage to `api.ts`** - `billUtils.ts` has 16 tests; `api.ts` utility functions (camelCase mapping, `logApiError`) are next candidates.
+3. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
+4. **Tech debt: light mode UI overhaul** - Light mode is visually broken. Full design pass needed. Blocked on branding refactor above.
+5. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings.
+6. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
+7. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+8. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 
@@ -320,6 +324,11 @@ squeezypay/
 ├── LICENSE
 ├── .gitignore
 ├── .env.example
+├── .claude/
+│   ├── settings.local.json     Project-level Claude Code permissions
+│   └── skills/
+│       ├── run-squeezypay.md   Launch primitive — ensures backend + frontend are up
+│       └── verifier-web.md     Playwright verifier — drives app via browser, requires SQUEEZYPAY_DEV_PASSPHRASE env var
 ├── SqueezyContext/
 │   ├── CONTEXT.md              This file
 │   ├── REQUIREMENTS.md         REQ-001 through REQ-018

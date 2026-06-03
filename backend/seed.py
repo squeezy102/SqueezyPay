@@ -1,5 +1,5 @@
-import sys
 from sqlalchemy.orm import Session
+
 from database.db import SessionLocal, init_db
 from models.models import Bill
 

@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
+
+from core.logging_config import get_logger
 from repositories.credential_repository import CredentialRepository
 from services.encryption_service import encryption_service
-from core.logging_config import get_logger
 
 logger = get_logger("squeezypay.services.credentials")
 

@@ -1,7 +1,6 @@
 """
 Tests for REQ-016: household passphrase authentication.
 """
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -56,12 +55,13 @@ def test_protected_route_without_token():
     JWT validation is exercised.
     """
     from fastapi.testclient import TestClient as _TC
-    from sqlalchemy import create_engine, StaticPool
+    from sqlalchemy import StaticPool, create_engine
     from sqlalchemy.orm import sessionmaker
+
     import database.db as db_module
-    from models.models import Base
-    from main import app
     from database.db import get_db
+    from main import app
+    from models.models import Base
 
     engine = create_engine(
         "sqlite:///:memory:",

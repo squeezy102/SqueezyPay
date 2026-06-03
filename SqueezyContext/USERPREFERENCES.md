@@ -69,7 +69,13 @@ tab to click, what the output looks like, and what to copy/paste back
 
 ## Git Commits and Branches
 
-**The one non-negotiable: never commit untested code. Anywhere. Ever.** If it hasn't been run and verified, it doesn't get committed - not to dev, not to master, not to a feature branch.
+**The non-negotiable: never commit code that hasn't been tested at the appropriate tier for the change.** What "tested" means depends on where you are in the workflow:
+
+**Tier 1 - Before committing to dev:** Run only the tests directly related to what changed. Touched `auth.py`? Run `test_auth.py`. Touched `billUtils.ts`? Run its Vitest spec. This takes seconds and catches obvious breakage. No need to run the full suite locally - CI does that automatically on every push.
+
+**Tier 2 - On push to dev:** CI runs the full backend suite (`pytest --cov --cov-fail-under=80`) and frontend typecheck (`tsc --noEmit`) automatically. If CI fails, fix it before continuing new work.
+
+**Tier 3 - Before merging to master:** Full suite must pass in CI. E2E smoke test recommended for anything touching auth, payment workflows, or data persistence.
 
 **master** - tested, complete, meaningful, ready-to-ship code only. Never commit directly. Only receives merges from dev at real milestones.
 
@@ -80,6 +86,23 @@ tab to click, what the output looks like, and what to copy/paste back
 - Short-lived feature/fix/docs/chore branches are optional for larger efforts - branch from dev, merge back when done
 - During major restructuring, intermediate commits are acceptable as safety checkpoints
 - Branch naming: `feature/`, `fix/`, `docs/`, `chore/` + short description
+
+---
+
+## Skills (.claude/skills/)
+
+Skills are reusable prompt templates that Claude Code invokes automatically when
+relevant (e.g. `/verify` picks up `verifier-web.md`). They encode project-specific
+knowledge that would otherwise need to be re-explained every session.
+
+- **Create skills proactively** - any time a workflow, tool invocation, or
+  verification pattern recurs, it belongs in a skill file rather than repeated
+  instructions
+- Skills are cheap to create and free to have - bias toward creating them
+- Existing skills: `run-squeezypay.md` (launch primitive), `verifier-web.md`
+  (Playwright verifier for frontend changes)
+- When adding a new skill, note it here under "Existing skills" and update
+  the File Structure in CONTEXT.md
 
 ---
 

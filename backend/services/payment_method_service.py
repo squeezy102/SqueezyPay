@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from repositories.payment_method_repository import PaymentMethodRepository
+
 from core.logging_config import get_logger
+from repositories.payment_method_repository import PaymentMethodRepository
 
 logger = get_logger("squeezypay.services.payment_methods")
 

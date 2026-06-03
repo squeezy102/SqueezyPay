@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from core.logging_config import get_logger
 
 router = APIRouter(prefix="/api/frontend-log", tags=["frontend-log"])

@@ -1,6 +1,6 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from models.models import Base
 
 DATABASE_URL = "sqlite:///./squeezypay.db"
@@ -27,8 +27,8 @@ def init_db():
 
 
 def _seed_default_settings():
-    from models.models import Setting
     from core.constants import DEFAULT_DUE_SOON_DAYS, DEFAULT_LARGE_PAYMENT_THRESHOLD
+    from models.models import Setting
     db = SessionLocal()
     try:
         defaults = {
