@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { getAuthStatus, logoutAuth } from "../utils/api";
 
-const TOKEN_KEY = "squeezypay_token";
+const TOKEN_STORAGE_KEY = "squeezypay_token";
+const UNAUTHORIZED_EVENT = "squeezypay:unauthorized";
 
 interface AuthContextValue {
   token: string | null;
@@ -17,11 +18,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => sessionStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState<string | null>(() => sessionStorage.getItem(TOKEN_STORAGE_KEY));
   const [isConfigured, setIsConfigured] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  // Check auth status on mount
   useEffect(() => {
     let cancelled = false;
     getAuthStatus()
@@ -43,12 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     function handleUnauthorized() {
       setToken(null);
     }
-    window.addEventListener("squeezypay:unauthorized", handleUnauthorized);
-    return () => window.removeEventListener("squeezypay:unauthorized", handleUnauthorized);
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
   }, []);
 
   function login(newToken: string) {
-    sessionStorage.setItem(TOKEN_KEY, newToken);
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, newToken);
     setToken(newToken);
   }
 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore logout errors — clear state regardless
     }
-    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
     setToken(null);
   }
 

@@ -6,11 +6,13 @@ interface ThemeContextValue {
   toggle: () => void;
 }
 
+const THEME_STORAGE_KEY = "squeezypay-theme";
+
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [dark, setDark] = useState<boolean>(() => {
-    const saved = localStorage.getItem("squeezypay-theme");
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
     if (saved) return saved === "dark";
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
@@ -22,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove("dark");
     }
-    localStorage.setItem("squeezypay-theme", dark ? "dark" : "light");
+    localStorage.setItem(THEME_STORAGE_KEY, dark ? "dark" : "light");
   }, [dark]);
 
   return (

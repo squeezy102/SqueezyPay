@@ -13,7 +13,7 @@ import type {
   CategoryUpdateResult,
 } from "../types";
 
-const API_BASE = `http://${window.location.hostname}:8000`;
+export const API_BASE = `http://${window.location.hostname}:8000`;
 
 function authHeaders(): Record<string, string> {
   const token = sessionStorage.getItem("squeezypay_token");
@@ -26,6 +26,10 @@ function handle401(response: Response): Response {
     window.dispatchEvent(new Event("squeezypay:unauthorized"));
   }
   return response;
+}
+
+function logApiError(context: string, error: unknown): void {
+  console.error(`[API] ${context}:`, error);
 }
 
 // ── Auth API ──────────────────────────────────────────────────────────────────
@@ -178,7 +182,7 @@ export async function getBills(): Promise<Bill[]> {
     const data = await response.json() as RawBill[];
     return data.map(mapBill);
   } catch (error) {
-    console.error("Failed to fetch bills:", error);
+    logApiError("Failed to fetch bills", error);
     return [];
   }
 }
@@ -190,7 +194,7 @@ export async function getAllBills(): Promise<Bill[]> {
     const data = await response.json() as RawBill[];
     return data.map(mapBill);
   } catch (error) {
-    console.error("Failed to fetch all bills:", error);
+    logApiError("Failed to fetch all bills", error);
     return [];
   }
 }
@@ -213,7 +217,7 @@ export async function createBill(payload: BillPayload): Promise<Bill | null> {
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json() as RawBill);
   } catch (error) {
-    console.error("Failed to create bill:", error);
+    logApiError("Failed to create bill", error);
     return null;
   }
 }
@@ -236,7 +240,7 @@ export async function updateBill(billId: number, payload: BillPayload): Promise<
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json() as RawBill);
   } catch (error) {
-    console.error("Failed to update bill:", error);
+    logApiError("Failed to update bill", error);
     return null;
   }
 }
@@ -247,7 +251,7 @@ export async function deactivateBill(billId: number): Promise<Bill | null> {
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json() as RawBill);
   } catch (error) {
-    console.error("Failed to deactivate bill:", error);
+    logApiError("Failed to deactivate bill", error);
     return null;
   }
 }
@@ -262,7 +266,7 @@ export async function reactivateBill(billId: number): Promise<Bill | null> {
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapBill(await response.json() as RawBill);
   } catch (error) {
-    console.error("Failed to reactivate bill:", error);
+    logApiError("Failed to reactivate bill", error);
     return null;
   }
 }
@@ -276,7 +280,7 @@ export async function getPaymentsByBill(billId: number): Promise<Payment[]> {
     const data = await response.json() as RawPayment[];
     return data.map(mapPayment);
   } catch (error) {
-    console.error("Failed to fetch payment history:", error);
+    logApiError("Failed to fetch payment history", error);
     return [];
   }
 }
@@ -288,7 +292,7 @@ export async function getAllPayments(): Promise<Payment[]> {
     const data = await response.json() as RawPayment[];
     return data.map(mapPayment);
   } catch (error) {
-    console.error("Failed to fetch all payments:", error);
+    logApiError("Failed to fetch all payments", error);
     return [];
   }
 }
@@ -310,7 +314,7 @@ export async function logPayment(payload: LogPaymentPayload): Promise<Payment | 
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapPayment(await response.json() as RawPayment);
   } catch (error) {
-    console.error("Failed to log payment:", error);
+    logApiError("Failed to log payment", error);
     return null;
   }
 }
@@ -324,7 +328,7 @@ export async function getCredentialByBill(billId: number): Promise<Credential | 
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return await response.json() as Credential;
   } catch (error) {
-    console.error("Failed to fetch credential:", error);
+    logApiError("Failed to fetch credential", error);
     return null;
   }
 }
@@ -335,7 +339,7 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return await response.json() as PaymentMethod[];
   } catch (error) {
-    console.error("Failed to fetch payment methods:", error);
+    logApiError("Failed to fetch payment methods", error);
     return [];
   }
 }
@@ -350,7 +354,7 @@ export async function getIncome(includeInactive = false): Promise<Income[]> {
     const data = await response.json() as RawIncome[];
     return data.map(mapIncome);
   } catch (error) {
-    console.error("Failed to fetch income:", error);
+    logApiError("Failed to fetch income", error);
     return [];
   }
 }
@@ -370,7 +374,7 @@ export async function createIncome(payload: IncomePayload): Promise<Income | nul
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapIncome(await response.json() as RawIncome);
   } catch (error) {
-    console.error("Failed to create income:", error);
+    logApiError("Failed to create income", error);
     return null;
   }
 }
@@ -390,7 +394,7 @@ export async function updateIncome(id: number, payload: IncomePayload): Promise<
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapIncome(await response.json() as RawIncome);
   } catch (error) {
-    console.error("Failed to update income:", error);
+    logApiError("Failed to update income", error);
     return null;
   }
 }
@@ -400,7 +404,7 @@ export async function deactivateIncome(id: number): Promise<void> {
     const response = handle401(await fetch(`${API_BASE}/api/income/${id}`, { method: "DELETE", headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
   } catch (error) {
-    console.error("Failed to deactivate income:", error);
+    logApiError("Failed to deactivate income", error);
   }
 }
 
@@ -413,7 +417,7 @@ export async function reactivateIncome(id: number): Promise<Income | null> {
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return mapIncome(await response.json() as RawIncome);
   } catch (error) {
-    console.error("Failed to reactivate income:", error);
+    logApiError("Failed to reactivate income", error);
     return null;
   }
 }
@@ -425,7 +429,7 @@ export async function getMonthlyTotal(): Promise<number | null> {
     const data = await response.json() as { monthly_total: number };
     return data.monthly_total;
   } catch (error) {
-    console.error("Failed to fetch monthly total:", error);
+    logApiError("Failed to fetch monthly total", error);
     return null;
   }
 }
@@ -442,7 +446,7 @@ export async function getSettings(): Promise<AppSettings | null> {
       largePaymentThreshold: data.large_payment_threshold,
     };
   } catch (error) {
-    console.error("Failed to fetch settings:", error);
+    logApiError("Failed to fetch settings", error);
     return null;
   }
 }
@@ -464,7 +468,7 @@ export async function updateSettings(payload: AppSettings): Promise<AppSettings 
       largePaymentThreshold: data.large_payment_threshold,
     };
   } catch (error) {
-    console.error("Failed to update settings:", error);
+    logApiError("Failed to update settings", error);
     return null;
   }
 }
@@ -477,7 +481,7 @@ export async function getCategories(): Promise<Category[]> {
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return await response.json() as Category[];
   } catch (error) {
-    console.error("Failed to fetch categories:", error);
+    logApiError("Failed to fetch categories", error);
     return [];
   }
 }

@@ -41,6 +41,7 @@ _last_status: dict = {}
 # Environment helpers
 # ---------------------------------------------------------------------------
 
+# Duplicates admin/main.py:_load_user_env — consolidate into shared module in a future pass.
 def _load_user_env() -> dict:
     """Merge HKCU\\Environment into os.environ so child processes get user env vars."""
     env = dict(os.environ)
@@ -340,7 +341,6 @@ def main():
 
     _tray.run()
 
-    # On quit: stop all services cleanly
     _api_stop("frontend")
     _api_stop("backend")
     _stop_admin()

@@ -10,7 +10,7 @@ class IncomeRepository:
     def get_all(db: Session, include_inactive: bool = False) -> list[Income]:
         query = db.query(Income)
         if not include_inactive:
-            query = query.filter(Income.active == True)
+            query = query.filter(Income.active.is_(True))
         return query.order_by(Income.source_name).all()
 
     @staticmethod

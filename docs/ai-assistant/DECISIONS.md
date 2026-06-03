@@ -207,6 +207,16 @@ Plaid flow:
 | Bill amount: expected vs. actual | Fixed bills (Netflix) always match. Variable bills (utilities, electric) never do. Tracking both gives an accurate picture of projected vs. real cash flow. |
 | Income tracked alongside expenses | Spending percentages are meaningless without income context. Budget targets require knowing what the total is. Income is a first-class data point, not an afterthought. |
 
+## Tooling
+
+**Linter tooling (under consideration)**
+- Python: Ruff (replaces flake8 + isort + pyupgrade; fast, single tool)
+- TypeScript: ESLint with typescript-eslint plugin (standard for TS projects)
+- Status: Not yet implemented. Adding linters requires a dedicated session to configure rules and fix all existing violations cleanly. Value is high — would catch duplicate constants, unused imports, and style inconsistencies automatically. Schedule as a standalone session before any significant new feature work.
+- Decision: Defer until a dedicated linting setup session. Do not bolt it on mid-feature.
+
+---
+
 ## Bill Payment Friction Hierarchy
 
 The primary job of the app is to remove friction from bill payment. These four levels are in priority order - the app implements the highest level each biller supports.

@@ -8,7 +8,7 @@ logger = get_logger("squeezypay.repositories.bills")
 class BillRepository:
     @staticmethod
     def get_all(db: Session, include_inactive: bool = False) -> list[Bill]:
-        query = db.query(Bill) if include_inactive else db.query(Bill).filter(Bill.active == True)
+        query = db.query(Bill) if include_inactive else db.query(Bill).filter(Bill.active.is_(True))
         return query.all()
 
     @staticmethod

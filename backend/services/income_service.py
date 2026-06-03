@@ -7,8 +7,8 @@ from core.logging_config import get_logger
 logger = get_logger("squeezypay.services.income")
 
 _MONTHLY_MULTIPLIERS = {
-    "weekly": 52 / 12,
-    "bi-weekly": 26 / 12,
+    "weekly": 52 / 12,        # 52 weeks per year
+    "bi-weekly": 26 / 12,     # 26 fortnights per year
     "semi-monthly": 2,
     "monthly": 1,
 }

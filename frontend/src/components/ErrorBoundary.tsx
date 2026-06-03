@@ -1,7 +1,6 @@
 import { Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
-
-const API_BASE = `http://${window.location.hostname}:8000`;
+import { API_BASE } from "../utils/api";
 
 function reportError(error: Error, componentStack: string) {
   fetch(`${API_BASE}/api/frontend-log/`, {

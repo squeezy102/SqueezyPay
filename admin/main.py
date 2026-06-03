@@ -28,6 +28,9 @@ LOG_DIR = BACKEND_DIR / "logs"
 LOG_FILE = LOG_DIR / "squeezypay.log"
 VENV_PYTHON = BACKEND_DIR / "venv" / "Scripts" / "python.exe"
 
+BACKEND_PORT = 8000
+FRONTEND_PORT = 5173
+
 _processes: dict[str, subprocess.Popen] = {}
 _log_handles: dict[str, object] = {}
 
@@ -36,7 +39,6 @@ def _open_log(name: str):
     """Open (or reopen) a rotating log file for a service subprocess."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     path = LOG_DIR / f"{name}.log"
-    # Close any previous handle before reopening
     old = _log_handles.get(name)
     if old:
         try:
@@ -123,14 +125,14 @@ def _process_alive(name: str) -> bool:
 def service_status() -> dict:
     return {
         "backend": {
-            "running": _process_alive("backend") or _is_port_in_use(8000),
-            "port": 8000,
-            "url": "http://localhost:8000",
+            "running": _process_alive("backend") or _is_port_in_use(BACKEND_PORT),
+            "port": BACKEND_PORT,
+            "url": f"http://localhost:{BACKEND_PORT}",
         },
         "frontend": {
-            "running": _process_alive("frontend") or _is_port_in_use(5173),
-            "port": 5173,
-            "url": "http://localhost:5173",
+            "running": _process_alive("frontend") or _is_port_in_use(FRONTEND_PORT),
+            "port": FRONTEND_PORT,
+            "url": f"http://localhost:{FRONTEND_PORT}",
             "browseable": True,
         },
     }
@@ -162,7 +164,7 @@ def get_status():
 @app.post("/api/start/{service}")
 def start_service(service: str):
     if service == "backend":
-        if _process_alive("backend") or _is_port_in_use(8000):
+        if _process_alive("backend") or _is_port_in_use(BACKEND_PORT):
             return {"ok": False, "message": "Backend is already running"}
         env = {**_load_user_env(), "PYTHONUNBUFFERED": "1"}
         log = _open_log("backend")
@@ -178,7 +180,7 @@ def start_service(service: str):
         return {"ok": True, "message": "Backend started"}
 
     if service == "frontend":
-        if _process_alive("frontend") or _is_port_in_use(5173):
+        if _process_alive("frontend") or _is_port_in_use(FRONTEND_PORT):
             return {"ok": False, "message": "Frontend is already running"}
         env = _load_user_env()
         log = _open_log("frontend")
@@ -218,7 +220,7 @@ def _kill_by_port(port: int) -> bool:
 
 @app.post("/api/stop/{service}")
 def stop_service(service: str):
-    port_map = {"backend": 8000, "frontend": 5173}
+    port_map = {"backend": BACKEND_PORT, "frontend": FRONTEND_PORT}
     if service not in port_map:
         return {"ok": False, "message": f"Unknown service: {service}"}
 
@@ -279,27 +281,6 @@ def recent_logs(lines: int = 100):
         except Exception:
             parsed.append({"message": line, "level": "INFO", "timestamp": "", "service": ""})
     return parsed
-
-
-@app.get("/api/debug/env")
-def debug_env():
-    """Return key PATH info as seen by the admin server process."""
-    env = _load_user_env()
-    path_entries = [p for p in env.get("PATH", "").split(";") if p.strip()]
-    try:
-        result = subprocess.run(
-            [r"C:\Windows\System32\where.exe", "npm"],
-            env=env, capture_output=True, text=True, timeout=5,
-        )
-        npm_where = result.stdout.strip() or result.stderr.strip()
-    except Exception as e:
-        npm_where = f"error: {e}"
-    return {
-        "npm_where": npm_where,
-        "duplicate_path_keys": [k for k in env if k.upper() == "PATH"],
-        "path_entry_count": len(path_entries),
-        "nodejs_entries": [p for p in path_entries if "node" in p.lower() or "npm" in p.lower()],
-    }
 
 
 @app.get("/", response_class=HTMLResponse)

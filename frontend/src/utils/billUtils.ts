@@ -1,5 +1,7 @@
 import type { Bill, BillStatus } from "../types";
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 export function getDueDate(dayOfMonth: number): Date {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -18,12 +20,12 @@ function getCurrentCycleDueDate(dayOfMonth: number): Date {
   return new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
 }
 
-export function getBillStatus(dayOfMonth: number, dueSoonDays = 7): BillStatus {
+export function getBillStatus(dayOfMonth: number, dueSoonDays = 7 /* fallback until settings load */): BillStatus {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const currentCycleDue = getCurrentCycleDueDate(dayOfMonth);
   if (currentCycleDue < today) return "overdue";
-  const daysUntil = Math.ceil((currentCycleDue.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const daysUntil = Math.ceil((currentCycleDue.getTime() - today.getTime()) / MS_PER_DAY);
   if (daysUntil <= dueSoonDays) return "due-soon";
   return "upcoming";
 }
@@ -32,7 +34,7 @@ export function getDaysUntilDue(dayOfMonth: number): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = getDueDate(dayOfMonth);
-  return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.ceil((due.getTime() - today.getTime()) / MS_PER_DAY);
 }
 
 export function formatDueDate(dayOfMonth: number): string {
