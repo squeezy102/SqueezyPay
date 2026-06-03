@@ -115,7 +115,11 @@ Then explore the codebase. All files assume you've read the above.
 
 ## What Was Built This Session
 
-**This session (linters, Vitest, skills, middleware, CORS fix):**
+**This session (admin log viewer: REQUEST/RESPONSE filter chips):**
+
+- **`[REQUEST]`/`[RESPONSE]` filter chips** — Request logging middleware split into two paired log lines: `[REQUEST] METHOD /path` on entry, `[RESPONSE] METHOD /path STATUS NNms` on exit. Admin log viewer gains REQ (indigo) and RES (green) filter chips with distinct bubble styles, toggleable independently from INFO/WARN/ERROR service logs.
+
+**Previous session (linters, Vitest, skills, middleware, CORS fix):**
 
 - **Rate limiter CORS bug fixed** — `slowapi` 429 responses bypassed the CORS middleware stack. Replaced `_rate_limit_exceeded_handler` with a custom async handler in `main.py` that manually injects `Access-Control-Allow-Origin` / `Access-Control-Allow-Credentials` headers when the request origin matches the allowlist. Origin constants (`_ALLOWED_ORIGINS`, `_ALLOWED_ORIGIN_REGEX`) extracted and shared between the CORS middleware and the custom handler.
 - **Ruff (Python linter)** — installed in venv, `pyproject.toml` added to `backend/` with E/F/I/UP rules. All violations fixed (import ordering, unused imports, pyupgrade modernization). `ruff check .` wired into CI before the test step. `ruff` added to `requirements.txt`.
@@ -305,14 +309,13 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **Admin dashboard - `[REQUEST]` filter chip** - request logging middleware is now live; the admin log viewer needs a filter chip for `[REQUEST]` lines to complete unified logging. Low-effort follow-on.
-2. **Vitest - expand coverage to `api.ts`** - `billUtils.ts` has 16 tests; `api.ts` utility functions (camelCase mapping, `logApiError`) are next candidates.
-3. **Tech debt: branding refactor** - Logo removed (was placeholder). App name displayed as text in sidebar, mobile top bar, login, and setup screens. A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
-4. **Tech debt: light mode UI overhaul** - Light mode is visually broken. Full design pass needed. Blocked on branding refactor above.
-5. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings.
-6. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
-7. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
-8. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
+1. **Vitest - expand coverage to `api.ts`** - `billUtils.ts` has 16 tests; `api.ts` utility functions (camelCase mapping, `logApiError`) are next candidates. *(was #2, promoted)*
+2. **Tech debt: branding refactor** - Logo removed (was placeholder). A proper brand identity is needed before open-source launch. *(was #3)*
+3. **Tech debt: light mode UI overhaul** - Light mode is visually broken. Full design pass needed. Blocked on branding refactor above.
+4. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings.
+5. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
+6. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+7. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 

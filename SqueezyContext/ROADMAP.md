@@ -156,7 +156,7 @@ spending insights, and a polished experience.
 | Auto-start on Windows login | - | REQUIRED (next session) |
 | Admin dashboard - metrics and graphs | - | GOOD NEXT STEP |
 | Admin dashboard - CPU/memory monitoring | - | NICE TO HAVE |
-| Unified logging — FastAPI request middleware + admin filter chip | Request middleware DONE; admin filter chip still pending | GOOD NEXT STEP |
+| ~~Unified logging — FastAPI request middleware + admin filter chip~~ | ~~Request middleware DONE; admin filter chip still pending~~ DONE - [REQUEST] entry + [RESPONSE] exit lines, REQ/RES filter chips in admin | ~~GOOD NEXT STEP~~ |
 | Light mode UI overhaul | - | TECH DEBT (blocked on branding) |
 | Notes popover on bill cards (replace inline truncated text) | - | TECH DEBT |
 | Passphrase change UI in Settings | - | TECH DEBT |
