@@ -241,6 +241,12 @@ Running notes for AI assistant continuity across sessions.
 
 ---
 
+## Known Issues / Outstanding Bugs
+
+- **Handoff checklist item: app not verified functional after cleanup commit.** The test suite was run and passed (55/55), but the running app was not manually confirmed in the browser before declaring handoff complete. Warnings visible in the admin log during the test run were confirmed to be test fixtures (test_frontend_log.py posts fake error payloads), not real runtime errors. Next session: start full stack and confirm app loads and core workflows function before doing any new work.
+
+---
+
 ## What Has NOT Been Built
 
 Phase 1 is complete. All REQs including REQ-016 (authentication) have been built.
