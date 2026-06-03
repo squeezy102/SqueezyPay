@@ -25,6 +25,10 @@
       --bubble-be:   #1e3a2f;   /* backend  — right, green-tinted */
       --bubble-fe-border: #2d5a9e;
       --bubble-be-border: #2d6a4a;
+      --bubble-req:        #1e1e3a;
+      --bubble-req-border: #4f46e5;
+      --bubble-res:        #1a2a1a;
+      --bubble-res-border: #16a34a;
     }
 
     body {
@@ -137,6 +141,8 @@
     .level-check.info    { color: var(--green); }
     .level-check.warning { color: var(--amber); }
     .level-check.error   { color: var(--red); }
+    .level-check.request  { color: var(--indigo); }
+    .level-check.response { color: var(--green); }
 
     .chat-legend {
       display: flex; gap: 16px; font-size: 0.7rem; color: var(--text-muted);
@@ -229,8 +235,21 @@
     .level-INFO    { color: var(--green); }
     .level-WARNING { color: var(--amber); }
     .level-ERROR   { color: var(--red); }
+    .level-REQUEST  { color: var(--indigo); }
+    .level-RESPONSE { color: var(--green); }
 
     .bubble-msg { color: var(--text); }
+
+    .bubble.req {
+      background: var(--bubble-req);
+      border: 1px solid var(--bubble-req-border);
+      border-bottom-right-radius: 4px;
+    }
+    .bubble.res {
+      background: var(--bubble-res);
+      border: 1px solid var(--bubble-res-border);
+      border-bottom-right-radius: 4px;
+    }
 
     /* Empty state */
     #chat-empty {
@@ -292,6 +311,12 @@
         <label class="level-check error">
           <input type="checkbox" id="chk-error" checked onchange="applyFilter()"> ERROR
         </label>
+        <label class="level-check request">
+          <input type="checkbox" id="chk-request" checked onchange="applyFilter()"> REQ
+        </label>
+        <label class="level-check response">
+          <input type="checkbox" id="chk-response" checked onchange="applyFilter()"> RES
+        </label>
       </div>
       <a href="/api/logs/raw" target="_blank" rel="noreferrer"
          style="font-size:0.75rem; color:var(--indigo); text-decoration:underline; font-weight:600; white-space:nowrap;">
@@ -310,9 +335,11 @@
 <script>
   const API = 'http://localhost:9000/api';
 
-  let allEntries   = [];
-  let activeLevels = new Set(['INFO', 'WARNING', 'ERROR']);
-  let autoScroll   = true;
+  let allEntries    = [];
+  let activeLevels  = new Set(['INFO', 'WARNING', 'ERROR']);
+  let showRequests  = true;
+  let showResponses = true;
+  let autoScroll    = true;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -324,7 +351,17 @@
     return (entry.service || '').startsWith('squeezypay.frontend');
   }
 
+  function isRequest(entry) {
+    return (entry.message || '').startsWith('[REQUEST]');
+  }
+
+  function isResponse(entry) {
+    return (entry.message || '').startsWith('[RESPONSE]');
+  }
+
   function levelAllowed(entry) {
+    if (isRequest(entry))  return showRequests;
+    if (isResponse(entry)) return showResponses;
     return activeLevels.has((entry.level || 'INFO').toUpperCase());
   }
 
@@ -341,22 +378,35 @@
   // ── Rendering ─────────────────────────────────────────────────────────────
 
   function buildBubble(entry) {
-    const fe    = isFrontend(entry);
-    const side  = fe ? 'fe' : 'be';
-    const label = fe ? 'Frontend' : 'Backend';
-    const level = (entry.level || 'INFO').toUpperCase();
-    const ts    = fmtTime(entry.timestamp);
-    const svc   = (entry.service || '').replace('squeezypay.', '');
-    const msg   = entry.message || '';
+    const fe  = isFrontend(entry);
+    const req = isRequest(entry);
+    const res = isResponse(entry);
+
+    let side, label, bubbleCls, levelKey, levelLabel;
+    if (req) {
+      side = 'be'; label = 'Request';  bubbleCls = 'req'; levelKey = 'REQUEST';  levelLabel = 'REQ';
+    } else if (res) {
+      side = 'be'; label = 'Response'; bubbleCls = 'res'; levelKey = 'RESPONSE'; levelLabel = 'RES';
+    } else {
+      side = fe ? 'fe' : 'be';
+      label = fe ? 'Frontend' : 'Backend';
+      bubbleCls = side;
+      levelKey = (entry.level || 'INFO').toUpperCase();
+      levelLabel = levelKey;
+    }
+
+    const ts  = fmtTime(entry.timestamp);
+    const svc = (entry.service || '').replace('squeezypay.', '');
+    const msg = entry.message || '';
 
     const row = document.createElement('div');
     row.className     = `bubble-row ${side}`;
-    row.dataset.level = level;
+    row.dataset.level = levelKey;
 
     row.innerHTML = `
       <span class="bubble-sender">${escHtml(label)}</span>
-      <div class="bubble ${side}">
-        <span class="bubble-level level-${level}">${level} </span><span class="bubble-msg">${escHtml(msg)}</span>
+      <div class="bubble ${bubbleCls}">
+        <span class="bubble-level level-${levelKey}">${levelLabel} </span><span class="bubble-msg">${escHtml(msg)}</span>
         <span class="bubble-ts">${escHtml(ts)}${svc ? ' · ' + escHtml(svc) : ''}</span>
       </div>`;
     return row;
@@ -415,6 +465,8 @@
       document.getElementById('chk-warning').checked ? 'WARNING' : null,
       document.getElementById('chk-error').checked   ? 'ERROR'   : null,
     ].filter(Boolean));
+    showRequests  = document.getElementById('chk-request').checked;
+    showResponses = document.getElementById('chk-response').checked;
     renderAll();
   }
 

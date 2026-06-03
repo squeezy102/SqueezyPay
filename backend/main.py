@@ -71,11 +71,12 @@ app = FastAPI(title="SqueezyPay API", version="0.1.0", lifespan=lifespan)
 async def request_logging_middleware(request: Request, call_next):
     if request.url.path in _SUPPRESS_REQUEST_LOG:
         return await call_next(request)
+    logger.info("[REQUEST] %s %s", request.method, request.url.path)
     start = time.monotonic()
     response = await call_next(request)
     duration_ms = round((time.monotonic() - start) * 1000)
     logger.info(
-        "[REQUEST] %s %s %s %dms",
+        "[RESPONSE] %s %s %s %dms",
         request.method,
         request.url.path,
         response.status_code,
