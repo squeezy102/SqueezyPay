@@ -26,6 +26,10 @@ export default defineConfig([
       ...js.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
+      // typescript-eslint recommendation: disable no-undef in TS files —
+      // TypeScript's compiler catches undefined references more accurately
+      // and no-undef produces false positives for DOM/global types.
+      'no-undef': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',

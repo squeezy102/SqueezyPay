@@ -54,6 +54,52 @@ function cellValue(p: Payment, key: SortKey): React.ReactNode {
   }
 }
 
+// ── Mobile card — one card per payment ───────────────────────────────────────
+function PaymentCard({ payment }: { payment: Payment }) {
+  return (
+    <div className="rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 flex flex-col gap-2">
+      {/* Primary row: biller + amount */}
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight">
+          {payment.billName}
+        </span>
+        <span className="font-semibold text-teal-700 dark:text-teal-400 text-sm whitespace-nowrap">
+          {formatAmount(payment.amountPaid)}
+        </span>
+      </div>
+
+      {/* Date */}
+      <span className="text-xs text-slate-500 dark:text-slate-400">
+        {formatDate(payment.paymentDate)}
+      </span>
+
+      {/* Secondary details */}
+      {(payment.paymentMethod || payment.confirmationNumber || payment.notes) && (
+        <div className="border-t border-violet-50 dark:border-slate-700 pt-2 flex flex-col gap-1">
+          {payment.paymentMethod && (
+            <div className="flex gap-2 text-xs">
+              <span className="text-slate-400 dark:text-slate-500 w-20 shrink-0">Method</span>
+              <span className="text-slate-700 dark:text-slate-300">{payment.paymentMethod}</span>
+            </div>
+          )}
+          {payment.confirmationNumber && (
+            <div className="flex gap-2 text-xs">
+              <span className="text-slate-400 dark:text-slate-500 w-20 shrink-0">Confirm #</span>
+              <span className="text-slate-700 dark:text-slate-300 font-mono">{payment.confirmationNumber}</span>
+            </div>
+          )}
+          {payment.notes && (
+            <div className="flex gap-2 text-xs">
+              <span className="text-slate-400 dark:text-slate-500 w-20 shrink-0">Notes</span>
+              <span className="text-slate-700 dark:text-slate-300">{payment.notes}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PaymentHistory() {
   const query   = useQuery({ queryKey: ["payments"], queryFn: getAllPayments });
   const [search, setSearch]     = useState("");
@@ -100,11 +146,11 @@ export default function PaymentHistory() {
 
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">
-      <div className="px-6 py-5 flex flex-col gap-4">
+      <div className="px-4 sm:px-6 py-5 flex flex-col gap-4">
 
         {/* Toolbar */}
         <div className="flex items-center justify-between gap-4">
-          <div className="relative w-80">
+          <div className="relative flex-1 sm:flex-none sm:w-80">
             <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
@@ -112,7 +158,7 @@ export default function PaymentHistory() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search biller, confirmation, method, notes..."
+              placeholder="Search..."
               className="w-full pl-9 pr-4 py-2 rounded-lg border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
           </div>
@@ -121,8 +167,19 @@ export default function PaymentHistory() {
           </span>
         </div>
 
-        {/* Table */}
-        <div className="rounded-xl border border-violet-100 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
+        {/* Mobile card list (hidden on md+) */}
+        <div className="flex flex-col gap-3 md:hidden">
+          {sorted.length === 0 ? (
+            <p className="text-center text-sm text-slate-400 py-12">
+              {search ? "No payments match your search." : "No payments logged yet."}
+            </p>
+          ) : (
+            sorted.map((p) => <PaymentCard key={p.id} payment={p} />)
+          )}
+        </div>
+
+        {/* Desktop table (hidden on mobile) */}
+        <div className="hidden md:block rounded-xl border border-violet-100 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
           {sorted.length === 0 ? (
             <p className="text-center text-sm text-slate-400 py-16">
               {search ? "No payments match your search." : "No payments logged yet."}
