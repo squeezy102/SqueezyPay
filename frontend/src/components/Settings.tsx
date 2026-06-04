@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSettings, updateSettings, getCategories, createCategory, updateCategory } from "../utils/api";
+import { getSettings, updateSettings, getCategories, createCategory, updateCategory, changePassphrase } from "../utils/api";
 import type { Category } from "../types";
 
 function PencilIcon() {
@@ -380,6 +380,122 @@ function CategoriesCard() {
   );
 }
 
+// ── Change Passphrase section ─────────────────────────────────────────────────
+function ChangePassphraseCard() {
+  const [current, setCurrent]       = useState("");
+  const [next, setNext]             = useState("");
+  const [confirm, setConfirm]       = useState("");
+  const [saving, setSaving]         = useState(false);
+  const [saved, setSaved]           = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const savedTimerRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); };
+  }, []);
+
+  const changeMutation = useMutation({
+    mutationFn: () => changePassphrase(current, next),
+    onSuccess: () => {
+      setSaving(false);
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+      setSaved(true);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaved(false), 3000);
+    },
+    onError: (err: Error) => {
+      setSaving(false);
+      setError(err.message ?? "Change failed — check backend logs.");
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (next !== confirm) {
+      setError("New passphrases do not match.");
+      return;
+    }
+    if (next.length < 8) {
+      setError("New passphrase must be at least 8 characters.");
+      return;
+    }
+    setSaving(true);
+    changeMutation.mutate();
+  }
+
+  return (
+    <section className="rounded-xl border border-violet-100 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+      <div className="px-5 py-4 border-b border-violet-100 dark:border-slate-700">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Change Passphrase</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          Update the household passphrase used to log in
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} autoComplete="off" className="px-5 py-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Current Passphrase
+          </label>
+          <input
+            type="password"
+            required
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            className="w-full sm:w-72 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+            New Passphrase
+          </label>
+          <input
+            type="password"
+            required
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            className="w-full sm:w-72 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Confirm New Passphrase
+          </label>
+          <input
+            type="password"
+            required
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="w-full sm:w-72 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
+          />
+        </div>
+
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        )}
+
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-60"
+          >
+            {saving ? "Updating…" : "Update Passphrase"}
+          </button>
+          {saved && (
+            <span className="text-sm text-green-600 dark:text-green-400 font-medium">Passphrase updated</span>
+          )}
+        </div>
+      </form>
+    </section>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Settings() {
   return (
@@ -394,6 +510,7 @@ export default function Settings() {
       <div className="max-w-2xl space-y-6">
         <AlertThresholdsCard />
         <CategoriesCard />
+        <ChangePassphraseCard />
       </div>
     </div>
   );

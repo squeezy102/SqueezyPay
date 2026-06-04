@@ -66,7 +66,7 @@ describe("api.ts", () => {
       await getBills();
       expect(sessionStorage.getItem("squeezypay_token")).toBeNull();
       const unauthorizedCalls = dispatchSpy.mock.calls.filter(
-        ([e]) => (e as Event).type === "squeezypay:unauthorized"
+        ([e]: [Event]) => e.type === "squeezypay:unauthorized"
       );
       expect(unauthorizedCalls).toHaveLength(1);
     });
@@ -75,7 +75,7 @@ describe("api.ts", () => {
       mockFetch(500, {});
       await getBills();
       const unauthorizedCalls = dispatchSpy.mock.calls.filter(
-        ([e]) => (e as Event).type === "squeezypay:unauthorized"
+        ([e]: [Event]) => e.type === "squeezypay:unauthorized"
       );
 expect(unauthorizedCalls).toHaveLength(0);
     });

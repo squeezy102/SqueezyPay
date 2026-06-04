@@ -20,9 +20,10 @@ function makeBill(id: number, dayOfMonth: number): Bill {
     dayOfMonth,
     url: "",
     notes: null,
-    category: null,
-    isRecurring: true,
+    category: "",
+    recurring: true,
     expectedAmount: null,
+    amountLabel: "Amount varies",
   };
 }
 

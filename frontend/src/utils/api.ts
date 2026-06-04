@@ -67,6 +67,16 @@ export async function logoutAuth(): Promise<void> {
   });
 }
 
+export async function changePassphrase(currentPassphrase: string, newPassphrase: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/auth/change-passphrase`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ current_passphrase: currentPassphrase, new_passphrase: newPassphrase }),
+  });
+  if (response.status === 401) throw new Error("Current passphrase is incorrect.");
+  if (!response.ok) throw new Error(`Change passphrase failed: ${response.status}`);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function formatAmount(amount: number | null): string {
