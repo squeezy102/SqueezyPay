@@ -23,13 +23,13 @@ These are infrastructure and tooling items that must be in place before Phase 2 
 | ~~Playwright~~ | ~~E2E tests for critical flows~~ Scaffolded at repo root; tests/e2e/ ready; full suite to be written as features accumulate DONE | ~~GOOD NEXT STEP~~ |
 | ~~React Query (TanStack Query)~~ | ~~Add before more API call patterns accumulate~~ DONE | ~~REQUIRED~~ |
 | ~~React Hook Form~~ | ~~Add before more forms are written~~ DONE | ~~REQUIRED~~ |
-| pytest + pytest-asyncio | Backend test infrastructure | REQUIRED |
+| ~~pytest + pytest-asyncio~~ | ~~Backend test infrastructure~~ pytest-asyncio 1.4.0 installed, asyncio_mode=auto configured, 59 backend tests at 87.67% coverage DONE | ~~REQUIRED~~ |
 | ~~Vitest~~ | ~~Frontend unit test infrastructure~~ 38 tests: 16 billUtils.ts + 22 api.ts DONE | ~~REQUIRED~~ |
 | ~~Ruff (Python linter)~~ | ~~pyproject.toml configured, all violations fixed, wired into CI~~ DONE | ~~REQUIRED~~ |
 | ~~ESLint + typescript-eslint~~ | ~~Frontend linter configured for .ts/.tsx, wired into CI~~ DONE | ~~REQUIRED~~ |
-| Recharts | Needed for Phase 2+ charts; add before Phase 2 begins | GOOD NEXT STEP |
-| PyJWT | Add when authentication is implemented | Add with auth |
-| slowapi | Rate limiting on login endpoint | Add with auth |
+| ~~Recharts~~ | ~~Needed for Phase 2+ charts; add before Phase 2 begins~~ DONE | ~~GOOD NEXT STEP~~ |
+| ~~PyJWT~~ | ~~Add when authentication is implemented~~ DONE | ~~Add with auth~~ |
+| ~~slowapi~~ | ~~Rate limiting on login endpoint~~ DONE | ~~Add with auth~~ |
 
 ---
 
@@ -160,7 +160,7 @@ spending insights, and a polished experience.
 | Light mode UI overhaul | - | TECH DEBT (blocked on branding) |
 | Notes popover on bill cards (replace inline truncated text) | - | TECH DEBT |
 | ~~Passphrase change UI in Settings~~ | ~~-~~ DONE | ~~TECH DEBT~~ |
-| Mobile payment history — card layout for small screens | - | TECH DEBT |
+| ~~Mobile payment history — card layout for small screens~~ | ~~-~~ DONE | ~~TECH DEBT~~ |
 
 **Admin Dashboard** - A browser-based operations console (pinned tab at localhost:9000).
 Vision: one-stop shop for monitoring, debugging, troubleshooting, logging, diagnostics, and graphs.

@@ -33,7 +33,7 @@ Then explore the codebase. All files assume you've read the above.
 
 **Phase 1 (Real Foundation):** Complete. All REQs including REQ-016 (authentication) are done.
 
-**Engineering Foundations:** Alembic done. Auth done. TypeScript migration done. CI gate done. Playwright scaffolded. React Query, React Hook Form, Vitest still to do.
+**Engineering Foundations:** All pre-Phase 2 foundations complete. Alembic, Auth, TypeScript, CI gate, Playwright scaffold, React Query, React Hook Form, Vitest (38 tests), Ruff, ESLint, pytest-asyncio, Recharts all done.
 
 **Admin Dashboard:** Pulled forward from Phase 4. Basic version complete and working.
 
@@ -115,11 +115,15 @@ Then explore the codebase. All files assume you've read the above.
 
 ## What Was Built This Session
 
-**This session (admin log viewer, Vitest api.ts, passphrase change UI):**
+**This session (Phase 2 readiness: pytest-asyncio, Recharts, mobile history, passphrase UI, admin log viewer):**
 
 - **`[REQUEST]`/`[RESPONSE]` filter chips** — Request logging middleware split into two paired log lines: `[REQUEST] METHOD /path` on entry, `[RESPONSE] METHOD /path STATUS NNms` on exit. Admin log viewer gains REQ (indigo) and RES (green) filter chips with distinct bubble styles, toggleable independently from INFO/WARN/ERROR service logs.
 - **Vitest: `api.ts` coverage (22 tests)** — `src/utils/api.test.ts` added. Covers `authHeaders` (token present/absent), `handle401` (event dispatch + token removal), snake_case→camelCase mappers for Bill/Payment/Income/Settings, camelCase→snake_case request bodies, `getMonthlyTotal` extraction, and `createCategory`/`updateCategory` conflict/notFound result shapes. Uses `jsdom` environment (installed `jsdom` dev dependency). Total Vitest tests: 38 (16 billUtils + 22 api).
 - **Passphrase change UI** — `ChangePassphraseCard` added to `Settings.tsx`. Three-field form (current, new, confirm). Client-side validation: match check, 8-char minimum. Backend 401 (wrong current passphrase) surfaces as inline error. Success clears fields and shows transient confirmation. `changePassphrase()` added to `api.ts`. Pre-existing TypeScript errors in test files fixed (`category: null→""`, `isRecurring→recurring`, missing `amountLabel`).
+- **pytest-asyncio** — installed (1.4.0), configured in `pyproject.toml` with `asyncio_mode=auto`. 5 new tests for `POST /api/auth/change-passphrase`. Backend now at 59 tests, 87.67% coverage.
+- **Recharts** — installed as frontend dependency, ready for Phase 2 chart components (blame graph, budget visualizations).
+- **Mobile payment history** — `PaymentHistory.tsx` now renders stacked cards on mobile (`< md`). Cards show biller + amount prominently, date below, method/confirmation/notes as secondary detail rows. Desktop sortable table unchanged. Search bar full-width on mobile.
+- **ESLint `no-undef` disabled for TS files** — per typescript-eslint recommendation; TS compiler handles this more accurately. Fixes 5 false-positive errors on DOM types in `api.test.ts`.
 
 **Previous session (linters, Vitest, skills, middleware, CORS fix):**
 
@@ -311,11 +315,10 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 ## Next Session Priorities
 
-1. **Tech debt: branding refactor** - Logo removed (was placeholder). A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
-2. **Tech debt: light mode UI overhaul** - Light mode is visually broken. Full design pass needed. Blocked on branding refactor above.
-3. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
-4. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
-5. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
+1. **Phase 2: Plaid integration** — All pre-Phase 2 foundations are complete. NFCU is confirmed supported via Plaid OAuth (post-2024 migration). Free Trial plan (10 lifetime Items) covers household use. Begin Phase 2: Plaid OAuth connection flow, account balances, transaction sync. See DECISIONS.md and ROADMAP.md for open decisions (OAuth redirect on local network, Plaid free tier limits).
+2. **Tech debt: branding refactor** — Logo removed (was placeholder). App name as text everywhere. New logo + color scheme needed before open-source launch. All current visual design is placeholder — do not invest in polish until brand direction is decided.
+3. **Tech debt: light mode UI overhaul** — Light mode is visually broken. Blocked on branding refactor above.
+4. **Admin dashboard metrics pass** — uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 
