@@ -159,7 +159,7 @@ spending insights, and a polished experience.
 | ~~Unified logging — FastAPI request middleware + admin filter chip~~ | ~~Request middleware DONE; admin filter chip still pending~~ DONE - [REQUEST] entry + [RESPONSE] exit lines, REQ/RES filter chips in admin | ~~GOOD NEXT STEP~~ |
 | Light mode UI overhaul | - | TECH DEBT (blocked on branding) |
 | Notes popover on bill cards (replace inline truncated text) | - | TECH DEBT |
-| Passphrase change UI in Settings | - | TECH DEBT |
+| ~~Passphrase change UI in Settings~~ | ~~-~~ DONE | ~~TECH DEBT~~ |
 | Mobile payment history — card layout for small screens | - | TECH DEBT |
 
 **Admin Dashboard** - A browser-based operations console (pinned tab at localhost:9000).

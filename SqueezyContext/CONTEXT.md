@@ -115,10 +115,11 @@ Then explore the codebase. All files assume you've read the above.
 
 ## What Was Built This Session
 
-**This session (admin log viewer: REQUEST/RESPONSE filter chips; Vitest api.ts coverage):**
+**This session (admin log viewer, Vitest api.ts, passphrase change UI):**
 
 - **`[REQUEST]`/`[RESPONSE]` filter chips** — Request logging middleware split into two paired log lines: `[REQUEST] METHOD /path` on entry, `[RESPONSE] METHOD /path STATUS NNms` on exit. Admin log viewer gains REQ (indigo) and RES (green) filter chips with distinct bubble styles, toggleable independently from INFO/WARN/ERROR service logs.
 - **Vitest: `api.ts` coverage (22 tests)** — `src/utils/api.test.ts` added. Covers `authHeaders` (token present/absent), `handle401` (event dispatch + token removal), snake_case→camelCase mappers for Bill/Payment/Income/Settings, camelCase→snake_case request bodies, `getMonthlyTotal` extraction, and `createCategory`/`updateCategory` conflict/notFound result shapes. Uses `jsdom` environment (installed `jsdom` dev dependency). Total Vitest tests: 38 (16 billUtils + 22 api).
+- **Passphrase change UI** — `ChangePassphraseCard` added to `Settings.tsx`. Three-field form (current, new, confirm). Client-side validation: match check, 8-char minimum. Backend 401 (wrong current passphrase) surfaces as inline error. Success clears fields and shows transient confirmation. `changePassphrase()` added to `api.ts`. Pre-existing TypeScript errors in test files fixed (`category: null→""`, `isRecurring→recurring`, missing `amountLabel`).
 
 **Previous session (linters, Vitest, skills, middleware, CORS fix):**
 
@@ -312,10 +313,9 @@ Phase 1 is complete. All REQs including REQ-016 (authentication) have been built
 
 1. **Tech debt: branding refactor** - Logo removed (was placeholder). A proper brand identity is needed before open-source launch: new logo, new color scheme (approachable, professional - replace the SNES violet/teal placeholder). Treat all current visual design as a placeholder. Do not invest in polish until brand direction is decided.
 2. **Tech debt: light mode UI overhaul** - Light mode is visually broken. Full design pass needed. Blocked on branding refactor above.
-3. **Tech debt: no UI for passphrase change** - `POST /api/auth/change-passphrase` is built but not surfaced in the Settings screen. Add a "Change Passphrase" card to Settings.
-4. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
-5. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
-6. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
+3. **Tech debt: mobile payment history table** - payment history table is not usable on mobile. Needs a card-based or condensed layout for small screens.
+4. **Phase 2 planning: Plaid** - verify your financial institution's Plaid support, verify Plaid free tier limits, design Plaid OAuth flow for local network. Do before writing any Plaid code.
+5. **Admin dashboard metrics pass** - uptime, request rate, DB stats. Admin dashboard is functional but metrics are thin.
 
 ---
 
