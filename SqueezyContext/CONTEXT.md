@@ -311,6 +311,8 @@ No known bugs at this time.
 
 Phase 1 is complete. All REQs including REQ-016 (authentication) have been built.
 
+Phase 2 (Plaid bank integration) has not been started. All Phase 2 engineering foundations are in place.
+
 ---
 
 ## Next Session Priorities
@@ -354,37 +356,42 @@ squeezypay/
 │   └── requirements.txt
 ├── frontend/
 │   ├── index.html              Viewport locked for mobile
+│   ├── eslint.config.js
 │   ├── public/
-│   │   ├── logo.png            App logo
 │   │   ├── manifest.json       PWA manifest
 │   │   ├── favicon.svg
 │   │   └── icons.svg
 │   ├── src/
-│   │   ├── App.jsx             App shell - sidebar + mobile nav + tab routing
-│   │   ├── main.jsx
+│   │   ├── App.tsx             App shell - sidebar + mobile nav + tab routing
+│   │   ├── main.tsx
 │   │   ├── index.css
+│   │   ├── types.ts            All shared domain interfaces (Bill, Payment, Income, etc.)
+│   │   ├── vite-env.d.ts
 │   │   ├── components/
-│   │   │   ├── NavBar.jsx              Sidebar (desktop) + MobileTopBar (mobile)
-│   │   │   ├── BillDashboard.jsx       Home tab - bill cards, alert banners, expand/collapse
-│   │   │   ├── BillCard.jsx            Individual bill card + Start Workflow button
-│   │   │   ├── BillManagement.jsx      Bills tab - manage all bills (active + inactive)
-│   │   │   ├── BillFormModal.jsx       Add/edit bill modal
-│   │   │   ├── LogPaymentModal.jsx     Payment workflow modal (2-panel)
-│   │   │   ├── MoneyInput.jsx          Currency input component
-│   │   │   ├── PaymentHistory.jsx      History tab - sortable payment table
-│   │   │   ├── IncomeManagement.jsx    Income tab - monthly total + income list
-│   │   │   ├── IncomeFormModal.jsx     Add/edit income modal
-│   │   │   ├── Settings.jsx            Settings tab - alert thresholds + categories
-│   │   │   ├── SetupScreen.jsx         First-launch passphrase creation screen
-│   │   │   └── LoginScreen.jsx         Returning session login screen
+│   │   │   ├── NavBar.tsx              Sidebar (desktop) + MobileTopBar (mobile)
+│   │   │   ├── BillDashboard.tsx       Home tab - bill cards, alert banners, expand/collapse
+│   │   │   ├── BillCard.tsx            Individual bill card + Start Workflow button
+│   │   │   ├── BillManagement.tsx      Bills tab - manage all bills
+│   │   │   ├── BillFormModal.tsx       Add/edit bill modal (React Hook Form)
+│   │   │   ├── LogPaymentModal.tsx     Payment workflow modal (2-panel, React Hook Form)
+│   │   │   ├── MoneyInput.tsx          Currency input component
+│   │   │   ├── PaymentHistory.tsx      History tab - sortable table (desktop) + cards (mobile)
+│   │   │   ├── IncomeManagement.tsx    Income tab - monthly total + income list
+│   │   │   ├── IncomeFormModal.tsx     Add/edit income modal (React Hook Form)
+│   │   │   ├── Settings.tsx            Settings tab - thresholds, categories, change passphrase
+│   │   │   ├── Spinner.tsx             Loading spinner
+│   │   │   ├── SetupScreen.tsx         First-launch passphrase creation screen
+│   │   │   └── LoginScreen.tsx         Returning session login screen
 │   │   ├── context/
-│   │   │   ├── ThemeContext.jsx
-│   │   │   └── AuthContext.jsx
+│   │   │   ├── ThemeContext.tsx
+│   │   │   └── AuthContext.tsx
 │   │   ├── theme/
-│   │   │   └── tokens.js               All colors/design tokens, including alertBannerTokens
+│   │   │   └── tokens.ts               All colors/design tokens
 │   │   └── utils/
-│   │       ├── api.js                  All API calls + snake_case→camelCase mapping
-│   │       └── billUtils.js            Date/status calculations, filterActionableBills
+│   │       ├── api.ts                  All API calls + snake_case→camelCase mapping
+│   │       ├── api.test.ts             Vitest: 22 tests for api.ts
+│   │       ├── billUtils.ts            Date/status calculations, filterActionableBills
+│   │       └── billUtils.test.ts       Vitest: 16 tests for billUtils.ts
 │   ├── vite.config.js
 │   └── package.json
 └── backend/
@@ -428,9 +435,11 @@ squeezypay/
     │   └── auth.py
     └── tests/
         ├── conftest.py
+        ├── test_auth.py
         ├── test_bills.py
         ├── test_bill_repository.py
         ├── test_categories.py
+        ├── test_change_passphrase.py
         ├── test_frontend_log.py
         ├── test_income.py
         ├── test_payment_history.py
