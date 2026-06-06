@@ -149,9 +149,6 @@ def _try_autofill(url: str, username: str, password: str) -> bool:
                 browser.close()
                 return False
 
-            # Give JS-rendered pages a moment to settle
-            page.wait_for_timeout(2000)
-
             # Locate username field — first visible match wins
             username_field = None
             for sel in USERNAME_SELECTORS:
