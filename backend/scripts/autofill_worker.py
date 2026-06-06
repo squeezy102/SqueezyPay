@@ -39,7 +39,7 @@ def main():
         page = browser.new_page()
 
         try:
-            page.goto(url, timeout=15000, wait_until="domcontentloaded")
+            page.goto(url, timeout=15000, wait_until="networkidle")
         except PWTimeout:
             sys.exit(1)
 
@@ -75,8 +75,10 @@ def main():
         if username_field.input_value() != username or password_field.input_value() != password:
             sys.exit(1)
 
-        # Fields filled — block here so the browser stays open until the user closes it
-        page.wait_for_event("close", timeout=0)
+        # Fields filled — block until the user closes the browser
+        import time
+        while browser.is_connected():
+            time.sleep(0.5)
         sys.exit(0)
 
 if __name__ == "__main__":
