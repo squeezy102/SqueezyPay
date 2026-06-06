@@ -46,8 +46,11 @@ export interface Category {
 }
 
 export interface Credential {
+  id: number;
+  bill_id: number;
   username: string;
   password: string;
+  notes?: string | null;
 }
 
 export interface PaymentMethod {

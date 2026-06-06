@@ -330,6 +330,42 @@ export async function getCredentialByBill(billId: number): Promise<Credential | 
   }
 }
 
+export async function saveCredential(
+  billId: number,
+  username: string,
+  password: string,
+  existingId: number | null,
+): Promise<Credential | null> {
+  try {
+    const url    = existingId ? `${API_BASE}/api/credentials/${existingId}` : `${API_BASE}/api/credentials/`;
+    const method = existingId ? "PUT" : "POST";
+    const body   = existingId ? { username, password } : { bill_id: billId, username, password };
+    const response = handle401(await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body),
+    }));
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return await response.json() as Credential;
+  } catch (error) {
+    logApiError("Failed to save credential", error);
+    return null;
+  }
+}
+
+export async function deleteCredential(credentialId: number): Promise<boolean> {
+  try {
+    const response = handle401(await fetch(`${API_BASE}/api/credentials/${credentialId}`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    }));
+    return response.ok || response.status === 204;
+  } catch (error) {
+    logApiError("Failed to delete credential", error);
+    return false;
+  }
+}
+
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
   try {
     const response = handle401(await fetch(`${API_BASE}/api/payment-methods/`, { headers: { ...authHeaders() } }));
