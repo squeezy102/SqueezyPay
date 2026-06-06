@@ -149,15 +149,18 @@ def _try_autofill(url: str, username: str, password: str) -> bool:
                 browser.close()
                 return False
 
-            # Locate username field
+            # Give JS-rendered pages a moment to settle
+            page.wait_for_timeout(2000)
+
+            # Locate username field — first visible match wins
             username_field = None
             for sel in USERNAME_SELECTORS:
                 try:
                     el = page.locator(sel).first
-                    el.wait_for(timeout=2000, state="visible")
-                    username_field = el
-                    break
-                except PWTimeout:
+                    if el.count() > 0 and el.is_visible():
+                        username_field = el
+                        break
+                except Exception:
                     continue
 
             if username_field is None:
@@ -165,15 +168,15 @@ def _try_autofill(url: str, username: str, password: str) -> bool:
                 browser.close()
                 return False
 
-            # Locate password field
+            # Locate password field — first visible match wins
             password_field = None
             for sel in PASSWORD_SELECTORS:
                 try:
                     el = page.locator(sel).first
-                    el.wait_for(timeout=2000, state="visible")
-                    password_field = el
-                    break
-                except PWTimeout:
+                    if el.count() > 0 and el.is_visible():
+                        password_field = el
+                        break
+                except Exception:
                     continue
 
             if password_field is None:
