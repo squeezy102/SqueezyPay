@@ -1,5 +1,5 @@
 import re
-from enum import Enum
+from enum import StrEnum
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
@@ -11,7 +11,7 @@ from services.payment_method_service import PaymentMethodService
 router = APIRouter(prefix="/api/payment-methods", tags=["payment-methods"])
 
 
-class PaymentType(str, Enum):
+class PaymentType(StrEnum):
     credit_card = "credit_card"
     debit_card = "debit_card"
     bank_account = "bank_account"

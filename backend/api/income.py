@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
@@ -10,7 +10,7 @@ from services.income_service import IncomeService
 router = APIRouter(prefix="/api/income", tags=["income"])
 
 
-class IncomeFrequency(str, Enum):
+class IncomeFrequency(StrEnum):
     weekly = "weekly"
     bi_weekly = "bi-weekly"
     semi_monthly = "semi-monthly"

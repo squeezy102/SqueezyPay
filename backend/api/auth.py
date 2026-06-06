@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from core.limiter import limiter
 from database.db import get_db
 from services.auth_service import AuthService
+
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 

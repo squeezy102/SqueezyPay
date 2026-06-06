@@ -55,6 +55,7 @@ def test_protected_route_without_token():
     JWT validation is exercised.
     """
     import uuid
+
     from fastapi.testclient import TestClient as _TC
     from sqlalchemy import StaticPool, create_engine
     from sqlalchemy.orm import sessionmaker

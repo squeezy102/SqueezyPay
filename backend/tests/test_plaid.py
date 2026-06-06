@@ -5,15 +5,6 @@ directly via PlaidItemRepository/PlaidAccountRepository for read-path tests.
 """
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from repositories.plaid_repository import (
-    PlaidAccountRepository,
-    PlaidItemRepository,
-    PlaidTransactionRepository,
-)
-from services.encryption_service import encryption_service
-
 
 def _mock_plaid_client():
     mock = MagicMock()

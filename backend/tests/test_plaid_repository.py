@@ -1,11 +1,10 @@
 """Repository-level tests for Plaid — hit in-memory SQLite directly."""
-from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker
 
-from models.models import Base, PlaidAccount, PlaidItem, PlaidTransaction, TransactionCategory
+from models.models import Base, TransactionCategory
 from repositories.plaid_repository import (
     PlaidAccountRepository,
     PlaidItemRepository,

@@ -1,5 +1,5 @@
 import os
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 
 import plaid
 from plaid.api import plaid_api

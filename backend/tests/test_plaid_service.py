@@ -1,5 +1,4 @@
 """Unit tests for PlaidService methods that don't require Plaid API calls."""
-import os
 
 import pytest
 from sqlalchemy import StaticPool, create_engine

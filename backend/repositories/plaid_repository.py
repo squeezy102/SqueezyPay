@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from models.models import PlaidAccount, PlaidItem, PlaidTransaction
