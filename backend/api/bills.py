@@ -137,64 +137,70 @@ def _try_autofill(url: str, username: str, password: str) -> bool:
     ]
 
     try:
-        from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
+        from playwright.sync_api import Playwright, sync_playwright, TimeoutError as PWTimeout
 
+        # Start playwright without a context manager so the browser outlives this function
+        pw: Playwright = sync_playwright().start()
+        browser = pw.chromium.launch(headless=False)
+        page = browser.new_page()
+
+        try:
+            page.goto(url, timeout=15000, wait_until="domcontentloaded")
+        except PWTimeout:
+            logger.warning(f"autofill: page load timed out for {url}")
+            browser.close()
+            pw.stop()
+            return False
+
+        # Locate username field — first visible match wins
+        username_field = None
+        for sel in USERNAME_SELECTORS:
             try:
-                page.goto(url, timeout=15000, wait_until="domcontentloaded")
-            except PWTimeout:
-                logger.warning(f"autofill: page load timed out for {url}")
-                browser.close()
-                return False
+                el = page.locator(sel).first
+                if el.count() > 0 and el.is_visible():
+                    username_field = el
+                    break
+            except Exception:
+                continue
 
-            # Locate username field — first visible match wins
-            username_field = None
-            for sel in USERNAME_SELECTORS:
-                try:
-                    el = page.locator(sel).first
-                    if el.count() > 0 and el.is_visible():
-                        username_field = el
-                        break
-                except Exception:
-                    continue
+        if username_field is None:
+            logger.info(f"autofill: no username field found at {url}")
+            browser.close()
+            pw.stop()
+            return False
 
-            if username_field is None:
-                logger.info(f"autofill: no username field found at {url}")
-                browser.close()
-                return False
+        # Locate password field — first visible match wins
+        password_field = None
+        for sel in PASSWORD_SELECTORS:
+            try:
+                el = page.locator(sel).first
+                if el.count() > 0 and el.is_visible():
+                    password_field = el
+                    break
+            except Exception:
+                continue
 
-            # Locate password field — first visible match wins
-            password_field = None
-            for sel in PASSWORD_SELECTORS:
-                try:
-                    el = page.locator(sel).first
-                    if el.count() > 0 and el.is_visible():
-                        password_field = el
-                        break
-                except Exception:
-                    continue
+        if password_field is None:
+            logger.info(f"autofill: no password field found at {url}")
+            browser.close()
+            pw.stop()
+            return False
 
-            if password_field is None:
-                logger.info(f"autofill: no password field found at {url}")
-                browser.close()
-                return False
+        username_field.fill(username)
+        password_field.fill(password)
 
-            username_field.fill(username)
-            password_field.fill(password)
+        # Verify values were accepted
+        filled_user = username_field.input_value()
+        filled_pass  = password_field.input_value()
+        if filled_user != username or filled_pass != password:
+            logger.warning("autofill: field fill verification failed")
+            browser.close()
+            pw.stop()
+            return False
 
-            # Verify values were accepted
-            filled_user = username_field.input_value()
-            filled_pass  = password_field.input_value()
-            if filled_user != username or filled_pass != password:
-                logger.warning("autofill: field fill verification failed")
-                browser.close()
-                return False
-
-            logger.info(f"autofill: credentials filled for bill_id tied to {url}")
-            # Leave browser open — user completes the login
-            return True
+        logger.info(f"autofill: credentials filled for bill_id tied to {url}")
+        # Browser stays open — user completes login and closes it themselves
+        return True
 
     except Exception as exc:
         logger.warning(f"autofill: unexpected error — {exc}")
