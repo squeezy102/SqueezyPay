@@ -32,10 +32,9 @@ function StatusBadge({ status, daysUntil }: StatusBadgeProps) {
 interface Props {
   bill: Bill;
   dueSoonDays?: number;
-  onSetupCredentials?: () => void;
 }
 
-export default function BillCard({ bill, dueSoonDays = 7, onSetupCredentials }: Props) {
+export default function BillCard({ bill, dueSoonDays = 7 }: Props) {
   const status      = getBillStatus(bill.dayOfMonth, dueSoonDays);
   const daysUntil   = getDaysUntilDue(bill.dayOfMonth);
   const dueDate     = formatDueDate(bill.dayOfMonth);
@@ -81,7 +80,6 @@ export default function BillCard({ bill, dueSoonDays = 7, onSetupCredentials }: 
             queryClient.invalidateQueries({ queryKey: ["bills"] });
             setShowModal(false);
           }}
-          onSetupCredentials={onSetupCredentials}
         />
       )}
     </>

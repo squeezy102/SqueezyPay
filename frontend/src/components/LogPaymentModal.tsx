@@ -5,6 +5,7 @@ import { logPayment, getCredentialByBill, getPaymentMethods } from "../utils/api
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { Bill, Payment, Credential, PaymentMethod } from "../types";
 import MoneyInput from "./MoneyInput";
+import CredentialModal from "./CredentialModal";
 
 interface CopyButtonProps {
   text: string;
@@ -56,10 +57,10 @@ interface Props {
   bill: Bill;
   onClose: () => void;
   onLogged: (payment: Payment) => void;
-  onSetupCredentials?: () => void;
 }
 
-export default function LogPaymentModal({ bill, onClose, onLogged, onSetupCredentials }: Props) {
+export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
+  const [showCredModal, setShowCredModal] = useState(false);
   const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
   const trapRef = useFocusTrap<HTMLDivElement>();
@@ -79,8 +80,8 @@ export default function LogPaymentModal({ bill, onClose, onLogged, onSetupCreden
   const credsLoading    = credQuery.isLoading;
   const pmLoading       = pmQuery.isLoading;
 
-  const [success, setSuccess] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [success, setSuccess]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
 
   const {
     register,
@@ -184,16 +185,18 @@ export default function LogPaymentModal({ bill, onClose, onLogged, onSetupCreden
                 </svg>
                 No credentials stored
               </div>
-              {onSetupCredentials && (
-                <button
-                  type="button"
-                  onClick={onSetupCredentials}
-                  className="text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline shrink-0"
-                >
-                  Set up credentials →
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowCredModal(true)}
+                className="text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline shrink-0"
+              >
+                Set up credentials →
+              </button>
             </div>
+          )}
+
+          {showCredModal && (
+            <CredentialModal bill={bill} onClose={() => setShowCredModal(false)} />
           )}
 
           {/* Go to biller button */}
