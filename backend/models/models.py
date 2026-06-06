@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -99,3 +99,59 @@ class AuthConfig(Base):
     passphrase_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+class PlaidItem(Base):
+    __tablename__ = "plaid_items"
+
+    id = Column(Integer, primary_key=True)
+    item_id = Column(String(255), unique=True, nullable=False)
+    access_token_enc = Column(String(1000), nullable=False)
+    institution_id = Column(String(100), nullable=True)
+    institution_name = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    accounts = relationship("PlaidAccount", back_populates="item", cascade="all, delete-orphan")
+
+
+class PlaidAccount(Base):
+    __tablename__ = "plaid_accounts"
+
+    id = Column(Integer, primary_key=True)
+    plaid_item_id = Column(Integer, ForeignKey("plaid_items.id"), nullable=False)
+    account_id = Column(String(255), unique=True, nullable=False)
+    name = Column(String(255), nullable=False)
+    official_name = Column(String(255), nullable=True)
+    type = Column(String(50), nullable=False)
+    subtype = Column(String(50), nullable=True)
+    mask = Column(String(10), nullable=True)
+    current_balance = Column(Float, nullable=True)
+    available_balance = Column(Float, nullable=True)
+    balance_synced_at = Column(DateTime, nullable=True)
+
+    item = relationship("PlaidItem", back_populates="accounts")
+    transactions = relationship("PlaidTransaction", back_populates="account", cascade="all, delete-orphan")
+
+
+class PlaidTransaction(Base):
+    __tablename__ = "plaid_transactions"
+    __table_args__ = (UniqueConstraint("transaction_id", name="uq_plaid_transaction_id"),)
+
+    id = Column(Integer, primary_key=True)
+    plaid_account_id = Column(Integer, ForeignKey("plaid_accounts.id"), nullable=False)
+    transaction_id = Column(String(255), nullable=False)
+    amount = Column(Float, nullable=False)
+    date = Column(String(10), nullable=False)
+    name = Column(String(500), nullable=False)
+    merchant_name = Column(String(255), nullable=True)
+    plaid_category_primary = Column(String(255), nullable=True)
+    plaid_category_detailed = Column(String(255), nullable=True)
+    category_id = Column(Integer, ForeignKey("transaction_categories.id"), nullable=True)
+    payment_channel = Column(String(50), nullable=True)
+    pending = Column(Boolean, default=False)
+    logo_url = Column(String(500), nullable=True)
+    iso_currency_code = Column(String(10), nullable=True)
+    created_at = Column(DateTime, default=_utcnow)
+
+    account = relationship("PlaidAccount", back_populates="transactions")

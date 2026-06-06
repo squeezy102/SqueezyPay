@@ -11,6 +11,7 @@ import IncomeManagement from "./components/IncomeManagement";
 import Settings from "./components/Settings";
 import LoginScreen from "./components/LoginScreen";
 import SetupScreen from "./components/SetupScreen";
+import Accounts from "./components/Accounts";
 
 function AppShell() {
   const [activeTab, setActiveTab] = useState("home");
@@ -27,6 +28,7 @@ function AppShell() {
         {activeTab === "history"  && <PaymentHistory />}
         {activeTab === "income"   && <IncomeManagement />}
         {activeTab === "settings" && <Settings />}
+        {activeTab === "accounts" && <Accounts />}
       </div>
     </div>
   );

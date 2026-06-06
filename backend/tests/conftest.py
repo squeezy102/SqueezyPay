@@ -7,6 +7,8 @@ from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("SQUEEZYPAY_ENCRYPTION_KEY", "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXJlc3Q=")
 os.environ.setdefault("SQUEEZYPAY_SECRET_KEY", "test-secret-key-for-testing-only-32chars!!")
+os.environ.setdefault("SQUEEZYPAY_PLAID_CLIENTID", "test-plaid-client-id")
+os.environ.setdefault("SQUEEZYPAY_PLAID_SECRET", "test-plaid-secret")
 os.environ["SQUEEZYPAY_TESTING"] = "1"
 
 import database.db as db_module

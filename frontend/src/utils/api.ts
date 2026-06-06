@@ -11,6 +11,10 @@ import type {
   AuthTokenResponse,
   CategoryResult,
   CategoryUpdateResult,
+  PlaidItem,
+  PlaidAccount,
+  PlaidTransaction,
+  BlameData,
 } from "../types";
 
 export const API_BASE = `http://${window.location.hostname}:8000`;
@@ -500,4 +504,228 @@ export async function updateCategory(id: number, name: string): Promise<Category
   if (response.status === 404) return { notFound: true };
   if (!response.ok) throw new Error(`API error: ${response.status}`);
   return await response.json() as Category;
+}
+
+// ── Plaid ─────────────────────────────────────────────────────────────────────
+
+interface RawPlaidItem {
+  id: number;
+  item_id: string;
+  institution_name: string | null;
+  created_at: string | null;
+}
+
+interface RawPlaidAccount {
+  id: number;
+  account_id: string;
+  name: string;
+  official_name: string | null;
+  type: string;
+  subtype: string | null;
+  mask: string | null;
+  current_balance: number | null;
+  available_balance: number | null;
+  balance_synced_at: string | null;
+  institution_name: string | null;
+}
+
+interface RawPlaidTransaction {
+  id: number;
+  transaction_id: string;
+  plaid_account_id: number;
+  amount: number;
+  date: string;
+  name: string;
+  merchant_name: string | null;
+  plaid_category_primary: string | null;
+  plaid_category_detailed: string | null;
+  category_id: number | null;
+  payment_channel: string | null;
+  pending: boolean;
+  logo_url: string | null;
+  iso_currency_code: string | null;
+  created_at: string | null;
+}
+
+interface RawBlameData {
+  period_start: string;
+  period_end: string;
+  total_spending: number;
+  by_category: Array<{ category: string; amount: number; count: number; pct: number }>;
+  by_account: Array<{ account_name: string; amount: number; pct: number }>;
+}
+
+function mapPlaidItem(raw: RawPlaidItem): PlaidItem {
+  return {
+    id:              raw.id,
+    itemId:          raw.item_id,
+    institutionName: raw.institution_name,
+    createdAt:       raw.created_at,
+  };
+}
+
+function mapPlaidAccount(raw: RawPlaidAccount): PlaidAccount {
+  return {
+    id:               raw.id,
+    accountId:        raw.account_id,
+    name:             raw.name,
+    officialName:     raw.official_name,
+    type:             raw.type,
+    subtype:          raw.subtype,
+    mask:             raw.mask,
+    currentBalance:   raw.current_balance,
+    availableBalance: raw.available_balance,
+    balanceSyncedAt:  raw.balance_synced_at,
+    institutionName:  raw.institution_name,
+  };
+}
+
+function mapPlaidTransaction(raw: RawPlaidTransaction): PlaidTransaction {
+  return {
+    id:                   raw.id,
+    transactionId:        raw.transaction_id,
+    plaidAccountId:       raw.plaid_account_id,
+    amount:               raw.amount,
+    date:                 raw.date,
+    name:                 raw.name,
+    merchantName:         raw.merchant_name,
+    plaidCategoryPrimary: raw.plaid_category_primary,
+    plaidCategoryDetailed: raw.plaid_category_detailed,
+    categoryId:           raw.category_id,
+    paymentChannel:       raw.payment_channel,
+    pending:              raw.pending,
+    logoUrl:              raw.logo_url,
+    isoCurrencyCode:      raw.iso_currency_code,
+    createdAt:            raw.created_at,
+  };
+}
+
+function mapBlameData(raw: RawBlameData): BlameData {
+  return {
+    periodStart:   raw.period_start,
+    periodEnd:     raw.period_end,
+    totalSpending: raw.total_spending,
+    byCategory:    raw.by_category,
+    byAccount:     raw.by_account,
+  };
+}
+
+export async function createPlaidLinkToken(): Promise<string> {
+  const response = handle401(await fetch(`${API_BASE}/api/plaid/link-token`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+  }));
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  const data = await response.json() as { link_token: string };
+  return data.link_token;
+}
+
+export async function exchangePlaidPublicToken(publicToken: string): Promise<PlaidItem> {
+  const response = handle401(await fetch(`${API_BASE}/api/plaid/exchange-token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ public_token: publicToken }),
+  }));
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return mapPlaidItem(await response.json() as RawPlaidItem);
+}
+
+export async function getPlaidItems(): Promise<PlaidItem[]> {
+  try {
+    const response = handle401(await fetch(`${API_BASE}/api/plaid/items`, { headers: { ...authHeaders() } }));
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return (await response.json() as RawPlaidItem[]).map(mapPlaidItem);
+  } catch (error) {
+    logApiError("Failed to fetch Plaid items", error);
+    return [];
+  }
+}
+
+export async function disconnectPlaidItem(itemId: number): Promise<boolean> {
+  try {
+    const response = handle401(await fetch(`${API_BASE}/api/plaid/items/${itemId}`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    }));
+    return response.ok || response.status === 204;
+  } catch (error) {
+    logApiError("Failed to disconnect Plaid item", error);
+    return false;
+  }
+}
+
+export async function getPlaidAccounts(): Promise<PlaidAccount[]> {
+  try {
+    const response = handle401(await fetch(`${API_BASE}/api/plaid/accounts`, { headers: { ...authHeaders() } }));
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return (await response.json() as RawPlaidAccount[]).map(mapPlaidAccount);
+  } catch (error) {
+    logApiError("Failed to fetch Plaid accounts", error);
+    return [];
+  }
+}
+
+export async function syncPlaidBalances(plaidItemId: number): Promise<PlaidAccount[]> {
+  const response = handle401(await fetch(`${API_BASE}/api/plaid/accounts/sync-balances`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ plaid_item_id: plaidItemId }),
+  }));
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return (await response.json() as RawPlaidAccount[]).map(mapPlaidAccount);
+}
+
+export interface PlaidTransactionParams {
+  accountId?: number;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function getPlaidTransactions(params: PlaidTransactionParams = {}): Promise<{ transactions: PlaidTransaction[]; total: number }> {
+  try {
+    const qs = new URLSearchParams();
+    if (params.accountId != null) qs.set("account_id", String(params.accountId));
+    if (params.startDate)         qs.set("start_date", params.startDate);
+    if (params.endDate)           qs.set("end_date", params.endDate);
+    if (params.limit != null)     qs.set("limit", String(params.limit));
+    if (params.offset != null)    qs.set("offset", String(params.offset));
+    const response = handle401(await fetch(`${API_BASE}/api/plaid/transactions?${qs}`, { headers: { ...authHeaders() } }));
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json() as { transactions: RawPlaidTransaction[]; total: number };
+    return {
+      transactions: data.transactions.map(mapPlaidTransaction),
+      total:        data.total,
+    };
+  } catch (error) {
+    logApiError("Failed to fetch Plaid transactions", error);
+    return { transactions: [], total: 0 };
+  }
+}
+
+export async function syncPlaidTransactions(plaidItemId: number, daysBack = 30): Promise<{ added: number; updated: number }> {
+  const response = handle401(await fetch(`${API_BASE}/api/plaid/transactions/sync`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ plaid_item_id: plaidItemId, days_back: daysBack }),
+  }));
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return await response.json() as { added: number; updated: number };
+}
+
+export async function assignPlaidTransactionCategory(txId: number, categoryId: number): Promise<PlaidTransaction> {
+  const response = handle401(await fetch(`${API_BASE}/api/plaid/transactions/${txId}/category`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ category_id: categoryId }),
+  }));
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return mapPlaidTransaction(await response.json() as RawPlaidTransaction);
+}
+
+export async function getPlaidBlame(daysBack = 30): Promise<BlameData> {
+  const response = handle401(await fetch(`${API_BASE}/api/plaid/blame?days_back=${daysBack}`, { headers: { ...authHeaders() } }));
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return mapBlameData(await response.json() as RawBlameData);
 }

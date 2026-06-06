@@ -70,3 +70,65 @@ export type CategoryResult = Category | { conflict: true } | null;
 export type CategoryUpdateResult = Category | { conflict: true } | { notFound: true } | null;
 
 export type BillStatus = "overdue" | "due-soon" | "upcoming";
+
+// ── Plaid ─────────────────────────────────────────────────────────────────────
+
+export interface PlaidItem {
+  id: number;
+  itemId: string;
+  institutionName: string | null;
+  createdAt: string | null;
+}
+
+export interface PlaidAccount {
+  id: number;
+  accountId: string;
+  name: string;
+  officialName: string | null;
+  type: string;
+  subtype: string | null;
+  mask: string | null;
+  currentBalance: number | null;
+  availableBalance: number | null;
+  balanceSyncedAt: string | null;
+  institutionName: string | null;
+}
+
+export interface PlaidTransaction {
+  id: number;
+  transactionId: string;
+  plaidAccountId: number;
+  amount: number;
+  date: string;
+  name: string;
+  merchantName: string | null;
+  plaidCategoryPrimary: string | null;
+  plaidCategoryDetailed: string | null;
+  categoryId: number | null;
+  paymentChannel: string | null;
+  pending: boolean;
+  logoUrl: string | null;
+  isoCurrencyCode: string | null;
+  createdAt: string | null;
+}
+
+export interface BlameCategory {
+  category: string;
+  amount: number;
+  count: number;
+  pct: number;
+}
+
+export interface BlameAccount {
+  account_name: string;
+  amount: number;
+  pct: number;
+}
+
+export interface BlameData {
+  periodStart: string;
+  periodEnd: string;
+  totalSpending: number;
+  byCategory: BlameCategory[];
+  byAccount: BlameAccount[];
+}

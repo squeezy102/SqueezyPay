@@ -15,6 +15,7 @@ from api.frontend_log import router as frontend_log_router
 from api.income import router as income_router
 from api.payment_history import router as payment_history_router
 from api.payment_methods import router as payment_methods_router
+from api.plaid import router as plaid_router
 from api.settings import router as settings_router
 from core.auth import require_auth
 from core.limiter import limiter
@@ -112,6 +113,7 @@ app.include_router(frontend_log_router, dependencies=[Depends(require_auth)])
 app.include_router(income_router, dependencies=[Depends(require_auth)])
 app.include_router(settings_router, dependencies=[Depends(require_auth)])
 app.include_router(categories_router, dependencies=[Depends(require_auth)])
+app.include_router(plaid_router, dependencies=[Depends(require_auth)])
 
 
 @app.get("/health")
