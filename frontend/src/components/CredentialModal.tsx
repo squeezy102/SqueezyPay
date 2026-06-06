@@ -70,7 +70,7 @@ export default function CredentialModal({ bill, onClose }: Props) {
         {credQuery.isLoading ? (
           <div className="px-5 py-8 flex justify-center"><Spinner /></div>
         ) : (
-          <form onSubmit={handleSave} autoComplete="off" className="px-5 py-4 flex flex-col gap-4">
+          <form onSubmit={handleSave} className="px-5 py-4 flex flex-col gap-4">
             {error && <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-3 py-2 rounded-lg">{error}</p>}
 
             <div className="flex flex-col gap-1.5">
@@ -78,7 +78,7 @@ export default function CredentialModal({ bill, onClose }: Props) {
               <input
                 autoFocus
                 type="text"
-                autoComplete="one-time-code"
+                autoComplete="off"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
@@ -89,11 +89,10 @@ export default function CredentialModal({ bill, onClose }: Props) {
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Password</label>
               <div className="relative">
                 <input
-                  type="text"
-                  autoComplete="one-time-code"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  style={showPassword ? undefined : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)}
                   className="w-full px-3 py-2 pr-10 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
                 <button
