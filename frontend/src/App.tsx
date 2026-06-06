@@ -4,18 +4,19 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Sidebar, MobileTopBar } from "./components/NavBar";
-import BillDashboard from "./components/BillDashboard";
+import Dashboard from "./components/Dashboard";
 import BillManagement from "./components/BillManagement";
-import PaymentHistory from "./components/PaymentHistory";
 import IncomeManagement from "./components/IncomeManagement";
 import Settings from "./components/Settings";
 import LoginScreen from "./components/LoginScreen";
 import SetupScreen from "./components/SetupScreen";
 import Accounts from "./components/Accounts";
 import SpendingBlame from "./components/SpendingBlame";
+import Transactions from "./components/Transactions";
+import BillPayments from "./components/BillPayments";
 
 function AppShell() {
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">
@@ -24,13 +25,14 @@ function AppShell() {
 
       {/* Content area - offset for sidebar on desktop, top bar on mobile */}
       <div className="lg:pl-56 pt-14 lg:pt-0">
-        {activeTab === "home"     && <BillDashboard />}
-        {activeTab === "bills"    && <BillManagement />}
-        {activeTab === "history"  && <PaymentHistory />}
-        {activeTab === "income"   && <IncomeManagement />}
-        {activeTab === "settings" && <Settings />}
-        {activeTab === "accounts" && <Accounts />}
-        {activeTab === "spending" && <SpendingBlame onNavigate={setActiveTab} />}
+        {activeTab === "dashboard"     && <Dashboard />}
+        {activeTab === "bills"         && <BillManagement />}
+        {activeTab === "transactions"  && <Transactions />}
+        {activeTab === "bill-payments" && <BillPayments />}
+        {activeTab === "income"        && <IncomeManagement />}
+        {activeTab === "settings"      && <Settings />}
+        {activeTab === "accounts"      && <Accounts />}
+        {activeTab === "spending"      && <SpendingBlame onNavigate={setActiveTab} />}
       </div>
     </div>
   );

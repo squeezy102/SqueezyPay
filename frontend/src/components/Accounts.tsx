@@ -21,13 +21,32 @@ function formatSyncTime(iso: string | null): string {
   return `Synced ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-// ── Connected Banks section ───────────────────────────────────────────────────
+// ── No-bank empty state ───────────────────────────────────────────────────────
+
+function NoBankConnected() {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 p-10 flex flex-col items-center gap-4 text-center">
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+      </svg>
+      <div>
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No bank connected</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
+          Connect your financial institution via Plaid to see live balances and transaction history.
+        </p>
+      </div>
+      <PlaidLinkButton />
+    </div>
+  );
+}
+
+// ── Connected bank panel ──────────────────────────────────────────────────────
 
 function ConnectedBanks({ items }: { items: PlaidItem[] }) {
   const queryClient = useQueryClient();
   const [syncingBalances, setSyncingBalances] = useState<number | null>(null);
-  const [syncingTx, setSyncingTx] = useState<number | null>(null);
-  const [syncResult, setSyncResult] = useState<{ id: number; msg: string } | null>(null);
+  const [syncingTx, setSyncingTx]             = useState<number | null>(null);
+  const [syncResult, setSyncResult]           = useState<{ id: number; msg: string } | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<number | null>(null);
 
   const disconnectMutation = useMutation({
@@ -61,18 +80,6 @@ function ConnectedBanks({ items }: { items: PlaidItem[] }) {
     }
   }
 
-  if (items.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 p-8 flex flex-col items-center gap-3 text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-        </svg>
-        <p className="text-sm text-slate-500 dark:text-slate-400">No banks connected yet</p>
-        <PlaidLinkButton />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-3">
       {items.map((item) => (
@@ -81,7 +88,9 @@ function ConnectedBanks({ items }: { items: PlaidItem[] }) {
             <p className="text-sm font-semibold text-slate-900 dark:text-white">
               {item.institutionName ?? "Connected Institution"}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Connected {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Connected {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
+            </p>
             {syncResult?.id === item.id && (
               <p className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">{syncResult.msg}</p>
             )}
@@ -128,9 +137,6 @@ function ConnectedBanks({ items }: { items: PlaidItem[] }) {
           </div>
         </div>
       ))}
-      <div className="pt-1">
-        <PlaidLinkButton label="Connect Another Bank" />
-      </div>
     </div>
   );
 }
@@ -209,16 +215,36 @@ export default function Accounts() {
     queryFn: getPlaidAccounts,
   });
 
+  const isConnected = !itemsLoading && items.length > 0;
+
+  // While loading, render nothing that touches PlaidLinkButton to avoid
+  // double-script injection from multiple usePlaidLink instances.
+  if (itemsLoading) {
+    return (
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Bank Accounts</h1>
+        <p className="text-sm text-slate-500">Loading…</p>
+      </div>
+    );
+  }
+
+  // No bank connected — full-page prompt with a single PlaidLinkButton instance.
+  if (!isConnected) {
+    return (
+      <div className="p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Bank Accounts</h1>
+        <NoBankConnected />
+      </div>
+    );
+  }
+
+  // Bank connected — no PlaidLinkButton anywhere on this page.
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6">
       <h1 className="text-xl font-bold text-slate-900 dark:text-white">Bank Accounts</h1>
 
-      <Section title="Connected Banks">
-        {itemsLoading ? (
-          <p className="text-sm text-slate-500">Loading…</p>
-        ) : (
-          <ConnectedBanks items={items} />
-        )}
+      <Section title="Connected Bank">
+        <ConnectedBanks items={items} />
       </Section>
 
       <Section title="Account Balances">

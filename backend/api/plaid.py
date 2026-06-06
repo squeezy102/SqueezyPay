@@ -44,6 +44,8 @@ def create_link_token():
 def exchange_token(payload: ExchangeTokenRequest, db: Session = Depends(get_db)):
     try:
         return PlaidService.exchange_public_token(db, payload.public_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:

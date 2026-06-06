@@ -10,17 +10,25 @@ function LogoutIcon() {
   );
 }
 
-interface Tab {
+interface NavTab {
+  type?: "tab";
   id: string;
   label: string;
   icon: React.ReactNode;
   disabled?: boolean;
 }
 
-const tabs: Tab[] = [
+interface NavDivider {
+  type: "divider";
+  label: string;
+}
+
+type NavItem = NavTab | NavDivider;
+
+const navItems: NavItem[] = [
   {
-    id: "home",
-    label: "Home",
+    id: "dashboard",
+    label: "Dashboard",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -37,11 +45,11 @@ const tabs: Tab[] = [
     ),
   },
   {
-    id: "history",
-    label: "History",
+    id: "accounts",
+    label: "Accounts",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
       </svg>
     ),
   },
@@ -54,22 +62,25 @@ const tabs: Tab[] = [
       </svg>
     ),
   },
+
+  // ── History section ─────────────────────────────────────
+  { type: "divider", label: "History" },
+
   {
-    id: "settings",
-    label: "Settings",
+    id: "transactions",
+    label: "Transactions",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
       </svg>
     ),
   },
   {
-    id: "accounts",
-    label: "Accounts",
+    id: "bill-payments",
+    label: "Bill Payments",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
@@ -79,6 +90,20 @@ const tabs: Tab[] = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+      </svg>
+    ),
+  },
+
+  // ── Misc section ────────────────────────────────────────
+  { type: "divider", label: "" },
+
+  {
+    id: "settings",
+    label: "Settings",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
   },
@@ -93,6 +118,51 @@ const tabs: Tab[] = [
     ),
   },
 ];
+
+function NavItemRow({
+  item,
+  active,
+  onSelect,
+}: {
+  item: NavTab;
+  active: string;
+  onSelect: (id: string) => void;
+}) {
+  const isActive = active === item.id;
+  return (
+    <button
+      onClick={() => !item.disabled && onSelect(item.id)}
+      disabled={item.disabled}
+      title={item.disabled ? "Coming soon" : undefined}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left
+        ${item.disabled
+          ? "text-violet-600 dark:text-slate-600 cursor-not-allowed"
+          : isActive
+            ? "bg-violet-700 dark:bg-violet-900/50 text-white dark:text-violet-300"
+            : "text-violet-200 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white dark:hover:text-slate-200"
+        }`}
+    >
+      {item.icon}
+      {item.label}
+      {item.disabled && (
+        <span className="ml-auto text-xs text-violet-600 dark:text-slate-600">Soon</span>
+      )}
+    </button>
+  );
+}
+
+function NavDividerRow({ label }: { label: string }) {
+  return (
+    <div className="mt-3 mb-1 px-3 flex items-center gap-2">
+      {label && (
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-violet-500 dark:text-slate-500 shrink-0 select-none">
+          {label}
+        </span>
+      )}
+      <div className="flex-1 h-px bg-violet-700 dark:bg-slate-700" />
+    </div>
+  );
+}
 
 function DarkModeToggle() {
   const { dark, toggle } = useTheme();
@@ -128,31 +198,12 @@ export function Sidebar({ active, onChange }: NavProps) {
         <span className="text-white font-bold text-lg tracking-wide">SqueezyPay</span>
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-        {tabs.map((tab) => {
-          const isActive = active === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => !tab.disabled && onChange(tab.id)}
-              disabled={tab.disabled}
-              title={tab.disabled ? "Coming soon" : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left
-                ${tab.disabled
-                  ? "text-violet-600 dark:text-slate-600 cursor-not-allowed"
-                  : isActive
-                    ? "bg-violet-700 dark:bg-violet-900/50 text-white dark:text-violet-300"
-                    : "text-violet-200 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white dark:hover:text-slate-200"
-                }`}
-            >
-              {tab.icon}
-              {tab.label}
-              {tab.disabled && (
-                <span className="ml-auto text-xs text-violet-600 dark:text-slate-600">Soon</span>
-              )}
-            </button>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
+        {navItems.map((item, i) =>
+          item.type === "divider"
+            ? <NavDividerRow key={`divider-${i}`} label={item.label} />
+            : <NavItemRow key={item.id} item={item} active={active} onSelect={onChange} />
+        )}
       </nav>
 
       <div className="px-4 py-3 border-t border-violet-800 dark:border-slate-700 flex items-center justify-between">
@@ -265,30 +316,30 @@ export function MobileTopBar({ active, onChange }: NavProps) {
         </div>
       </header>
 
-      {/* Dropdown menu */}
       {menuOpen && (
-        <div className="lg:hidden fixed top-14 left-0 right-0 z-40 bg-violet-900 dark:bg-slate-900 border-b border-violet-800 dark:border-slate-700 px-3 py-2 flex flex-col gap-1 shadow-lg">
-          {tabs.map((tab) => {
-            const isActive = active === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => { if (!tab.disabled) { onChange(tab.id); setMenuOpen(false); } }}
-                disabled={tab.disabled}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left
-                  ${tab.disabled
-                    ? "text-violet-600 dark:text-slate-600 cursor-not-allowed"
-                    : isActive
-                      ? "bg-violet-700 dark:bg-violet-900/50 text-white dark:text-violet-300"
-                      : "text-violet-200 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white"
-                  }`}
-              >
-                {tab.icon}
-                {tab.label}
-                {tab.disabled && <span className="ml-auto text-xs text-violet-600 dark:text-slate-600">Coming soon</span>}
-              </button>
-            );
-          })}
+        <div className="lg:hidden fixed top-14 left-0 right-0 z-40 bg-violet-900 dark:bg-slate-900 border-b border-violet-800 dark:border-slate-700 px-3 py-2 flex flex-col gap-1 shadow-lg overflow-y-auto max-h-[calc(100vh-3.5rem)]">
+          {navItems.map((item, i) =>
+            item.type === "divider"
+              ? <NavDividerRow key={`divider-${i}`} label={item.label} />
+              : (
+                <button
+                  key={item.id}
+                  onClick={() => { if (!item.disabled) { onChange(item.id); setMenuOpen(false); } }}
+                  disabled={item.disabled}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left
+                    ${item.disabled
+                      ? "text-violet-600 dark:text-slate-600 cursor-not-allowed"
+                      : active === item.id
+                        ? "bg-violet-700 dark:bg-violet-900/50 text-white dark:text-violet-300"
+                        : "text-violet-200 dark:text-slate-400 hover:bg-violet-800 dark:hover:bg-slate-700 hover:text-white"
+                    }`}
+                >
+                  {item.icon}
+                  {item.label}
+                  {item.disabled && <span className="ml-auto text-xs text-violet-600 dark:text-slate-600">Coming soon</span>}
+                </button>
+              )
+          )}
           <MobileLogoutButton onClose={() => setMenuOpen(false)} />
         </div>
       )}

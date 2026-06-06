@@ -88,6 +88,13 @@ class PlaidService:
 
     @staticmethod
     def exchange_public_token(db: Session, public_token: str) -> dict:
+        existing = PlaidItemRepository.get_all(db)
+        if existing:
+            raise ValueError(
+                "A financial institution is already connected. "
+                "Disconnect it before connecting a new one."
+            )
+
         client = _get_plaid_client()
         request = ItemPublicTokenExchangeRequest(public_token=public_token)
         response = client.item_public_token_exchange(request)

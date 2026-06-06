@@ -7,9 +7,10 @@ interface Props {
   onConnected?: () => void;
   label?: string;
   className?: string;
+  hideIcon?: boolean;
 }
 
-export default function PlaidLinkButton({ onConnected, label = "Connect Bank Account", className }: Props) {
+export default function PlaidLinkButton({ onConnected, label = "Connect Bank Account", className, hideIcon }: Props) {
   const queryClient = useQueryClient();
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [fetchingToken, setFetchingToken] = useState(false);
@@ -79,9 +80,11 @@ export default function PlaidLinkButton({ onConnected, label = "Connect Bank Acc
           </>
         ) : (
           <>
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
+            {!hideIcon && (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            )}
             {label}
           </>
         )}
