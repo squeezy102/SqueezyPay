@@ -143,6 +143,7 @@ spending insights, and a polished experience.
 | Year-over-year spending comparison | REQ-012 | NICE TO HAVE |
 | Savings goals | - | NICE TO HAVE |
 | Shared vs. personal expense tagging | - | NICE TO HAVE |
+| LLM-assisted financial insights panel | - | GOOD NEXT STEP |
 | User accounts / household member profiles | - | STRETCH GOAL |
 | External asset / liability tracking | REQ-011 | STRETCH GOAL |
 | ~~External push notifications (bill reminders)~~ | ~~REQ-013~~ | Covered by REQ-017 |
@@ -218,3 +219,5 @@ even if it isn't used yet. This prevents a painful migration later.
 to access the app. Implement local DNS (e.g., `squeezypay.local` or `squeezypay`
 via .local mDNS or router DNS config). This is a UX priority for household use
 but is not blocking Phase 1 - can be added once the backend is stable.
+
+- **Phase 4 - LLM insights panel:** Users supply their own API key for their LLM of choice (Claude, OpenAI, etc.). The backend routes the request through a thin proxy so the key is stored encrypted server-side (same Fernet vault as other secrets) and never exposed to the browser. The prompt is assembled server-side from the user's actual transaction and budget data. UI must include a prominent disclaimer: "For guidance only. Not financial advice." Key design decisions to settle: which LLMs to support (multi-provider vs. Claude-only), whether insights are on-demand (button) or background/scheduled, and whether conversation is stateful (follow-up questions) or single-shot.
