@@ -117,91 +117,46 @@ def autofill_bill(bill_id: int, db: Session = Depends(get_db)):
 
 
 def _try_autofill(url: str, username: str, password: str) -> bool:
-    # Selectors tried in order for the username/email field
-    USERNAME_SELECTORS = [
-        'input[type="email"]',
-        'input[name="email"]',
-        'input[name="username"]',
-        'input[name="user"]',
-        'input[name="login"]',
-        'input[id*="email" i]',
-        'input[id*="user" i]',
-        'input[autocomplete="email"]',
-        'input[autocomplete="username"]',
-    ]
-    PASSWORD_SELECTORS = [
-        'input[type="password"]',
-        'input[name="password"]',
-        'input[id*="password" i]',
-        'input[autocomplete="current-password"]',
+    import base64
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    worker = Path(__file__).parent.parent / "scripts" / "autofill_worker.py"
+    python = sys.executable
+
+    # Encode args as base64 to avoid any shell quoting issues with special characters
+    args = [
+        python,
+        str(worker),
+        base64.b64encode(url.encode()).decode(),
+        base64.b64encode(username.encode()).decode(),
+        base64.b64encode(password.encode()).decode(),
     ]
 
     try:
-        from playwright.sync_api import Playwright, sync_playwright, TimeoutError as PWTimeout
-
-        # Start playwright without a context manager so the browser outlives this function
-        pw: Playwright = sync_playwright().start()
-        browser = pw.chromium.launch(headless=False)
-        page = browser.new_page()
-
+        # Wait briefly for the worker to attempt the fill, then detach
+        proc = subprocess.Popen(
+            args,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+        )
+        # Give it up to 10s to navigate and fill — then return regardless
         try:
-            page.goto(url, timeout=15000, wait_until="domcontentloaded")
-        except PWTimeout:
-            logger.warning(f"autofill: page load timed out for {url}")
-            browser.close()
-            pw.stop()
-            return False
-
-        # Locate username field — first visible match wins
-        username_field = None
-        for sel in USERNAME_SELECTORS:
-            try:
-                el = page.locator(sel).first
-                if el.count() > 0 and el.is_visible():
-                    username_field = el
-                    break
-            except Exception:
-                continue
-
-        if username_field is None:
-            logger.info(f"autofill: no username field found at {url}")
-            browser.close()
-            pw.stop()
-            return False
-
-        # Locate password field — first visible match wins
-        password_field = None
-        for sel in PASSWORD_SELECTORS:
-            try:
-                el = page.locator(sel).first
-                if el.count() > 0 and el.is_visible():
-                    password_field = el
-                    break
-            except Exception:
-                continue
-
-        if password_field is None:
-            logger.info(f"autofill: no password field found at {url}")
-            browser.close()
-            pw.stop()
-            return False
-
-        username_field.fill(username)
-        password_field.fill(password)
-
-        # Verify values were accepted
-        filled_user = username_field.input_value()
-        filled_pass  = password_field.input_value()
-        if filled_user != username or filled_pass != password:
-            logger.warning("autofill: field fill verification failed")
-            browser.close()
-            pw.stop()
-            return False
-
-        logger.info(f"autofill: credentials filled for bill_id tied to {url}")
-        # Browser stays open — user completes login and closes it themselves
-        return True
+            proc.wait(timeout=10)
+            if proc.returncode == 0:
+                logger.info(f"autofill: credentials filled for {url}")
+                return True
+            else:
+                err = proc.stderr.read().decode(errors="replace") if proc.stderr else ""
+                logger.warning(f"autofill: worker exited {proc.returncode} — {err.strip()}")
+                return False
+        except subprocess.TimeoutExpired:
+            # Worker is still running (browser open, waiting for page close) — that's success
+            logger.info(f"autofill: worker running, browser open for {url}")
+            return True
 
     except Exception as exc:
-        logger.warning(f"autofill: unexpected error — {exc}")
+        logger.warning(f"autofill: failed to launch worker — {exc}")
         return False
