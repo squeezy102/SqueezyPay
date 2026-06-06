@@ -12,6 +12,7 @@ import Settings from "./components/Settings";
 import LoginScreen from "./components/LoginScreen";
 import SetupScreen from "./components/SetupScreen";
 import Accounts from "./components/Accounts";
+import SpendingBlame from "./components/SpendingBlame";
 
 function AppShell() {
   const [activeTab, setActiveTab] = useState("home");
@@ -29,6 +30,7 @@ function AppShell() {
         {activeTab === "income"   && <IncomeManagement />}
         {activeTab === "settings" && <Settings />}
         {activeTab === "accounts" && <Accounts />}
+        {activeTab === "spending" && <SpendingBlame onNavigate={setActiveTab} />}
       </div>
     </div>
   );

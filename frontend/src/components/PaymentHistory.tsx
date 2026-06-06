@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getAllPayments } from "../utils/api";
 import type { Payment } from "../types";
 import Spinner from "./Spinner";
+import TransactionTable from "./TransactionTable";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "-";
@@ -100,7 +101,9 @@ function PaymentCard({ payment }: { payment: Payment }) {
   );
 }
 
-export default function PaymentHistory() {
+type HistoryTab = "payments" | "transactions";
+
+function BillPaymentHistory() {
   const query   = useQuery({ queryKey: ["payments"], queryFn: getAllPayments });
   const [search, setSearch]     = useState("");
   const [sortKey, setSortKey]   = useState<SortKey>("paymentDate");
@@ -153,8 +156,7 @@ export default function PaymentHistory() {
   });
 
   return (
-    <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">
-      <div className="px-4 sm:px-6 py-5 flex flex-col gap-4">
+    <div className="px-4 sm:px-6 py-5 flex flex-col gap-4">
 
         {/* Toolbar */}
         <div className="flex items-center justify-between gap-4">
@@ -231,7 +233,41 @@ export default function PaymentHistory() {
           )}
         </div>
 
+    </div>
+  );
+}
+
+export default function PaymentHistory() {
+  const [activeTab, setActiveTab] = useState<HistoryTab>("payments");
+
+  const subTabs: { id: HistoryTab; label: string }[] = [
+    { id: "payments",     label: "Bill Payments" },
+    { id: "transactions", label: "Bank Transactions" },
+  ];
+
+  return (
+    <div className="p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">History</h1>
+        <div className="flex rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+          {subTabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === t.id
+                  ? "bg-violet-600 text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {activeTab === "payments"     && <BillPaymentHistory />}
+      {activeTab === "transactions" && <TransactionTable />}
     </div>
   );
 }
