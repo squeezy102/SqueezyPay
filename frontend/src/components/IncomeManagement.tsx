@@ -35,6 +35,7 @@ export default function IncomeManagement() {
   const incomeQuery = useQuery({
     queryKey: ["income", { includeInactive: showInactive }],
     queryFn:  () => getIncome(showInactive),
+    retry: 2,
   });
 
   const mtQuery = useQuery({
@@ -77,6 +78,14 @@ export default function IncomeManagement() {
 
   if (incomeQuery.isLoading || mtQuery.isLoading) {
     return <Spinner />;
+  }
+
+  if (incomeQuery.isError) {
+    return (
+      <div className="min-h-screen bg-violet-50 dark:bg-slate-950 flex items-center justify-center">
+        <p className="text-sm text-red-600 dark:text-red-400">Failed to load income sources. Check your connection and try refreshing.</p>
+      </div>
+    );
   }
 
   return (
@@ -227,6 +236,7 @@ function IncomeTable({ sources, onEdit, onToggle }: IncomeTableProps) {
                 <div className="flex items-center justify-end gap-1">
                   <button
                     onClick={() => onEdit(source)}
+                    aria-label={`Edit ${source.sourceName}`}
                     title="Edit"
                     className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/30 transition-colors"
                   >
@@ -236,6 +246,7 @@ function IncomeTable({ sources, onEdit, onToggle }: IncomeTableProps) {
                   </button>
                   <button
                     onClick={() => onToggle(source)}
+                    aria-label={source.active ? `Deactivate ${source.sourceName}` : `Reactivate ${source.sourceName}`}
                     title={source.active ? "Deactivate" : "Reactivate"}
                     className={`p-1.5 rounded-lg transition-colors ${
                       source.active

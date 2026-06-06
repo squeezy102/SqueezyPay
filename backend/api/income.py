@@ -1,5 +1,7 @@
+from enum import Enum
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from database.db import get_db
@@ -8,20 +10,45 @@ from services.income_service import IncomeService
 router = APIRouter(prefix="/api/income", tags=["income"])
 
 
+class IncomeFrequency(str, Enum):
+    weekly = "weekly"
+    bi_weekly = "bi-weekly"
+    semi_monthly = "semi-monthly"
+    monthly = "monthly"
+
+
 class IncomeCreate(BaseModel):
-    source_name: str
-    amount: float
-    frequency: str
+    source_name: str = Field(..., min_length=1, max_length=255)
+    amount: float = Field(..., gt=0)
+    frequency: IncomeFrequency
     next_expected_date: str | None = None
     active: bool = True
 
+    @field_validator("source_name")
+    @classmethod
+    def strip_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("source_name cannot be blank")
+        return v
+
 
 class IncomeUpdate(BaseModel):
-    source_name: str | None = None
-    amount: float | None = None
-    frequency: str | None = None
+    source_name: str | None = Field(None, min_length=1, max_length=255)
+    amount: float | None = Field(None, gt=0)
+    frequency: IncomeFrequency | None = None
     next_expected_date: str | None = None
     active: bool | None = None
+
+    @field_validator("source_name")
+    @classmethod
+    def strip_name(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("source_name cannot be blank")
+        return v
 
 
 @router.get("/monthly-total")

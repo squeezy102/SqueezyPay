@@ -1,5 +1,8 @@
+import re
+from enum import Enum
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from database.db import get_db
@@ -8,20 +11,50 @@ from services.payment_method_service import PaymentMethodService
 router = APIRouter(prefix="/api/payment-methods", tags=["payment-methods"])
 
 
+class PaymentType(str, Enum):
+    credit_card = "credit_card"
+    debit_card = "debit_card"
+    bank_account = "bank_account"
+
+
 class PaymentMethodCreate(BaseModel):
-    nickname: str
-    payment_type: str
-    last_four: str
+    nickname: str = Field(..., min_length=1, max_length=255)
+    payment_type: str = Field(..., min_length=1, max_length=50)
+    last_four: str = Field(..., min_length=4, max_length=4)
     expiration_date: str | None = None
     notes: str | None = None
+
+    @field_validator("last_four")
+    @classmethod
+    def must_be_digits(cls, v: str) -> str:
+        if not re.fullmatch(r"\d{4}", v):
+            raise ValueError("last_four must be exactly 4 digits")
+        return v
+
+    @field_validator("nickname")
+    @classmethod
+    def strip_nickname(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("nickname cannot be blank")
+        return v
 
 
 class PaymentMethodUpdate(BaseModel):
-    nickname: str | None = None
-    payment_type: str | None = None
-    last_four: str | None = None
+    nickname: str | None = Field(None, min_length=1, max_length=255)
+    payment_type: str | None = Field(None, min_length=1, max_length=50)
+    last_four: str | None = Field(None, min_length=4, max_length=4)
     expiration_date: str | None = None
     notes: str | None = None
+
+    @field_validator("last_four")
+    @classmethod
+    def must_be_digits(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not re.fullmatch(r"\d{4}", v):
+            raise ValueError("last_four must be exactly 4 digits")
+        return v
 
 
 @router.get("/")

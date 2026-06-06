@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from core.logging_config import get_logger
-from models.models import Bill
+from models.models import Bill, Credential, PaymentHistory
 from repositories.bill_repository import BillRepository
 
 logger = get_logger("squeezypay.services.bills")
@@ -53,6 +53,13 @@ class BillService:
             logger.warning(f"Delete attempted on non-existent bill id={bill_id}")
             return False
         name = bill.name
+        # Cascade: remove credentials and payment history before deleting the bill
+        cred_count = db.query(Credential).filter(Credential.bill_id == bill_id).delete()
+        pay_count = db.query(PaymentHistory).filter(PaymentHistory.bill_id == bill_id).delete()
+        if cred_count:
+            logger.info(f"Cascade deleted {cred_count} credential(s) for bill id={bill_id}")
+        if pay_count:
+            logger.info(f"Cascade deleted {pay_count} payment record(s) for bill id={bill_id}")
         result = BillRepository.delete(db, bill_id)
         if result:
             logger.info(f"Deleted bill id={bill_id} name='{name}'")

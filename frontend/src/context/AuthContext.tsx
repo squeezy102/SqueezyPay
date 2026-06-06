@@ -10,6 +10,7 @@ interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   isConfigured: boolean;
+  statusError: boolean;
   login: (newToken: string) => void;
   logout: () => Promise<void>;
   loading: boolean;
@@ -21,17 +22,20 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => sessionStorage.getItem(TOKEN_STORAGE_KEY));
   const [isConfigured, setIsConfigured] = useState(true);
+  const [statusError, setStatusError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     getAuthStatus()
       .then((data) => {
-        if (!cancelled) setIsConfigured(data.configured);
+        if (!cancelled) {
+          setIsConfigured(data.configured);
+          setStatusError(false);
+        }
       })
       .catch(() => {
-        // If status check fails, assume configured to avoid blocking the UI
-        if (!cancelled) setIsConfigured(true);
+        if (!cancelled) setStatusError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -69,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         isAuthenticated: !!token,
         isConfigured,
+        statusError,
         login,
         logout,
         loading,

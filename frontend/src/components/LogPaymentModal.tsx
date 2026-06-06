@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logPayment, getCredentialByBill, getPaymentMethods } from "../utils/api";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { Bill, Payment, Credential, PaymentMethod } from "../types";
 import MoneyInput from "./MoneyInput";
 
@@ -60,6 +61,7 @@ interface Props {
 export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   const credQuery = useQuery<Credential | null>({
     queryKey: ["credentials", "bill", bill.id],
@@ -71,8 +73,11 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
     queryFn: getPaymentMethods,
   });
 
-  const credential     = credQuery.data ?? null;
-  const paymentMethods = pmQuery.data ?? [];
+  const credential      = credQuery.data ?? null;
+  const paymentMethods  = pmQuery.data ?? [];
+  const credsLoading    = credQuery.isLoading;
+  const credsError      = credQuery.isError;
+  const pmLoading       = pmQuery.isLoading;
 
   const [showCreds, setShowCreds] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -125,7 +130,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md flex flex-col">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-label={`Log payment for ${bill.name}`} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md flex flex-col">
 
         {/* ── TOP HALF - GO PAY ───────────────────────────────────── */}
         <div className="px-6 pt-5 pb-6 flex flex-col gap-4">
@@ -150,16 +155,17 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             <button
               type="button"
-              onClick={() => setShowCreds((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+              onClick={() => !credsLoading && setShowCreds((v) => !v)}
+              disabled={credsLoading}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-60 disabled:cursor-default"
             >
               <span className="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
                 </svg>
-                {credential ? "Show credentials" : "No credentials stored"}
+                {credsLoading ? "Loading credentials…" : credsError ? "Could not load credentials" : credential ? "Show credentials" : "No credentials stored"}
               </span>
-              {credential && (
+              {!credsLoading && !credsError && credential && (
                 <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-slate-400 transition-transform ${showCreds ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -247,7 +253,9 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Payment Method <span className="text-slate-400 font-normal">(optional)</span>
             </label>
-            {paymentMethods.length > 0 ? (
+            {pmLoading ? (
+              <div className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-400 dark:text-slate-500">Loading…</div>
+            ) : paymentMethods.length > 0 ? (
               <select
                 {...register("paymentMethod")}
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"

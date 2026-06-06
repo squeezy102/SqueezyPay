@@ -54,6 +54,7 @@ def test_protected_route_without_token():
     Uses a dedicated client that does NOT override require_auth, so real
     JWT validation is exercised.
     """
+    import uuid
     from fastapi.testclient import TestClient as _TC
     from sqlalchemy import StaticPool, create_engine
     from sqlalchemy.orm import sessionmaker
@@ -84,7 +85,8 @@ def test_protected_route_without_token():
     app.dependency_overrides[get_db] = override_get_db
 
     try:
-        with _TC(app) as c:
+        # Unique rate-key so this test doesn't share a bucket with other tests
+        with _TC(app, headers={"X-Test-Rate-Key": str(uuid.uuid4())}) as c:
             resp = c.get("/api/bills/")
             assert resp.status_code == 401
     finally:

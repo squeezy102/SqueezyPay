@@ -115,7 +115,42 @@ Then explore the codebase. All files assume you've read the above.
 
 ## What Was Built This Session
 
-**This session (Phase 2 readiness: pytest-asyncio, Recharts, mobile history, passphrase UI, admin log viewer):**
+**This session (production hardening: validation, rate limiting, cascade deletes, test coverage, frontend UX fixes):**
+
+**Backend — 115/115 tests passing, 96% coverage:**
+
+- **Input validation on all endpoints** — Pydantic `field_validator` + `Field` constraints added to all API request models:
+  - Bills: `name`/`category`/`url` strip+require, URL must start with `http://`/`https://`, `day_of_month` 1-31, `expected_amount > 0`
+  - Income: `IncomeFrequency` enum rejects any value outside `weekly/bi-weekly/semi-monthly/monthly`, `amount > 0`, `source_name` not blank
+  - Payment history: date validator accepts both `YYYY-MM-DD` and full ISO datetime strings
+  - Payment methods: `last_four` must be exactly 4 digits (`\d{4}` regex)
+  - Auth: `passphrase` minimum 8 chars, change-passphrase `current_passphrase` minimum 1 char
+- **Rate limiting on auth endpoints** — `/api/auth/setup` 5/min, `/api/auth/login` 10/min, `/api/auth/change-passphrase` 5/min
+- **Limiter refactored to `core/limiter.py`** — shared `Limiter(key_func=_rate_limit_key)` instance; `_rate_limit_key` returns `X-Test-Rate-Key` header (UUID per test fixture) for test isolation, falls back to `get_remote_address` in production. Fixes test suite rate limit bleed-through (was using separate limiter instance in `api/auth.py`).
+- **Startup validation** — `lifespan` context raises `RuntimeError` if `SQUEEZYPAY_ENCRYPTION_KEY` or `SQUEEZYPAY_SECRET_KEY` env vars are missing.
+- **Cascade delete** — `BillService.delete_bill()` deletes credentials and payment history before deleting the bill (SQLite cannot add FK constraints to existing tables). Orphan credentials prevented: `POST /api/credentials/` checks bill exists first.
+- **`get_expiry()` AttributeError fixed** — slowapi `Limit` object has no `get_expiry` method; replaced with hardcoded `"Retry-After": "60"` in rate limit handler.
+- **New test files** — `test_credentials.py` (15 tests), `test_payment_methods.py` (14 tests), `test_validation.py` (22 tests). Total: 115 tests, 96% coverage.
+
+**Frontend — 38/38 Vitest tests passing, 0 TypeScript errors:**
+
+- **BillManagement mobile card layout** — responsive: card list on `< md`, desktop table on `md+`. Cards show name, category badge, due day, amount, action buttons.
+- **BillManagement error state** — `isError` guard added; shows message and prompts refresh.
+- **Hardcoded "7 days" fixed in BillDashboard** — alert messages now use `thresholds.dueSoonDays` from live settings.
+- **BillDashboard empty state** — new zero-bills landing screen with icon and instructions to add a bill from the Bills tab.
+- **BillDashboard error state** — `billsError` guard renders error message instead of crashing on failed fetch.
+- **PaymentHistory error state** — `isError` guard added.
+- **IncomeManagement error state** — `isError` guard added.
+- **LogPaymentModal loading/error states** — credential section shows "Loading credentials…" while query is in flight, "Could not load credentials" on error. Payment method shows "Loading…" skeleton. Credential expand button disabled while loading.
+- **BillFormModal success toast** — footer shows green confirmation badge briefly after save before closing.
+- **IncomeFormModal success toast** — same pattern; `setTimeout(() => onSave(), 1200)` gives user time to see it.
+- **AuthContext failure path fixed** — added `statusError: boolean` to context value; on network failure, `AuthGate` in `App.tsx` renders a "Cannot reach server" screen with a Retry button instead of silently falling through to the login screen.
+- **Focus trap** — `src/hooks/useFocusTrap.ts` created; applied to `BillFormModal`, `IncomeFormModal`, `LogPaymentModal`. Tabs cycle within the modal; focus returns to trigger element on close. `role="dialog" aria-modal="true" aria-label="..."` added to all modal containers.
+- **Accessibility** — `aria-sort` added to all PaymentHistory table headers. `aria-label` added to icon-only Edit/Delete/Toggle buttons in BillManagement and IncomeManagement.
+
+---
+
+**Previous session (Phase 2 readiness: pytest-asyncio, Recharts, mobile history, passphrase UI, admin log viewer):**
 
 - **`[REQUEST]`/`[RESPONSE]` filter chips** — Request logging middleware split into two paired log lines: `[REQUEST] METHOD /path` on entry, `[RESPONSE] METHOD /path STATUS NNms` on exit. Admin log viewer gains REQ (indigo) and RES (green) filter chips with distinct bubble styles, toggleable independently from INFO/WARN/ERROR service logs.
 - **Vitest: `api.ts` coverage (22 tests)** — `src/utils/api.test.ts` added. Covers `authHeaders` (token present/absent), `handle401` (event dispatch + token removal), snake_case→camelCase mappers for Bill/Payment/Income/Settings, camelCase→snake_case request bodies, `getMonthlyTotal` extraction, and `createCategory`/`updateCategory` conflict/notFound result shapes. Uses `jsdom` environment (installed `jsdom` dev dependency). Total Vitest tests: 38 (16 billUtils + 22 api).
@@ -303,7 +338,7 @@ Then explore the codebase. All files assume you've read the above.
 
 ## Known Issues / Outstanding Bugs
 
-No known bugs at this time.
+- **slowapi DeprecationWarning** — slowapi 0.1.9 internally calls `asyncio.iscoroutinefunction()` which is deprecated in Python 3.14+. This is a third-party issue in slowapi's own code; cannot be suppressed without patching the library. 3 warnings shown in pytest output (one per auth endpoint with rate limit). No functional impact.
 
 ---
 
@@ -384,7 +419,9 @@ squeezypay/
 │   │   │   └── LoginScreen.tsx         Returning session login screen
 │   │   ├── context/
 │   │   │   ├── ThemeContext.tsx
-│   │   │   └── AuthContext.tsx
+│   │   │   └── AuthContext.tsx         statusError field; Retry screen on backend unreachable
+│   │   ├── hooks/
+│   │   │   └── useFocusTrap.ts         Focus trap for modals
 │   │   ├── theme/
 │   │   │   └── tokens.ts               All colors/design tokens
 │   │   └── utils/
@@ -424,6 +461,11 @@ squeezypay/
     │   ├── payment_history_service.py
     │   ├── settings_service.py
     │   └── auth_service.py
+    ├── core/
+    │   ├── logging_config.py
+    │   ├── auth.py
+    │   ├── constants.py
+    │   └── limiter.py             Shared slowapi Limiter with X-Test-Rate-Key isolation
     ├── api/
     │   ├── bills.py
     │   ├── categories.py
@@ -440,10 +482,13 @@ squeezypay/
         ├── test_bill_repository.py
         ├── test_categories.py
         ├── test_change_passphrase.py
+        ├── test_credentials.py
         ├── test_frontend_log.py
         ├── test_income.py
         ├── test_payment_history.py
-        └── test_settings.py
+        ├── test_payment_methods.py
+        ├── test_settings.py
+        └── test_validation.py
 ```
 
 ---

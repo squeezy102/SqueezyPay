@@ -117,6 +117,14 @@ export default function PaymentHistory() {
 
   if (query.isLoading) return <Spinner />;
 
+  if (query.isError) {
+    return (
+      <div className="min-h-screen bg-violet-50 dark:bg-slate-950 flex items-center justify-center">
+        <p className="text-sm text-red-600 dark:text-red-400">Failed to load payment history. Check your connection and try refreshing.</p>
+      </div>
+    );
+  }
+
   const payments = query.data ?? [];
 
   const filtered = payments.filter((p) => {
@@ -193,6 +201,7 @@ export default function PaymentHistory() {
                       <th
                         key={col.key}
                         onClick={() => handleSort(col.key)}
+                        aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                         className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 select-none whitespace-nowrap"
                       >
                         <div className="flex items-center gap-1.5">

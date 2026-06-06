@@ -33,8 +33,22 @@ function AppShell() {
 }
 
 function AuthGate({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isConfigured, loading } = useAuth();
+  const { isAuthenticated, isConfigured, statusError, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-violet-50 dark:bg-slate-950" />;
+  if (statusError) {
+    return (
+      <div className="min-h-screen bg-violet-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-base font-semibold text-slate-700 dark:text-slate-300">Cannot reach the SqueezyPay server</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Make sure the backend is running, then refresh the page.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
   if (!isConfigured) return <SetupScreen />;
   if (!isAuthenticated) return <LoginScreen />;
   return <>{children}</>;

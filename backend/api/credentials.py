@@ -1,23 +1,32 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from database.db import get_db
+from services.bill_service import BillService
 from services.credential_service import CredentialService
 
 router = APIRouter(prefix="/api/credentials", tags=["credentials"])
 
 
 class CredentialCreate(BaseModel):
-    bill_id: int
-    username: str
-    password: str
+    bill_id: int = Field(..., gt=0)
+    username: str = Field(..., min_length=1, max_length=255)
+    password: str = Field(..., min_length=1)
     notes: str | None = None
+
+    @field_validator("username")
+    @classmethod
+    def strip_username(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("username cannot be blank")
+        return v
 
 
 class CredentialUpdate(BaseModel):
-    username: str | None = None
-    password: str | None = None
+    username: str | None = Field(None, min_length=1, max_length=255)
+    password: str | None = Field(None, min_length=1)
     notes: str | None = None
 
 
@@ -44,6 +53,8 @@ def get_credential_by_bill(bill_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", status_code=201)
 def create_credential(payload: CredentialCreate, db: Session = Depends(get_db)):
+    if not BillService.get_bill(db, payload.bill_id):
+        raise HTTPException(status_code=404, detail="Bill not found")
     return CredentialService.create(
         db,
         bill_id=payload.bill_id,

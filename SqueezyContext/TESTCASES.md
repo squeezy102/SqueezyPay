@@ -442,6 +442,118 @@ Mark each with current status when running: ✅ Pass | ❌ Fail | ⏳ Not yet te
 
 ---
 
+---
+
+## TC-034: Bill Dashboard Empty State
+
+**What it tests:** Zero-bills state renders correctly instead of blank screen
+
+**Steps:**
+1. Delete all bills (or use a fresh database)
+2. Open the Dashboard tab
+
+**Expected:** Centered empty state with icon and message "No bills added yet — add from the Bills tab"
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-035: Bill Dashboard Error State
+
+**What it tests:** Network error on bills fetch shows user-facing error message
+
+**Steps:**
+1. Stop the backend
+2. Open the Dashboard tab (or refresh)
+
+**Expected:** Error message "Failed to load bills. Check your connection and try refreshing."
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-036: Bill Form Success Toast
+
+**What it tests:** BillFormModal shows success badge after save before closing
+
+**Steps:**
+1. Open the Bills tab
+2. Click Add Bill, fill all required fields, click Save
+
+**Expected:** Green "Bill added" badge briefly appears in the footer before modal closes
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-037: Income Form Success Toast
+
+**What it tests:** IncomeFormModal shows success badge after save before closing
+
+**Steps:**
+1. Open the Income tab
+2. Click Add Income Source, fill all required fields, click Save
+
+**Expected:** Green "Income source added" badge briefly appears before modal closes
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-038: Bill Management Mobile Card Layout
+
+**What it tests:** Bills tab renders card layout on small screens
+
+**Steps:**
+1. Open the Bills tab on a phone (or narrow browser window < 768px)
+
+**Expected:** Each bill appears as a card with name, category badge, due day, amount, and action buttons — not a table
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-039: Backend Unreachable Screen
+
+**What it tests:** AuthContext error state shows Retry button when backend is down
+
+**Steps:**
+1. Stop the backend
+2. Open http://localhost:5173 (or refresh)
+
+**Expected:** "Cannot reach the SqueezyPay server" screen with a Retry button; clicking Retry reloads the page
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-040: Input Validation - Invalid Bill Data Rejected
+
+**What it tests:** Backend Pydantic validation rejects bad bill data with 422
+
+**Steps:**
+1. Open http://localhost:8000/docs
+2. POST /api/bills/ with `day_of_month: 0` (or 32, or a relative URL like `/pay`)
+
+**Expected:** 422 Unprocessable Entity with a descriptive validation error
+
+**Last result:** ⏳ Not yet tested
+
+---
+
+## TC-041: Rate Limit on Auth Setup
+
+**What it tests:** Setup endpoint rejects requests after 5/minute
+
+**Steps:**
+1. On a fresh database, call POST /api/auth/setup 6 times in quick succession (use curl or Swagger)
+
+**Expected:** First 5 return 201 or 409; 6th returns 429 Too Many Requests
+
+**Last result:** ⏳ Not yet tested
+
+---
+
 ## Future Test Cases (not yet testable)
 
 - TC-023: Credential vault - store and retrieve biller credentials

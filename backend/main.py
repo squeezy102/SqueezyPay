@@ -5,9 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from api.auth import router as auth_router
 from api.bills import router as bills_router
@@ -19,13 +17,12 @@ from api.payment_history import router as payment_history_router
 from api.payment_methods import router as payment_methods_router
 from api.settings import router as settings_router
 from core.auth import require_auth
+from core.limiter import limiter
 from core.logging_config import configure_logging, get_logger
 from database.db import init_db
 
 configure_logging()
 logger = get_logger("squeezypay.main")
-
-limiter = Limiter(key_func=get_remote_address)
 
 _ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -42,8 +39,7 @@ def _is_allowed_origin(origin: str) -> bool:
 
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     origin = request.headers.get("origin", "")
-    retry_after = str(exc.limit.get_expiry()) if exc.limit else "60"
-    headers = {"Retry-After": retry_after}
+    headers = {"Retry-After": "60"}
     if origin and _is_allowed_origin(origin):
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"
@@ -59,6 +55,17 @@ _SUPPRESS_REQUEST_LOG = {"/health"}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import os
+    if not os.environ.get("SQUEEZYPAY_ENCRYPTION_KEY"):
+        raise RuntimeError(
+            "SQUEEZYPAY_ENCRYPTION_KEY is not set. "
+            "Run scripts/generate_key.py to create your encryption key."
+        )
+    if not os.environ.get("SQUEEZYPAY_SECRET_KEY"):
+        raise RuntimeError(
+            "SQUEEZYPAY_SECRET_KEY is not set. "
+            "Set a 32+ character random string as your JWT signing key."
+        )
     init_db()
     logger.info("SqueezyPay backend started")
     yield

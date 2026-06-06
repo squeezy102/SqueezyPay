@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("SQUEEZYPAY_ENCRYPTION_KEY", "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXJlc3Q=")
 os.environ.setdefault("SQUEEZYPAY_SECRET_KEY", "test-secret-key-for-testing-only-32chars!!")
+os.environ["SQUEEZYPAY_TESTING"] = "1"
 
 import database.db as db_module
 from models.models import Base
@@ -48,7 +49,12 @@ def client():
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[require_auth] = override_require_auth
 
-    with TestClient(app) as c:
+    import uuid
+    # Each test gets a unique rate-limit bucket so tests never share quotas.
+    # The key function in main.py reads X-Test-Rate-Key when present.
+    test_rate_key = str(uuid.uuid4())
+
+    with TestClient(app, headers={"X-Test-Rate-Key": test_rate_key}) as c:
         yield c
 
     app.dependency_overrides.clear()

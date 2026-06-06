@@ -1,5 +1,7 @@
+from datetime import date, datetime
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from database.db import get_db
@@ -9,12 +11,22 @@ router = APIRouter(prefix="/api/payment-history", tags=["payment-history"])
 
 
 class PaymentCreate(BaseModel):
-    bill_id: int
+    bill_id: int = Field(..., gt=0)
     payment_date: str
-    amount_paid: float
+    amount_paid: float = Field(..., gt=0)
     payment_method: str | None = None
     confirmation_number: str | None = None
     notes: str | None = None
+
+    @field_validator("payment_date")
+    @classmethod
+    def validate_date(cls, v: str) -> str:
+        # Accept both YYYY-MM-DD and ISO datetime strings
+        try:
+            date.fromisoformat(v[:10])
+        except ValueError:
+            raise ValueError("payment_date must be a valid ISO date (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)")
+        return v
 
 
 @router.get("/")

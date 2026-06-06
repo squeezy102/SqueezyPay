@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { categoryTokens } from "../theme/tokens";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { Bill } from "../types";
 import type { BillPayload } from "../utils/api";
 import MoneyInput from "./MoneyInput";
@@ -33,6 +34,8 @@ interface Props {
 
 export default function BillFormModal({ bill, onSave, onClose }: Props) {
   const isEdit = !!bill;
+  const [saved, setSaved] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   const {
     register,
@@ -77,11 +80,12 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
       notes:          data.notes || null,
     };
     await onSave(payload);
+    setSaved(true);
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-label={isEdit ? "Edit Bill" : "Add Bill"} className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
@@ -224,20 +228,31 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit(onValid)}
-            disabled={isSubmitting}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-50"
-          >
-            {isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Add Bill"}
-          </button>
+          {saved ? (
+            <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400 py-2 px-3 rounded-lg bg-green-50 dark:bg-green-900/30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              {isEdit ? "Bill updated" : "Bill added"}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit(onValid)}
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 active:bg-teal-800 dark:bg-teal-500 dark:hover:bg-teal-600 text-white transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Add Bill"}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
