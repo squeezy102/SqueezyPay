@@ -4,6 +4,10 @@ from sqlalchemy.orm import Session
 
 from database.db import get_db
 from services.bill_service import BillService
+from services.credential_service import CredentialService
+from core.logging_config import get_logger
+
+logger = get_logger("squeezypay.api.bills")
 
 router = APIRouter(prefix="/api/bills", tags=["bills"])
 
@@ -92,3 +96,106 @@ def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)
 def delete_bill(bill_id: int, db: Session = Depends(get_db)):
     if not BillService.delete_bill(db, bill_id):
         raise HTTPException(status_code=404, detail="Bill not found")
+
+
+@router.post("/{bill_id}/autofill")
+def autofill_bill(bill_id: int, db: Session = Depends(get_db)):
+    bill = BillService.get_bill(db, bill_id)
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+
+    credential = CredentialService.get_by_bill_id(db, bill_id)
+    if not credential:
+        raise HTTPException(status_code=404, detail="No credential stored for this bill")
+
+    url = bill["url"]
+    username = credential["username"]
+    password = credential["password"]
+
+    filled = _try_autofill(url, username, password)
+    return {"filled": filled}
+
+
+def _try_autofill(url: str, username: str, password: str) -> bool:
+    # Selectors tried in order for the username/email field
+    USERNAME_SELECTORS = [
+        'input[type="email"]',
+        'input[name="email"]',
+        'input[name="username"]',
+        'input[name="user"]',
+        'input[name="login"]',
+        'input[id*="email" i]',
+        'input[id*="user" i]',
+        'input[autocomplete="email"]',
+        'input[autocomplete="username"]',
+    ]
+    PASSWORD_SELECTORS = [
+        'input[type="password"]',
+        'input[name="password"]',
+        'input[id*="password" i]',
+        'input[autocomplete="current-password"]',
+    ]
+
+    try:
+        from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            page = browser.new_page()
+
+            try:
+                page.goto(url, timeout=15000, wait_until="domcontentloaded")
+            except PWTimeout:
+                logger.warning(f"autofill: page load timed out for {url}")
+                browser.close()
+                return False
+
+            # Locate username field
+            username_field = None
+            for sel in USERNAME_SELECTORS:
+                try:
+                    el = page.locator(sel).first
+                    el.wait_for(timeout=2000, state="visible")
+                    username_field = el
+                    break
+                except PWTimeout:
+                    continue
+
+            if username_field is None:
+                logger.info(f"autofill: no username field found at {url}")
+                browser.close()
+                return False
+
+            # Locate password field
+            password_field = None
+            for sel in PASSWORD_SELECTORS:
+                try:
+                    el = page.locator(sel).first
+                    el.wait_for(timeout=2000, state="visible")
+                    password_field = el
+                    break
+                except PWTimeout:
+                    continue
+
+            if password_field is None:
+                logger.info(f"autofill: no password field found at {url}")
+                browser.close()
+                return False
+
+            username_field.fill(username)
+            password_field.fill(password)
+
+            # Verify values were accepted
+            filled_user = username_field.input_value()
+            filled_pass  = password_field.input_value()
+            if filled_user != username or filled_pass != password:
+                logger.warning("autofill: field fill verification failed")
+                browser.close()
+                return False
+
+            logger.info(f"autofill: credentials filled for bill_id tied to {url}")
+            # Leave browser open — user completes the login
+            return True
+
+    except Exception as exc:
+        logger.warning(f"autofill: unexpected error — {exc}")
+        return False

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { logPayment, getCredentialByBill, getPaymentMethods } from "../utils/api";
+import { logPayment, getCredentialByBill, getPaymentMethods, autofillBill } from "../utils/api";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { Bill, Payment, Credential, PaymentMethod } from "../types";
 import MoneyInput from "./MoneyInput";
@@ -80,8 +80,9 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   const credsLoading    = credQuery.isLoading;
   const pmLoading       = pmQuery.isLoading;
 
-  const [success, setSuccess]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [success, setSuccess]     = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+  const [autofilling, setAutofill] = useState(false);
 
   const {
     register,
@@ -106,7 +107,13 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
     },
   });
 
-  function handleGoToBiller() {
+  async function handleGoToBiller() {
+    if (credential && !autofilling) {
+      setAutofill(true);
+      const filled = await autofillBill(bill.id);
+      setAutofill(false);
+      if (filled) return; // Playwright opened the window with credentials pre-filled
+    }
     window.open(bill.url, "_blank", "noopener,noreferrer");
   }
 
@@ -203,12 +210,15 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
           <button
             type="button"
             onClick={handleGoToBiller}
-            className="w-full rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-sm font-semibold py-3 flex items-center justify-center gap-2 transition-colors"
+            disabled={autofilling}
+            className="w-full rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 disabled:opacity-70 text-white text-sm font-semibold py-3 flex items-center justify-center gap-2 transition-colors"
           >
-            Go to {bill.name}
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clipRule="evenodd" />
-            </svg>
+            {autofilling ? "Opening…" : `Go to ${bill.name}`}
+            {!autofilling && (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clipRule="evenodd" />
+              </svg>
+            )}
           </button>
         </div>
 

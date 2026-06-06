@@ -8,6 +8,7 @@ bcrypt
 PyJWT
 slowapi
 plaid-python>=14.0.0
+playwright>=1.40.0
 
 # Testing
 pytest==9.0.3

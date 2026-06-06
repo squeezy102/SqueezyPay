@@ -366,6 +366,20 @@ export async function deleteCredential(credentialId: number): Promise<boolean> {
   }
 }
 
+export async function autofillBill(billId: number): Promise<boolean> {
+  try {
+    const response = handle401(await fetch(`${API_BASE}/api/bills/${billId}/autofill`, {
+      method: "POST",
+      headers: { ...authHeaders() },
+    }));
+    if (!response.ok) return false;
+    const data = await response.json() as { filled: boolean };
+    return data.filled === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
   try {
     const response = handle401(await fetch(`${API_BASE}/api/payment-methods/`, { headers: { ...authHeaders() } }));
