@@ -232,7 +232,7 @@ function BillsOverview({ onStartSession }: { onStartSession: () => void }) {
 
 // ── Pay Bills sub-view ────────────────────────────────────────────────────────
 
-function PayBills() {
+function PayBills({ onSetupCredentials }: { onSetupCredentials: (bill: Bill) => void }) {
   const { data: bills = [], isLoading } = useQuery({
     queryKey: ["bills", "all"],
     queryFn:  getAllBills,
@@ -253,7 +253,11 @@ function PayBills() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 max-w-5xl">
       {sorted.map((bill) => (
-        <BillCard key={bill.id} bill={bill} />
+        <BillCard
+          key={bill.id}
+          bill={bill}
+          onSetupCredentials={() => onSetupCredentials(bill)}
+        />
       ))}
     </div>
   );
@@ -689,12 +693,20 @@ function NotesPopover({ notes, billName, onEdit }: {
   );
 }
 
-function ManageBillers() {
+function ManageBillers({ initialCredBill, onCredBillHandled }: { initialCredBill?: Bill | null; onCredBillHandled?: () => void }) {
   const queryClient = useQueryClient();
   const [modalBill, setModalBill]           = useState<Bill | null | undefined>(undefined);
-  const [credBill, setCredBill]             = useState<Bill | null>(null);
+  const [credBill, setCredBill]             = useState<Bill | null>(initialCredBill ?? null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [error, setError]                   = useState<string | null>(null);
+
+  // If parent sends a new bill to credential after navigation, open it
+  useEffect(() => {
+    if (initialCredBill) {
+      setCredBill(initialCredBill);
+      onCredBillHandled?.();
+    }
+  }, [initialCredBill]);
 
   const billsQuery = useQuery({
     queryKey: ["bills", "all"],
@@ -888,7 +900,13 @@ function ManageBillers() {
 // ── Root Bills component ──────────────────────────────────────────────────────
 
 export default function Bills({ initialView = "overview" }: { initialView?: SubView }) {
-  const [view, setView] = useState<SubView>(initialView);
+  const [view, setView]         = useState<SubView>(initialView);
+  const [credBillFromPay, setCredBillFromPay] = useState<Bill | null>(null);
+
+  function handleSetupCredentials(bill: Bill) {
+    setCredBillFromPay(bill);
+    setView("manage");
+  }
 
   const titles: Record<SubView, string> = {
     overview: "Bills",
@@ -909,9 +927,9 @@ export default function Bills({ initialView = "overview" }: { initialView?: SubV
 
         {/* Sub-view content */}
         {view === "overview" && <BillsOverview onStartSession={() => setView("pay")} />}
-        {view === "pay"      && <PayBills />}
+        {view === "pay"      && <PayBills onSetupCredentials={handleSetupCredentials} />}
         {view === "history"  && <BillPaymentHistory />}
-        {view === "manage"   && <ManageBillers />}
+        {view === "manage"   && <ManageBillers initialCredBill={credBillFromPay} onCredBillHandled={() => setCredBillFromPay(null)} />}
       </div>
     </div>
   );

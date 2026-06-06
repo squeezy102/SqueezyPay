@@ -56,9 +56,10 @@ interface Props {
   bill: Bill;
   onClose: () => void;
   onLogged: (payment: Payment) => void;
+  onSetupCredentials?: () => void;
 }
 
-export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
+export default function LogPaymentModal({ bill, onClose, onLogged, onSetupCredentials }: Props) {
   const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
   const trapRef = useFocusTrap<HTMLDivElement>();
@@ -76,10 +77,8 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   const credential      = credQuery.data ?? null;
   const paymentMethods  = pmQuery.data ?? [];
   const credsLoading    = credQuery.isLoading;
-  const credsError      = credQuery.isError;
   const pmLoading       = pmQuery.isLoading;
 
-  const [showCreds, setShowCreds] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
@@ -152,28 +151,19 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
           </div>
 
           {/* Credentials */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => !credsLoading && setShowCreds((v) => !v)}
-              disabled={credsLoading}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-60 disabled:cursor-default"
-            >
-              <span className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+          {credsLoading ? (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-sm text-slate-400 dark:text-slate-500">
+              Loading credentials…
+            </div>
+          ) : credential ? (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
                 </svg>
-                {credsLoading ? "Loading credentials…" : credsError ? "Could not load credentials" : credential ? "Show credentials" : "No credentials stored"}
-              </span>
-              {!credsLoading && !credsError && credential && (
-                <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-slate-400 transition-transform ${showCreds ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
-
-            {showCreds && credential && (
-              <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3 flex flex-col gap-2 bg-slate-50 dark:bg-slate-900/40">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Credentials</span>
+              </div>
+              <div className="px-4 py-3 flex flex-col gap-2 bg-white dark:bg-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500 dark:text-slate-400 w-20 shrink-0">Username</span>
                   <span className="flex-1 text-sm text-slate-900 dark:text-white font-mono truncate">{credential.username}</span>
@@ -185,8 +175,26 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
                   <CopyButton text={credential.password} />
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                </svg>
+                No credentials stored
+              </div>
+              {onSetupCredentials && (
+                <button
+                  type="button"
+                  onClick={onSetupCredentials}
+                  className="text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline shrink-0"
+                >
+                  Set up credentials →
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Go to biller button */}
           <button
