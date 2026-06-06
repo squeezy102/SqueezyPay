@@ -76,9 +76,10 @@ def main():
             sys.exit(1)
 
         # Fields filled — block until the user closes the browser
-        import time
-        while browser.is_connected():
-            time.sleep(0.5)
+        import threading
+        done = threading.Event()
+        browser.on("disconnected", lambda: done.set())
+        done.wait()
         sys.exit(0)
 
 if __name__ == "__main__":
