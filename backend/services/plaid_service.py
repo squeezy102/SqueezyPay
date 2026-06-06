@@ -80,7 +80,6 @@ class PlaidService:
             country_codes=[CountryCode("US")],
             user=LinkTokenCreateRequestUser(client_user_id="household"),
             products=[Products("transactions")],
-            redirect_uri="http://localhost:5173/plaid/oauth-return",
         )
         response = client.link_token_create(request)
         return response["link_token"]

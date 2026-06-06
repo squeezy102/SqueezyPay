@@ -48,8 +48,9 @@ export default function PlaidLinkButton({ onConnected, label = "Connect Bank Acc
     try {
       const token = await createPlaidLinkToken();
       setLinkToken(token);
-    } catch {
-      setTokenError("Could not reach Plaid. Check that your Plaid credentials are set and the backend is running.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setTokenError(`Could not open Plaid: ${msg}`);
     } finally {
       setFetchingToken(false);
     }

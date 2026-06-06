@@ -615,7 +615,14 @@ export async function createPlaidLinkToken(): Promise<string> {
     method: "POST",
     headers: { ...authHeaders() },
   }));
-  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const body = await response.json() as { detail?: string };
+      if (body.detail) detail = body.detail;
+    } catch { /* ignore parse errors */ }
+    throw new Error(detail);
+  }
   const data = await response.json() as { link_token: string };
   return data.link_token;
 }
