@@ -11,9 +11,18 @@ const DAYS_OPTIONS = [7, 30, 90] as const;
 type DaysOption = typeof DAYS_OPTIONS[number];
 
 const CHART_COLORS = [
-  "#7c3aed", "#0d9488", "#f59e0b", "#ef4444", "#3b82f6",
-  "#10b981", "#f97316", "#8b5cf6", "#06b6d4", "#84cc16",
-  "#ec4899", "#6366f1",
+  "#e63946", // red
+  "#2a9d8f", // teal
+  "#e9c46a", // gold
+  "#264653", // dark teal
+  "#f4a261", // sandy orange
+  "#457b9d", // steel blue
+  "#a8dadc", // pale cyan
+  "#c77dff", // lavender
+  "#6a994e", // olive green
+  "#bc6c25", // burnt sienna
+  "#48cae4", // sky blue
+  "#ff6b6b", // coral
 ];
 
 function formatCurrency(v: number) {
@@ -171,7 +180,7 @@ export default function SpendingBlame({ onNavigate }: SpendingBlameProps) {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => [formatCurrency(Number(value)), "Spending"]}
+                    formatter={(value, name) => [formatCurrency(Number(value)), String(name)]}
                     contentStyle={{
                       borderRadius: "0.75rem",
                       border: "1px solid #e2e8f0",
