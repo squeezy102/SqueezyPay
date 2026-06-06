@@ -49,6 +49,7 @@ Current development phase: **Phase 2** (bank integration and spending visibility
 |---|---|
 | Plaid webhook receiver | Requires public URL or tunnel (ngrok, Cloudflare Tunnel) |
 | Spend and deposit notifications | SendGrid + SMS gateway already scaffolded |
+| Windows installer | See design note below |
 
 ---
 
@@ -75,6 +76,31 @@ Current development phase: **Phase 2** (bank integration and spending visibility
 | Streamlined installer script | Medium |
 | Export data to CSV | Low |
 | Savings goals | Low |
+
+---
+
+## Windows installer
+
+**Goal:** A user who has never heard of Python, Node, or Alembic should be able to run one file and have a working SqueezyPay on their home network within five minutes.
+
+**What the installer needs to do:**
+1. Check for Python 3.11+ and Node 18+, download and install them silently if missing (winget or direct download)
+2. Clone or extract the repo to a user-chosen directory
+3. Create the Python virtual environment and run `pip install -r requirements.txt`
+4. Run `npm install` in the frontend directory
+5. Generate `SQUEEZYPAY_ENCRYPTION_KEY` and `SQUEEZYPAY_JWT_SECRET`, store them as Windows User environment variables
+6. Prompt for Plaid credentials (optional — can be skipped and configured later)
+7. Run `alembic upgrade head` to initialize the database
+8. Create desktop shortcuts for the admin dashboard and the app
+9. Optionally register a Task Scheduler entry for auto-start on login
+10. Open the app in the browser when done
+
+**Likely implementation:** PowerShell script (`install.ps1`) for the bootstrap layer, which handles prerequisites and environment setup. The script should be runnable by right-clicking and choosing "Run with PowerShell" — no prior terminal experience required.
+
+**Design decisions to settle:**
+- Self-contained bundle (Python + Node embedded) vs. system installs? Embedded is simpler for the user but large (~200 MB). System installs are lighter but require more error handling.
+- Upgrade path: how does a user update to a new version without losing their database and environment variables?
+- Uninstaller: should the installer register an uninstall entry in Add/Remove Programs?
 
 ---
 
