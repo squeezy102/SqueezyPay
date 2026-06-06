@@ -45,3 +45,9 @@ htmlcov/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# AI session context — local only, never published
+SqueezyContext/
+
+# Claude Code memory
+.claude/
