@@ -75,6 +75,7 @@ class TestLinkToken:
     def test_create_link_token_missing_env(self, client, monkeypatch):
         monkeypatch.delenv("SQUEEZYPAY_PLAID_CLIENTID", raising=False)
         monkeypatch.delenv("SQUEEZYPAY_PLAID_SECRET", raising=False)
+        monkeypatch.setattr("services.plaid_service._read_win_user_env", lambda name: None)
         response = client.post("/api/plaid/link-token")
         assert response.status_code == 503
 

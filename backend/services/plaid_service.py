@@ -31,10 +31,26 @@ _PLAID_ENV_MAP = {
 }
 
 
+def _read_win_user_env(name: str) -> str | None:
+    """Read a value from HKCU\\Environment (Windows User env vars) directly.
+
+    Process-inherited os.environ misses vars set after the process started.
+    This ensures the backend always sees the current User-scope registry values
+    without requiring a full restart of the process tree.
+    """
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+            value, _ = winreg.QueryValueEx(key, name)
+            return str(value)
+    except Exception:
+        return None
+
+
 def _get_plaid_client() -> plaid_api.PlaidApi:
-    client_id = os.environ.get("SQUEEZYPAY_PLAID_CLIENTID")
-    secret = os.environ.get("SQUEEZYPAY_PLAID_SECRET")
-    env_name = os.environ.get("SQUEEZYPAY_PLAID_ENV", "sandbox").lower()
+    client_id = os.environ.get("SQUEEZYPAY_PLAID_CLIENTID") or _read_win_user_env("SQUEEZYPAY_PLAID_CLIENTID")
+    secret    = os.environ.get("SQUEEZYPAY_PLAID_SECRET")    or _read_win_user_env("SQUEEZYPAY_PLAID_SECRET")
+    env_name  = (os.environ.get("SQUEEZYPAY_PLAID_ENV")      or _read_win_user_env("SQUEEZYPAY_PLAID_ENV") or "sandbox").lower()
 
     if not client_id or not secret:
         raise RuntimeError(

@@ -273,6 +273,8 @@ class TestPlaidClientMissingEnv:
     def test_raises_if_client_id_missing(self, monkeypatch):
         monkeypatch.delenv("SQUEEZYPAY_PLAID_CLIENTID", raising=False)
         monkeypatch.delenv("SQUEEZYPAY_PLAID_SECRET", raising=False)
+        # Also patch the registry fallback so the real keys don't prevent the raise
+        monkeypatch.setattr("services.plaid_service._read_win_user_env", lambda name: None)
         from services.plaid_service import _get_plaid_client
         with pytest.raises(RuntimeError, match="SQUEEZYPAY_PLAID_CLIENTID"):
             _get_plaid_client()
