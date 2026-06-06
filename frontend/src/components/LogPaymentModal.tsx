@@ -108,7 +108,8 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
   });
 
   async function handleGoToBiller() {
-    if (credential && !autofilling) {
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (credential && !autofilling && !isMobile) {
       setAutofill(true);
       const filled = await autofillBill(bill.id);
       setAutofill(false);
