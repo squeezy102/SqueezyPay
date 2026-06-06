@@ -175,7 +175,10 @@ export default function TransactionTable() {
               </div>
               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>{tx.date}</span>
-                {tx.pending && <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Pending</span>}
+                {tx.pending
+                  ? <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">Pending</span>
+                  : <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">Posted</span>
+                }
               </div>
               <CategorySelect txId={tx.id} categoryId={tx.categoryId} categories={categories} />
             </div>
@@ -210,6 +213,7 @@ export default function TransactionTable() {
               >
                 Amount <SortIcon col="amount" />
               </th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Category</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Channel</th>
             </tr>
@@ -237,13 +241,18 @@ export default function TransactionTable() {
                     {tx.merchantName && tx.merchantName !== tx.name && (
                       <p className="text-xs text-slate-500 dark:text-slate-400">{tx.name}</p>
                     )}
-                    {tx.pending && <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Pending</span>}
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {acct ? `${acct.name}${acct.mask ? ` ···${acct.mask}` : ""}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <AmountCell amount={tx.amount} />
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {tx.pending
+                      ? <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">Pending</span>
+                      : <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">Posted</span>
+                    }
                   </td>
                   <td className="px-4 py-3 min-w-[150px]">
                     <CategorySelect txId={tx.id} categoryId={tx.categoryId} categories={categories} />

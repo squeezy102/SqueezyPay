@@ -127,7 +127,11 @@ export default function SpendingBlame({ onNavigate }: SpendingBlameProps) {
       </div>
 
       {isLoading && <p className="text-sm text-slate-500 py-8 text-center">Loading…</p>}
-      {isError && <p className="text-sm text-red-600 dark:text-red-400">Failed to load spending data.</p>}
+      {isError && (
+        <p className="text-sm text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+          Failed to load spending data. Check that the backend is running.
+        </p>
+      )}
 
       {!isLoading && !isError && totalSpending === 0 && (
         <EmptyState hasAccounts={hasAccounts} onGoToAccounts={() => onNavigate?.("accounts")} />
