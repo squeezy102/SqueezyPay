@@ -1,16 +1,23 @@
 # Roadmap
 
+> **Tracking:** Active work is tracked in [GitHub Issues](https://github.com/squeezy102/SqueezyPay/issues), [Milestones](https://github.com/squeezy102/SqueezyPay/milestones), and the [SqueezyPay Development project board](https://github.com/squeezy102/SqueezyPay/projects). This document is the narrative context behind those items — not the authoritative task list. When the two diverge, GitHub is the source of truth.
+>
+> Architecture decisions and open-ended design questions live in [GitHub Discussions](https://github.com/squeezy102/SqueezyPay/discussions).
+
 All core phases through Phase 2 are complete. Active work is Phase 2+ extensions (scheduled sync, CSV/OFX import) and Phase 4 admin tooling pulled forward.
 
 ## Phase status
 
-| Phase | Status |
-|---|---|
-| Phase 0 — POC | Complete |
-| Phase 1 — Real Foundation | Complete |
-| Phase 2 — Bank Integration | Complete |
-| Phase 3 — Budget and Projections | Not started |
-| Phase 4 — Analytics and Polish | Partially started (admin dashboard pulled forward) |
+| Phase | Milestone | Status |
+|---|---|---|
+| Phase 0 — POC | — | Complete |
+| Phase 1 — Real Foundation | — | Complete |
+| Phase 2 — Bank Integration | — | Complete |
+| v0.1 — Installer & Distribution | [v0.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/1) | In progress |
+| v0.2 — Scheduled Sync & CSV Import | [v0.2 milestone](https://github.com/squeezy102/SqueezyPay/milestone/2) | Not started |
+| v0.3 — Per-Cardholder Attribution | [v0.3 milestone](https://github.com/squeezy102/SqueezyPay/milestone/3) | Not started |
+| v0.4 — Budget & Projections | [v0.4 milestone](https://github.com/squeezy102/SqueezyPay/milestone/4) | Not started |
+| v1.0 — Polish & LLM Insights | [v1.0 milestone](https://github.com/squeezy102/SqueezyPay/milestone/5) | Not started |
 
 ---
 
@@ -136,7 +143,7 @@ C:\Program Files\SqueezyPay\
 **What the installer does:**
 - Extracts binaries and static files to Program Files
 - Creates `%APPDATA%\SqueezyPay\` and subdirs
-- Generates `SQUEEZYPAY_ENCRYPTION_KEY` (Fernet) and `SQUEEZYPAY_JWT_SECRET`, writes to `HKCU\Environment`
+- Generates `SQUEEZYPAY_ENCRYPTION_KEY` (Fernet) and `SQUEEZYPAY_SECRET_KEY`, writes to `HKCU\Environment`
 - Writes Plaid credentials to `HKCU\Environment` if provided
 - Runs `backend.exe --migrate` (Alembic upgrade head, headless, exits when done)
 - Optionally creates Task Scheduler entry via `schtasks /create`
@@ -205,7 +212,7 @@ Webhook-based sync (immediate on Plaid SYNC_UPDATES_AVAILABLE events) requires a
 
 ## Known limitations and deferred items
 
-These are tracked as GitHub Issues. Do not work around them — document and move on.
+These are tracked as GitHub Issues. Do not work around them — document and move on. The [v0.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/1) shows which are actively being addressed.
 
 | Issue | Item | Notes |
 |---|---|---|

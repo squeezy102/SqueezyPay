@@ -134,6 +134,35 @@ Never commit:
 
 If you discover a security issue, open a private issue or contact the maintainer directly rather than filing a public bug report.
 
+## Project management
+
+SqueezyPay uses GitHub-native tooling as the primary PM layer. Local `.md` files provide narrative context, but the authoritative task list lives on GitHub.
+
+| Tool | Purpose |
+|---|---|
+| [Issues](https://github.com/squeezy102/SqueezyPay/issues) | Bug reports, feature requests, known limitations |
+| [Milestones](https://github.com/squeezy102/SqueezyPay/milestones) | Release scope — each milestone maps to a versioned release |
+| [Project board](https://github.com/squeezy102/SqueezyPay/projects) | Backlog → In Progress → In Review → Done view across all issues |
+| [Discussions](https://github.com/squeezy102/SqueezyPay/discussions) | Architecture decisions, open-ended design questions, ADRs |
+| [Releases](https://github.com/squeezy102/SqueezyPay/releases) | Versioned installer downloads with auto-generated release notes |
+
+### Linking PRs to issues
+
+Use `Closes #N` in the PR body to auto-close the linked issue when the PR merges to master:
+
+```
+## Summary
+- Fix passphrase bootstrap race on first install
+
+Closes #7
+```
+
+This moves the issue to Done on the project board automatically.
+
+### Filing issues
+
+Before opening a new issue, check [existing issues](https://github.com/squeezy102/SqueezyPay/issues) — especially open and closed ones. If you're unsure whether something is a bug, start a [Discussion](https://github.com/squeezy102/SqueezyPay/discussions) first.
+
 ## Questions
 
-Open an issue. Check existing issues first — your question may already be answered.
+Open a [Discussion](https://github.com/squeezy102/SqueezyPay/discussions) or an [Issue](https://github.com/squeezy102/SqueezyPay/issues) depending on whether it's a question or a defect. Check existing threads first.

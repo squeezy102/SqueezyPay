@@ -110,6 +110,16 @@ SqueezyPay is designed around a single financial institution. If you fork it and
 
 Generate a new encryption key. Never reuse a key from another instance.
 
+## Project tracking
+
+| Resource | Link |
+|---|---|
+| Issues & bugs | [github.com/squeezy102/SqueezyPay/issues](https://github.com/squeezy102/SqueezyPay/issues) |
+| Milestones | [github.com/squeezy102/SqueezyPay/milestones](https://github.com/squeezy102/SqueezyPay/milestones) |
+| Project board | [github.com/squeezy102/SqueezyPay/projects](https://github.com/squeezy102/SqueezyPay/projects) |
+| Discussions | [github.com/squeezy102/SqueezyPay/discussions](https://github.com/squeezy102/SqueezyPay/discussions) |
+| Releases & installers | [github.com/squeezy102/SqueezyPay/releases](https://github.com/squeezy102/SqueezyPay/releases) |
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
