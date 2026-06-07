@@ -153,13 +153,23 @@ def write_launcher_bat(staging_dir: Path) -> None:
     bat = staging_dir / "launch_exerciser.bat"
     bat.write_text(
         "@echo off\r\n"
-        # ping-based delay works headlessly; timeout /nobreak exits immediately
-        # when there is no console attached (LogonCommand has no TTY).
+        # Headless delay — ping works without a TTY; timeout /nobreak does not.
         "ping -n 11 127.0.0.1 >nul\r\n"
+        # Run exerciser synchronously (writes results.json when done).
         "powershell.exe -ExecutionPolicy Bypass -File "
         '"C:\\TestAssets\\sandbox_exerciser.ps1" '
         '-InstallerPath "C:\\TestAssets\\SqueezyPay-Setup.exe" '
-        '-ResultsPath "C:\\TestAssets\\results.json"\r\n',
+        '-ResultsPath "C:\\TestAssets\\results.json"\r\n'
+        # Keep the session alive so the sandbox doesn't log off before the
+        # host has a chance to read results.json from the mapped folder.
+        # PowerShell Start-Sleep loop runs until the host writes a sentinel
+        # file (done.txt) or 10 minutes elapse.
+        "powershell.exe -Command \""
+        "$deadline = (Get-Date).AddMinutes(10); "
+        "while ((Get-Date) -lt $deadline) { "
+        "  if (Test-Path 'C:\\\\TestAssets\\\\done.txt') { break }; "
+        "  Start-Sleep 3 "
+        "}\"\r\n",
         encoding="utf-8",
     )
 
@@ -186,6 +196,9 @@ def run_round(staging_dir: Path, round_num: int) -> dict:
         f'Start-Process "{SANDBOX_EXE}" -ArgumentList \'"{wsb_path}"\''
     ])
 
+    done_path = staging_dir / "done.txt"
+    done_path.unlink(missing_ok=True)
+
     # Poll for results.json (written by exerciser when done)
     deadline = time.time() + 480  # 8 minute timeout
     while time.time() < deadline:
@@ -193,9 +206,10 @@ def run_round(staging_dir: Path, round_num: int) -> dict:
         if results_path.exists():
             try:
                 data = json.loads(results_path.read_text(encoding="utf-8"))
-                # Give sandbox a moment to fully write the file
-                time.sleep(2)
-                proc.wait(timeout=10)
+                # Signal the sandbox keepalive loop to exit, then wait for it
+                done_path.write_text("done")
+                time.sleep(5)
+                proc.wait(timeout=30)
                 return data
             except (json.JSONDecodeError, OSError):
                 continue  # still writing
