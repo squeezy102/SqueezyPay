@@ -87,6 +87,8 @@ Use `vi.fn()` to mock `fetch` responses when testing API functions.
 
 ## End-to-end — Playwright
 
+> Note: Playwright is also used as a backend runtime dependency for the biller autofill feature (`backend/scripts/autofill_worker.py`). The `playwright>=1.40.0` package is in `backend/requirements.txt`. The E2E test framework described here is separate from that feature.
+
 **Location:** `tests/e2e/`
 
 **Prerequisites:** The backend and frontend must both be running.

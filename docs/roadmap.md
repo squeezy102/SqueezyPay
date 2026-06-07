@@ -30,6 +30,9 @@ Current development phase: **Phase 2** (bank integration and spending visibility
 - Manual category override per transaction
 - Single-institution enforcement (backend 409 guard + UI constraint)
 - Dashboard — account balances, bills, income, spend snapshots
+- Bills hub refactor — unified `Bills` tab with Overview, Pay Bills, Payment History, Manage Billers sub-views
+- Biller autofill — `POST /api/bills/{id}/autofill` launches Playwright worker; fills username + password fields on biller site (**known limitation:** always opens a new browser window, cannot open a tab in an existing window)
+- Credential vault UI — `CredentialModal` for create/edit; credentials auto-displayed in payment modal with Copy buttons
 
 ### In progress / next
 

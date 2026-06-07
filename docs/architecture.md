@@ -30,6 +30,11 @@ Browser (any device on LAN)
           │ HTTPS (Plaid SDK)
           ▼
      Plaid API
+
+          │ subprocess (autofill)
+          ▼
+  Playwright / Chromium
+  (autofill_worker.py)
 ```
 
 ## Backend
@@ -38,7 +43,7 @@ Browser (any device on LAN)
 
 **Routers** (`backend/api/`):
 - `auth.py` — login, logout, token refresh
-- `bills.py` — bill CRUD
+- `bills.py` — bill CRUD + `POST /{bill_id}/autofill` (Playwright biller login)
 - `payments.py` — payment history log
 - `credentials.py` — encrypted credential vault
 - `income.py` — income stream management
@@ -50,6 +55,11 @@ Browser (any device on LAN)
 - `plaid_service.py` — all Plaid API calls, transaction parsing, blame computation
 - `encryption_service.py` — Fernet encrypt/decrypt wrapper
 - `plaid_category_mapper.py` — maps Plaid's `personal_finance_category` taxonomy to internal categories
+
+**Scripts** (`backend/scripts/`):
+- `generate_key.py` — generates the Fernet encryption key
+- `autofill_worker.py` — Playwright worker spawned by the autofill endpoint; navigates to the biller URL, fills username/password fields, then blocks until the browser disconnects
+- `diagnose_autofill.py` — CLI diagnostic tool: `python scripts/diagnose_autofill.py <url>`. Runs the field-detection logic and reports which selectors matched, useful for debugging biller sites that fail autofill.
 
 **Repositories** (`backend/repositories/`): data access layer over SQLAlchemy models. Routes call services; services call repositories. Raw queries do not appear in routes.
 
@@ -73,7 +83,8 @@ Browser (any device on LAN)
 - `Dashboard.tsx` — account balances, bills, income, spend snapshots, AI callout placeholder
 - `Accounts.tsx` — Plaid connection flow, account balance cards
 - `Transactions.tsx` — transaction table with date/amount/merchant
-- `BillPayments.tsx` — payment history log
+- `Bills.tsx` — unified bills hub: Overview, Pay Bills, Payment History, Manage Billers sub-views
+- `CredentialModal.tsx` — standalone modal for creating/editing biller credentials; used by `Bills.tsx` and `LogPaymentModal`
 - `Spending.tsx` — blame graph by category and account
 - `Income.tsx` — income stream management
 - `Settings.tsx` — passphrase change, sync preferences

@@ -176,6 +176,42 @@ print('VACUUM complete.')
 
 ---
 
+## Biller autofill
+
+### Autofill opens a new window instead of a tab
+
+This is a known Playwright limitation. Playwright always launches a new browser window. It cannot open a tab in an existing browser window without a browser extension acting as a bridge. There is no workaround within the current architecture.
+
+---
+
+### Autofill doesn't fill the fields
+
+The selector list used by `autofill_worker.py` covers the most common field patterns, but some biller sites use unusual markup.
+
+Use the diagnostic tool to see which selectors matched:
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1
+python scripts/diagnose_autofill.py https://billersite.example.com/login
+```
+
+The tool reports:
+- Which username/email selectors matched and their element details
+- Which password selectors matched
+- Whether the page required a network-idle wait
+
+If the correct fields are not in the list, a new selector can be added to the prioritized list at the top of `backend/scripts/autofill_worker.py`.
+
+---
+
+### Autofill button stays "Opening…" indefinitely
+
+The frontend sets a 12-second timeout on the autofill request. If the backend worker takes longer than 12 s to navigate and fill fields, the request times out on the client side. This can happen on slow biller sites.
+
+Check the backend logs for `autofill:` entries to see whether the worker completed, errored, or is still running. If the worker launched successfully, the browser may still be open even though the button timed out.
+
+---
+
 ## CI failures
 
 ### ruff check fails

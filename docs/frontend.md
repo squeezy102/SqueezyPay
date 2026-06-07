@@ -15,7 +15,8 @@ frontend/
 │   │   ├── Dashboard.tsx     Main dashboard — balances, bills, income, spend
 │   │   ├── Accounts.tsx      Bank connection, account balance cards
 │   │   ├── Transactions.tsx  Transaction history table
-│   │   ├── BillPayments.tsx  Payment history log
+│   │   ├── Bills.tsx         Unified bills hub — four sub-views (see below)
+│   │   ├── CredentialModal.tsx  Standalone credential create/edit modal
 │   │   ├── Spending.tsx      Blame graph — category and account breakdown
 │   │   ├── Income.tsx        Income stream management
 │   │   ├── Settings.tsx      Passphrase, sync preferences
@@ -44,11 +45,34 @@ const [activeTab, setActiveTab] = useState("dashboard");
 | `dashboard` | `Dashboard` |
 | `accounts` | `Accounts` |
 | `transactions` | `Transactions` |
-| `bill-payments` | `BillPayments` |
+| `bills` | `Bills` |
 | `spending` | `Spending` |
 | `income` | `Income` |
 | `settings` | `Settings` |
 | `budget` | `Budget` (disabled) |
+
+## Bills hub — `Bills.tsx`
+
+`Bills.tsx` is the unified bill management component (~700 lines). It replaces the former `BillPayments` tab entirely. Sub-view state is managed by a `useState<SubView>` hook at the root of the component.
+
+**Sub-views:**
+
+| SubView | Description |
+|---|---|
+| `overview` | CTA banner + summary stats (due today, overdue count, upcoming) |
+| `pay-bills` | Grid of `BillCard` tiles — one per active bill |
+| `payment-history` | Searchable, sortable payment log table |
+| `manage-billers` | CRUD table: add/edit/delete billers, notes popover, credential key button |
+
+The **credential key button** in `ManageBillers` opens `CredentialModal` for the selected biller. The **"Go to {bill.name}" button** in the `PayBills` view calls the autofill endpoint when credentials exist and the user is not on mobile; on mobile (or when autofill returns false) it falls back to `window.open`.
+
+Mobile detection is done inline: `window.innerWidth < 768` at call time.
+
+## CredentialModal — `CredentialModal.tsx`
+
+Standalone exported component. Mounted by both `ManageBillers` (key icon in biller row) and `LogPaymentModal` ("Set up credentials →" link). Positioned at `z-60` so it appears above other modals.
+
+Handles both create and update via `saveCredential` from `api.ts`. Shows a delete button when editing an existing credential.
 
 ## Navigation — `NavBar.tsx`
 
@@ -111,7 +135,15 @@ export async function getPlaidAccounts(): Promise<PlaidAccount[]> {
 }
 ```
 
-`authHeaders()` reads the JWT from `localStorage` and returns `{ Authorization: "Bearer <token>" }`.
+`authHeaders()` reads the JWT from `sessionStorage` and returns `{ Authorization: "Bearer <token>" }`.
+
+Notable functions beyond the standard fetch wrappers:
+
+| Function | Description |
+|---|---|
+| `saveCredential(data)` | Create or update credentials for a bill. Calls `POST /api/credentials` or `PUT /api/credentials/{id}` depending on whether `data.id` is present. |
+| `deleteCredential(credentialId)` | Delete a credential by ID. Returns `true` on success. |
+| `autofillBill(billId)` | Call `POST /api/bills/{bill_id}/autofill`. Returns `true` if the browser was opened with fields filled, `false` otherwise. |
 
 ## TypeScript types — `types.ts`
 

@@ -84,6 +84,25 @@ Soft-delete a bill (`is_active = false`).
 
 ---
 
+### `POST /api/bills/{bill_id}/autofill`
+Launch a Playwright browser worker that navigates to the bill's URL and fills the login fields with stored credentials.
+
+**Response `200`:**
+```json
+{ "filled": true }
+```
+`filled` is `true` if the browser opened and fields were filled (or the worker is still running with fields filled), `false` if the worker ran but could not locate or fill the fields.
+
+**Response `404`:** Bill not found, or no credential is stored for this bill.
+
+**Behaviour notes:**
+- The worker navigates with `networkidle` wait, then tries a prioritized list of CSS selectors for username/email and password fields.
+- If filling fails on the first attempt it retries once (checking `document.activeElement` and field values before retrying).
+- A `TimeoutExpired` after 12 s is treated as success — it means the browser is open.
+- **Known limitation:** Playwright always opens a new browser window. It cannot open a tab in an existing browser window.
+
+---
+
 ## Payments
 
 ### `GET /api/payments`
@@ -382,16 +401,46 @@ List all transaction categories.
 
 ## Credentials
 
-### `GET /api/credentials/{bill_id}`
-Retrieve decrypted credentials for a bill. Requires auth.
+### `GET /api/credentials/by-bill/{bill_id}`
+Retrieve decrypted credentials for a bill by bill ID. Returns `404` if no credential is stored for that bill. Requires auth.
+
+**Response `200`:**
+```json
+{
+  "id": 1,
+  "bill_id": 3,
+  "username": "user@example.com",
+  "password": "hunter2",
+  "notes": null
+}
+```
+
+### `GET /api/credentials/{credential_id}`
+Retrieve a credential by its own ID.
+
+### `GET /api/credentials/`
+List all credentials (decrypted).
 
 ### `POST /api/credentials`
 Store credentials for a bill. Encrypted before write.
 
-### `PUT /api/credentials/{id}`
+**Request:**
+```json
+{
+  "bill_id": 3,
+  "username": "user@example.com",
+  "password": "hunter2",
+  "notes": null
+}
+```
+
+**Response `201`:** Created credential (same shape as GET response above).
+**Response `404`:** Bill not found.
+
+### `PUT /api/credentials/{credential_id}`
 Update credentials. Re-encrypted on write.
 
-### `DELETE /api/credentials/{id}`
+### `DELETE /api/credentials/{credential_id}`
 Delete credentials.
 
 ---
