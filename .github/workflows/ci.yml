@@ -15,9 +15,9 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -34,7 +34,17 @@ jobs:
           SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.CI_ENCRYPTION_KEY }}
           SQUEEZYPAY_SECRET_KEY: ${{ secrets.CI_SECRET_KEY }}
         run: |
-          pytest --cov=. --cov-report=term-missing --cov-fail-under=80
+          pytest --cov=. --cov-report=term-missing --cov-fail-under=80 \
+            -W error::DeprecationWarning \
+            -W error::PendingDeprecationWarning \
+            2>&1 | tee /tmp/backend_test_output.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Warning gate (backend)
+        run: |
+          python ../scripts/check_ci_warnings.py \
+            --input /tmp/backend_test_output.txt \
+            --ignore ../.ci-ignore-warnings
 
   frontend:
     name: Frontend Typecheck
@@ -44,22 +54,34 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci --legacy-peer-deps 2>&1 | tee /tmp/npm_install_output.txt; exit ${PIPESTATUS[0]}
+
+      - name: Warning gate (npm install)
+        run: |
+          python ../scripts/check_ci_warnings.py \
+            --input /tmp/npm_install_output.txt \
+            --ignore ../.ci-ignore-warnings
 
       - name: Lint (ESLint)
         run: npm run lint
 
       - name: Unit tests (Vitest)
-        run: npm test
+        run: npm test 2>&1 | tee /tmp/vitest_output.txt; exit ${PIPESTATUS[0]}
+
+      - name: Warning gate (Vitest)
+        run: |
+          python ../scripts/check_ci_warnings.py \
+            --input /tmp/vitest_output.txt \
+            --ignore ../.ci-ignore-warnings
 
       - name: Typecheck
         run: npm run typecheck

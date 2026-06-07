@@ -1,0 +1,26 @@
+# .ci-ignore-warnings
+# Patterns listed here are approved exceptions to the CI warning gate.
+# One pattern per line. Lines starting with # are comments. Blank lines ignored.
+# Patterns are matched as substrings against warning annotation text.
+#
+# POLICY: Every entry MUST have a comment explaining why it is accepted
+# and (where applicable) a linked issue for eventual resolution.
+#
+# ── Currently accepted warnings ──────────────────────────────────────────────
+
+# DeprecationWarning from third-party libraries in pytest output.
+# These are in upstream packages we don't control; tracked in deps upgrade cycle.
+DeprecationWarning
+
+# pytest-asyncio mode warning — requires config change in pyproject.toml.
+# Accepted until pytest-asyncio config is standardized.
+PytestUnraisableExceptionWarning
+
+# npm peer dependency warnings from --legacy-peer-deps installs.
+# Our frontend dependency tree has peer conflicts that are safe but noisy.
+# Tracked: resolve peer deps in next frontend dependency audit pass.
+npm warn ERESOLVE
+
+# ResourceWarning from SQLite connections in test teardown.
+# Harmless — SQLite file descriptors, not a leak in production code.
+ResourceWarning

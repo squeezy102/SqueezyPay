@@ -176,13 +176,35 @@ if _frontend_dist:
 if __name__ == "__main__":
     if "--migrate" in sys.argv:
         # Headless migration mode — used by the installer and upgrade flow.
+        #
+        # Fresh DB strategy:
+        #   1. init_db() creates all tables via SQLAlchemy create_all (idempotent)
+        #   2. If no alembic revision is stamped, stamp "head" — tables already
+        #      match the models so no migrations need to run
+        # Existing DB strategy:
+        #   1. init_db() is a no-op (tables already exist)
+        #   2. upgrade "head" applies any pending migrations
         from alembic.config import Config as AlembicConfig
+        from alembic.runtime.migration import MigrationContext
+        from sqlalchemy import create_engine
 
         from alembic import command
+        from database.db import DATABASE_URL, init_db
+
+        init_db()
+
+        _engine = create_engine(DATABASE_URL)
+        with _engine.connect() as _conn:
+            _current = MigrationContext.configure(_conn).get_current_revision()
 
         ini_path = Path(__file__).parent / "alembic.ini"
         alembic_cfg = AlembicConfig(str(ini_path))
-        command.upgrade(alembic_cfg, "head")
+
+        if _current is None:
+            command.stamp(alembic_cfg, "head")
+        else:
+            command.upgrade(alembic_cfg, "head")
+
         sys.exit(0)
 
     if "--generate-key" in sys.argv:
