@@ -60,13 +60,13 @@ All configuration is via Windows User environment variables (HKCU\Environment). 
 
 ## Running the app
 
-Start the admin dashboard — it manages all other services and runs without a console window:
+Start via the system tray launcher — manages all services, no console window:
 
 ```powershell
-pythonw admin\launch.pyw
+.\scripts\launch-tray.ps1
 ```
 
-This opens **http://localhost:9000** automatically. Running it again when already running just re-focuses the browser tab.
+A tray icon appears in the Windows system tray. Right-click for Start All / Stop All / Open Dashboard / Open App. Running it again when already running does nothing — a named mutex prevents duplicate instances.
 
 | Service | URL |
 |---|---|

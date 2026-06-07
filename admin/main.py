@@ -328,12 +328,5 @@ def dashboard():
 
 
 if __name__ == "__main__":
-    import webbrowser
     import uvicorn
-
-    if _is_port_in_use(ADMIN_PORT):
-        # Another instance is already running — focus it instead of starting a second one.
-        print(f"SqueezyPay admin is already running at http://localhost:{ADMIN_PORT}")
-        webbrowser.open(f"http://localhost:{ADMIN_PORT}")
-    else:
-        uvicorn.run(app, host="127.0.0.1", port=ADMIN_PORT)
+    uvicorn.run(app, host="127.0.0.1", port=ADMIN_PORT)

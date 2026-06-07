@@ -77,13 +77,13 @@ npm install
 
 ## 7. Start the app
 
-Start the admin dashboard — it manages all other services and runs without a console window:
+Start via the system tray launcher — manages all services, no console window:
 
 ```powershell
-pythonw admin\launch.pyw
+.\scripts\launch-tray.ps1
 ```
 
-This opens **http://localhost:9000** automatically. Click **Start & Launch** to start the backend and frontend and open the app. Running the launcher again when the admin is already running just re-focuses the browser tab — no duplicate processes.
+A tray icon appears in the Windows system tray. Right-click for **Start All**, **Stop All**, **Open Dashboard**, and **Open App**. Running it again when already running does nothing — a named mutex prevents duplicate instances.
 
 ## 8. Connect your bank (optional)
 
