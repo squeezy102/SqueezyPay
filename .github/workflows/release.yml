@@ -105,7 +105,9 @@ jobs:
         run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { Write-Error "ISCC.exe not found"; exit 1 }
-          & $iscc squeezypay.iss
+          # Strip leading 'v' from tag (v0.1.0-alpha.3 -> 0.1.0-alpha.3)
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          & $iscc /DAppVersion=$version squeezypay.iss
           if ($LASTEXITCODE -ne 0) { Write-Error "ISCC exited $LASTEXITCODE"; exit 1 }
         # Output: dist/SqueezyPay-Setup.exe
 

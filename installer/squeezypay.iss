@@ -15,7 +15,11 @@
 ;   then copying the browsers directory into backend/playwright_browsers/
 
 #define AppName      "SqueezyPay"
-#define AppVersion   GetFileVersion("..\backend\dist\backend.exe")
+; AppVersion is injected by CI via /DAppVersion=<tag> (e.g. /DAppVersion=0.1.0-alpha.3).
+; When building locally without that flag, fall back to reading the EXE version resource.
+#ifndef AppVersion
+  #define AppVersion GetVersionNumbersString("..\backend\dist\backend.exe")
+#endif
 #define AppPublisher "SqueezyPay"
 #define AppURL       "https://github.com/squeezy102/SqueezyPay"
 #define AppExeName   "backend.exe"
