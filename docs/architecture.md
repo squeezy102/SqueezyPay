@@ -120,7 +120,7 @@ Fernet (AES-128-CBC + HMAC-SHA256) via the Python `cryptography` library. One ke
 
 Encrypted values are stored as base64 strings. The key is read from the environment on each call to `encryption_service.encrypt()` or `encryption_service.decrypt()` — it is never stored in memory beyond the operation.
 
-Encrypted fields: biller credentials, payment method details, Plaid access tokens.
+Encrypted fields: biller login passwords (`credentials.password_encrypted`), Plaid access tokens (`plaid_items.access_token_enc`). Biller usernames and payment method records are stored in plaintext.
 
 ## Single-institution design
 
@@ -139,9 +139,7 @@ SqueezyPay supports exactly one connected financial institution at a time. This 
 
 ## CSV / OFX import
 
-Supplemental ingestion for the single connected institution. Not a back door for connecting additional institutions — the import is expected to represent the same accounts already connected via Plaid.
-
-Deduplication strategy: match on date + amount + merchant_name. A transaction imported from CSV that matches an existing Plaid transaction is marked as a duplicate and skipped. The `source` column on `plaid_transactions` records where each row originated (`plaid` or `import`).
+Not yet implemented. Planned as a supplemental ingestion path for the single connected institution — see [roadmap.md](roadmap.md).
 
 ## Admin dashboard
 
@@ -160,7 +158,7 @@ There are no individual user accounts. The household shares one passphrase.
 ## CI
 
 GitHub Actions runs on push to `dev` and on pull requests to `master`:
-- `ruff check` and `ruff format --check` (backend)
+- `ruff check` (backend)
 - `pytest` with coverage threshold (backend)
 - `npm run lint` (frontend)
 - `npm test` (frontend, Vitest)

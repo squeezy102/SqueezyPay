@@ -15,6 +15,7 @@ import type {
   PlaidAccount,
   PlaidTransaction,
   BlameData,
+  DiagnosticsReport,
 } from "../types";
 
 export const API_BASE = `http://${window.location.hostname}:8000`;
@@ -785,4 +786,12 @@ export async function getPlaidBlame(daysBack = 30): Promise<BlameData> {
   const response = handle401(await fetch(`${API_BASE}/api/plaid/blame?days_back=${daysBack}`, { headers: { ...authHeaders() } }));
   if (!response.ok) throw new Error(`API error: ${response.status}`);
   return mapBlameData(await response.json() as RawBlameData);
+}
+
+// ── Diagnostics ───────────────────────────────────────────────────────────────
+
+export async function getDiagnostics(): Promise<DiagnosticsReport> {
+  const response = handle401(await fetch(`${API_BASE}/api/diagnostics/`, { headers: { ...authHeaders() } }));
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return await response.json() as DiagnosticsReport;
 }

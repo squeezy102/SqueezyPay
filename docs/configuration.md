@@ -25,7 +25,7 @@ After setting a variable, open a new terminal window to pick it up in `os.enviro
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SQUEEZYPAY_ENCRYPTION_KEY` | Yes | — | Fernet key for encrypting credentials, payment methods, and Plaid access tokens. Generate with `python backend/scripts/generate_key.py`. |
+| `SQUEEZYPAY_ENCRYPTION_KEY` | Yes | — | Fernet key for encrypting biller passwords and Plaid access tokens. Generate with `python backend/scripts/generate_key.py`. |
 
 The key is a base64-encoded 32-byte value. It must be generated once and stored permanently. **If the key is lost, all encrypted data is unrecoverable.** Back it up outside the machine.
 
@@ -69,11 +69,12 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ## In-app settings
 
-Some preferences are stored in the database and managed through the **Settings** tab in the app:
+Some preferences are stored in the database via `PUT /api/settings`:
 
-- **Passphrase** — the household login passphrase (change via Settings → Security)
-- **Income streams** — recurring income configuration used on the Dashboard
-- **Bills** — bill entries, due dates, and biller URLs
+- **`due_soon_days`** — how many days before due date a bill is flagged as "due soon" (default: 7)
+- **`large_payment_threshold`** — payments above this amount are highlighted in payment history (default: 500.0)
+
+The household passphrase is managed via **Settings → Security** in the app (`POST /api/settings/change-passphrase`). Bills, income streams, and credentials are managed through their own tabs and API routes — not through the settings endpoint.
 
 These are not environment variables — they persist across restarts in the SQLite database.
 

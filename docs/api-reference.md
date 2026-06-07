@@ -184,11 +184,13 @@ Get all settings as a key-value map.
 **Response `200`:**
 ```json
 {
-  "plaid_balance_sync_enabled": true,
-  "plaid_balance_sync_interval_hours": 4,
-  "plaid_transaction_sync_enabled": true
+  "due_soon_days": 7,
+  "large_payment_threshold": 500.0
 }
 ```
+
+`due_soon_days` — how many days before a bill's due date it is flagged as "due soon" on the dashboard.
+`large_payment_threshold` — payments above this amount are highlighted in the payment history.
 
 ---
 
@@ -197,7 +199,7 @@ Update one or more settings.
 
 **Request:**
 ```json
-{ "plaid_balance_sync_interval_hours": 8 }
+{ "due_soon_days": 5 }
 ```
 
 ---
@@ -442,6 +444,68 @@ Update credentials. Re-encrypted on write.
 
 ### `DELETE /api/credentials/{credential_id}`
 Delete credentials.
+
+---
+
+## Payment Methods
+
+### `GET /api/payment-methods/`
+List all saved payment methods.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": 1,
+    "nickname": "Visa ···4242",
+    "payment_type": "credit_card",
+    "last_four": "4242",
+    "expiration_date": "12/27",
+    "notes": null,
+    "created_at": "2025-06-01T00:00:00",
+    "updated_at": "2025-06-01T00:00:00"
+  }
+]
+```
+
+---
+
+### `GET /api/payment-methods/{id}`
+Get a single payment method by ID.
+
+---
+
+### `POST /api/payment-methods/`
+Create a payment method.
+
+**Request:**
+```json
+{
+  "nickname": "Visa ···4242",
+  "payment_type": "credit_card",
+  "last_four": "4242",
+  "expiration_date": "12/27",
+  "notes": null
+}
+```
+
+`payment_type` must be one of: `credit_card`, `debit_card`, `bank_account`.
+`last_four` must be exactly 4 digits.
+
+**Response `201`:** Created payment method.
+
+---
+
+### `PUT /api/payment-methods/{id}`
+Update a payment method. All fields optional.
+
+---
+
+### `DELETE /api/payment-methods/{id}`
+Delete a payment method.
+
+**Response `204`:** Deleted.
+**Response `404`:** Not found.
 
 ---
 

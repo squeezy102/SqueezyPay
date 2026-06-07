@@ -13,9 +13,11 @@ import SetupScreen from "./components/SetupScreen";
 import Accounts from "./components/Accounts";
 import SpendingBlame from "./components/SpendingBlame";
 import Transactions from "./components/Transactions";
+import BugReportModal from "./components/BugReportModal";
 
 function AppShell() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [bugReportOpen, setBugReportOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">
@@ -32,6 +34,20 @@ function AppShell() {
         {activeTab === "accounts"     && <Accounts />}
         {activeTab === "spending"     && <SpendingBlame onNavigate={setActiveTab} />}
       </div>
+
+      {/* Floating bug report button — always visible regardless of active tab */}
+      <button
+        onClick={() => setBugReportOpen(true)}
+        title="Report a bug"
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-violet-700 hover:bg-violet-800 active:scale-95 shadow-lg transition-all text-white text-xl"
+        aria-label="Report a bug"
+      >
+        🐛
+      </button>
+
+      {bugReportOpen && (
+        <BugReportModal currentTab={activeTab} onClose={() => setBugReportOpen(false)} />
+      )}
     </div>
   );
 }
