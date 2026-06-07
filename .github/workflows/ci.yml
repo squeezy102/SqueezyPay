@@ -46,6 +46,15 @@ jobs:
             --input /tmp/backend_test_output.txt \
             --ignore ../.ci-ignore-warnings
 
+      - name: Startup smoke test
+        env:
+          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.CI_ENCRYPTION_KEY }}
+          SQUEEZYPAY_SECRET_KEY: ${{ secrets.CI_SECRET_KEY }}
+        run: |
+          # Verify all imports resolve and the app object can be constructed.
+          # Catches missing dependencies and broken imports before anyone tries to run locally.
+          python -c "import main; print('startup import OK')"
+
   frontend:
     name: Frontend Typecheck
     runs-on: ubuntu-latest
