@@ -99,26 +99,59 @@ SqueezyPay is self-hosted — there is no remote server to push to. CD for a hom
 
 ## Windows installer
 
-**Goal:** A user who has never heard of Python, Node, or Alembic should be able to run one file and have a working SqueezyPay on their home network within five minutes.
+**Goal:** A user who has never heard of Python, Node, or Alembic should be able to run one file and have a working SqueezyPay on their home network within five minutes. Zero runtime dependencies on the target machine.
 
-**What the installer needs to do:**
-1. Check for Python 3.11+ and Node 18+, download and install them silently if missing (winget or direct download)
-2. Clone or extract the repo to a user-chosen directory
-3. Create the Python virtual environment and run `pip install -r requirements.txt`
-4. Run `npm install` in the frontend directory
-5. Generate `SQUEEZYPAY_ENCRYPTION_KEY` and `SQUEEZYPAY_JWT_SECRET`, store them as Windows User environment variables
-6. Prompt for Plaid credentials (optional — can be skipped and configured later)
-7. Run `alembic upgrade head` to initialize the database
-8. Create desktop shortcuts for the admin dashboard and the app
-9. Optionally register a Task Scheduler entry for auto-start on login
-10. Open the app in the browser when done
+**Toolchain:**
+- **Inno Setup** — produces `SqueezyPay-Setup.exe`, the single artifact the user downloads and runs
+- **PyInstaller** — compiles the FastAPI backend + all Python dependencies into `backend.exe` (no Python required on target)
+- **`npm run build`** — produces `frontend/dist/` static files served directly by `backend.exe` (no Node required on target)
+- **GitHub Actions** (Windows runner) — builds all of the above and attaches the `.exe` to each GitHub Release
 
-**Likely implementation:** PowerShell script (`install.ps1`) for the bootstrap layer, which handles prerequisites and environment setup. The script should be runnable by right-clicking and choosing "Run with PowerShell" — no prior terminal experience required.
+**Install layout:**
+```
+C:\Program Files\SqueezyPay\
+  backend.exe        PyInstaller bundle — FastAPI + uvicorn + all deps
+  frontend\          Static build — served by backend.exe via StaticFiles
+  admin\             Admin dashboard (separate FastAPI process)
+  alembic\           Migration files — needed at runtime for upgrades
+  unins000.exe       Inno Setup uninstaller
 
-**Design decisions to settle:**
-- Self-contained bundle (Python + Node embedded) vs. system installs? Embedded is simpler for the user but large (~200 MB). System installs are lighter but require more error handling.
-- Upgrade path: how does a user update to a new version without losing their database and environment variables?
-- Uninstaller: should the installer register an uninstall entry in Add/Remove Programs?
+%APPDATA%\SqueezyPay\
+  squeezypay.db      Database — lives here so reinstalls/upgrades preserve data
+  logs\              Log files
+```
+
+**Installer screens:**
+1. Welcome
+2. License (MIT)
+3. Install location (default: `C:\Program Files\SqueezyPay`)
+4. **Select Components** — Core (always installed) + optional Biller Autofill (~150 MB Chromium; checked by default with explanation)
+5. **Security setup** — encryption key and JWT secret generated automatically, stored as User env vars; user sees confirmation only
+6. **Plaid setup (optional)** — explanation of what Plaid is + link to dashboard.plaid.com; fields for Client ID and Secret; prominent "Skip — set this up later" option; stored as User env vars
+7. **Passphrase** — choose household login passphrase with confirm field
+8. **Options** — "Start automatically on Windows login" (Task Scheduler), "Create desktop shortcut", "Open SqueezyPay when done"
+9. Installing (progress)
+10. Done
+
+**What the installer does:**
+- Extracts binaries and static files to Program Files
+- Creates `%APPDATA%\SqueezyPay\` and subdirs
+- Generates `SQUEEZYPAY_ENCRYPTION_KEY` (Fernet) and `SQUEEZYPAY_JWT_SECRET`, writes to `HKCU\Environment`
+- Writes Plaid credentials to `HKCU\Environment` if provided
+- Runs `backend.exe --migrate` (Alembic upgrade head, headless, exits when done)
+- Optionally creates Task Scheduler entry via `schtasks /create`
+- Creates desktop shortcut opening `http://localhost:8000` in default browser
+- Registers uninstaller in Add/Remove Programs
+
+**`backend.exe` modes:**
+- `backend.exe` — normal server (serves API + frontend static files on :8000)
+- `backend.exe --migrate` — runs Alembic upgrade head and exits; used by installer and future upgrade flow
+
+**Upgrade path:**
+- User runs new installer over existing install
+- Inno Setup detects existing installation, replaces binaries, preserves `%APPDATA%\SqueezyPay\`
+- Installer runs `backend.exe --migrate` to apply any new migrations
+- In-app update check (Phase 4) notifies user when a new release is available on GitHub
 
 ---
 
