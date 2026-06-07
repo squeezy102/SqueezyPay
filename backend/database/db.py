@@ -1,9 +1,26 @@
+import os
+import sys
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from models.models import Base
 
-DATABASE_URL = "sqlite:///./squeezypay.db"
+
+def _resolve_db_path() -> Path:
+    if getattr(sys, "frozen", False):
+        # Running as a PyInstaller bundle — store data in %APPDATA%\SqueezyPay
+        data_dir = Path(os.environ["APPDATA"]) / "SqueezyPay"
+    else:
+        # Dev mode — keep the database next to the backend directory
+        data_dir = Path(__file__).resolve().parent.parent
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir / "squeezypay.db"
+
+
+DB_PATH = _resolve_db_path()
+DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}

@@ -6,20 +6,19 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.models import Base  # noqa: E402
+from database.db import DATABASE_URL  # noqa: E402
+from models.models import Base        # noqa: E402
+
+# Override whatever sqlalchemy.url is in alembic.ini with the runtime-resolved path.
+# This ensures the packaged exe and dev mode both migrate the correct database file.
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 target_metadata = Base.metadata
 

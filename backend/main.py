@@ -57,6 +57,8 @@ _SUPPRESS_REQUEST_LOG = {"/health"}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import os
+    from pathlib import Path
+
     if not os.environ.get("SQUEEZYPAY_ENCRYPTION_KEY"):
         raise RuntimeError(
             "SQUEEZYPAY_ENCRYPTION_KEY is not set. "
@@ -68,6 +70,25 @@ async def lifespan(app: FastAPI):
             "Set a 32+ character random string as your JWT signing key."
         )
     init_db()
+
+    # Installer bootstrap — if a passphrase temp file exists, seed auth and delete it.
+    # The installer writes initial_passphrase.tmp to %APPDATA%\SqueezyPay\ after
+    # the user sets their passphrase on the installer's passphrase page.
+    # This file is consumed exactly once and never stored in plaintext after this point.
+    appdata_dir = Path(os.environ.get("APPDATA", "")) / "SqueezyPay"
+    passphrase_tmp = appdata_dir / "initial_passphrase.tmp"
+    if passphrase_tmp.exists():
+        try:
+            passphrase = passphrase_tmp.read_text(encoding="utf-8").strip()
+            if passphrase:
+                from database.db import SessionLocal
+                from services.auth_service import AuthService
+                with SessionLocal() as db:
+                    AuthService(db).setup(passphrase)
+                logger.info("Initial passphrase seeded from installer bootstrap")
+        finally:
+            passphrase_tmp.unlink(missing_ok=True)
+
     logger.info("SqueezyPay backend started")
     yield
 
@@ -122,5 +143,44 @@ def health():
 
 
 if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+
+    if "--migrate" in sys.argv:
+        # Headless migration mode — used by the installer and upgrade flow.
+        # Runs Alembic upgrade head against the resolved database path, then exits.
+        from alembic import command
+        from alembic.config import Config as AlembicConfig
+        ini_path = Path(__file__).parent / "alembic.ini"
+        alembic_cfg = AlembicConfig(str(ini_path))
+        command.upgrade(alembic_cfg, "head")
+        sys.exit(0)
+
+    if "--generate-key" in sys.argv:
+        # Key generation mode — used by the installer to produce secrets
+        # without requiring Python to be installed on the target machine.
+        # Usage:
+        #   backend.exe --generate-key fernet <output_file>
+        #   backend.exe --generate-key secret <output_file>
+        import os
+        import secrets
+        from cryptography.fernet import Fernet
+        args = sys.argv
+        idx = args.index("--generate-key")
+        key_type  = args[idx + 1] if idx + 1 < len(args) else ""
+        out_file  = args[idx + 2] if idx + 2 < len(args) else ""
+        if key_type == "fernet":
+            key = Fernet.generate_key().decode()
+        elif key_type == "secret":
+            key = secrets.token_hex(32)
+        else:
+            print("Unknown key type", file=sys.stderr)
+            sys.exit(1)
+        if out_file:
+            Path(out_file).write_text(key)
+        else:
+            print(key)
+        sys.exit(0)
+
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

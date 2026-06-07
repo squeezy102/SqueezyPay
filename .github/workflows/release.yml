@@ -1,0 +1,95 @@
+name: Build Installer
+
+# Triggered when a version tag is pushed (e.g. v0.1.0-alpha.1)
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-installer:
+    name: Build Windows Installer
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ----------------------------------------------------------------
+      # 1. Build frontend static files
+      # ----------------------------------------------------------------
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        # Output: frontend/dist/
+
+      # ----------------------------------------------------------------
+      # 2. Build backend.exe with PyInstaller
+      # ----------------------------------------------------------------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build backend.exe
+        working-directory: backend
+        run: pyinstaller backend.spec
+        # Output: backend/dist/backend.exe
+
+      # ----------------------------------------------------------------
+      # 3. Stage Playwright Chromium for the optional autofill component
+      # ----------------------------------------------------------------
+      - name: Install Playwright Chromium
+        working-directory: backend
+        run: |
+          python -m playwright install chromium --with-deps
+          # Copy the installed browsers into the expected staging directory
+          $browsersDir = python -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executablePath)" 2>$null
+          $playwrightDir = Join-Path $env:LOCALAPPDATA "ms-playwright"
+          if (Test-Path $playwrightDir) {
+            Copy-Item -Recurse -Force $playwrightDir "playwright_browsers"
+          }
+        shell: pwsh
+
+      # ----------------------------------------------------------------
+      # 4. Install Inno Setup and compile the installer
+      # ----------------------------------------------------------------
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+        shell: pwsh
+
+      - name: Create dist output directory
+        run: New-Item -ItemType Directory -Force -Path dist
+        shell: pwsh
+
+      - name: Compile installer
+        working-directory: installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" squeezypay.iss
+        shell: pwsh
+        # Output: dist/SqueezyPay-Setup.exe
+
+      # ----------------------------------------------------------------
+      # 5. Attach installer to the GitHub Release
+      # ----------------------------------------------------------------
+      - name: Upload installer to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/SqueezyPay-Setup.exe
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
