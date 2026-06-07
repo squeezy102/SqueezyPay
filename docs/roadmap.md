@@ -125,7 +125,7 @@ C:\Program Files\SqueezyPay\
 1. Welcome
 2. License (MIT)
 3. Install location (default: `C:\Program Files\SqueezyPay`)
-4. **Select Components** — Core (always installed) + optional Biller Autofill (~150 MB Chromium; checked by default with explanation)
+4. **Select Components** — Core (always installed) + optional Biller Autofill (~150 MB Chromium; checked by default). Description shown to user: *"Attempts to open your biller's login page and fill in your credentials automatically. Works well on some sites, not at all on others — results vary by biller. Experimental."*
 5. **Security setup** — encryption key and JWT secret generated automatically, stored as User env vars; user sees confirmation only
 6. **Plaid setup (optional)** — explanation of what Plaid is + link to dashboard.plaid.com; fields for Client ID and Secret; prominent "Skip — set this up later" option; stored as User env vars
 7. **Passphrase** — choose household login passphrase with confirm field
