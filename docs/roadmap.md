@@ -203,6 +203,21 @@ Webhook-based sync (immediate on Plaid SYNC_UPDATES_AVAILABLE events) requires a
 
 ---
 
+## Known limitations and deferred items
+
+These are tracked as GitHub Issues. Do not work around them — document and move on.
+
+| Issue | Item | Notes |
+|---|---|---|
+| [#3](https://github.com/squeezy102/SqueezyPay/issues/3) | Autofill documentation pass | Update all docs where autofill is mentioned to flag it as experimental, not guaranteed, accepted in current state |
+| [#4](https://github.com/squeezy102/SqueezyPay/issues/4) | Autofill always opens new browser window | Cannot open a tab in an existing browser window — OS/browser limitation, not fixable from the app |
+| [#5](https://github.com/squeezy102/SqueezyPay/issues/5) | Biller autofill site compatibility | Works on some sites, fails on others; results vary by biller |
+| [#6](https://github.com/squeezy102/SqueezyPay/issues/6) | Admin dashboard dev-only | Admin is not yet packaged into the installer; packaged installs have no admin UI |
+| [#7](https://github.com/squeezy102/SqueezyPay/issues/7) | Windows Sandbox not enabled on dev machine | Sandbox test harness (`scripts/sandbox/`) is ready but requires enabling the Containers-DisposableClientVM Windows feature and rebooting |
+| [#8](https://github.com/squeezy102/SqueezyPay/issues/8) | VITE_FEEDBACK_EMAIL not documented in .env.example | Bug report mailto path requires this env var; needs documentation |
+
+---
+
 ## Completed milestones
 
 ### Engineering foundations
