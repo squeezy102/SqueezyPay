@@ -1,6 +1,9 @@
+import os
 import re
+import sys
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,6 +32,8 @@ logger = get_logger("squeezypay.main")
 _ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:9000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 _ALLOWED_ORIGIN_REGEX = re.compile(
     r"http://(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?"
@@ -55,11 +60,18 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
 _SUPPRESS_REQUEST_LOG = {"/health"}
 
 
+def _resolve_frontend_dist() -> Path | None:
+    """Locate the frontend dist/ directory whether running packaged or from source."""
+    if getattr(sys, "frozen", False):
+        # PyInstaller: bundled assets are in sys._MEIPASS
+        candidate = Path(sys._MEIPASS) / "frontend" / "dist"  # type: ignore[attr-defined]
+    else:
+        candidate = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    return candidate if candidate.is_dir() else None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import os
-    from pathlib import Path
-
     if not os.environ.get("SQUEEZYPAY_ENCRYPTION_KEY"):
         raise RuntimeError(
             "SQUEEZYPAY_ENCRYPTION_KEY is not set. "
@@ -114,6 +126,7 @@ async def request_logging_middleware(request: Request, call_next):
     )
     return response
 
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
@@ -144,16 +157,29 @@ def health():
     return {"status": "ok"}
 
 
-if __name__ == "__main__":
-    import sys
-    from pathlib import Path
+# Mount the React SPA — API routes registered above take priority.
+# In packaged mode the dist/ is bundled inside sys._MEIPASS.
+# In dev mode the Vite dev server handles this; no mount needed.
+_frontend_dist = _resolve_frontend_dist()
+if _frontend_dist:
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
 
+    app.mount("/assets", StaticFiles(directory=str(_frontend_dist / "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_spa(full_path: str):  # noqa: ARG001
+        index = _frontend_dist / "index.html"
+        return FileResponse(str(index))
+
+
+if __name__ == "__main__":
     if "--migrate" in sys.argv:
         # Headless migration mode — used by the installer and upgrade flow.
-        # Runs Alembic upgrade head against the resolved database path, then exits.
         from alembic.config import Config as AlembicConfig
 
         from alembic import command
+
         ini_path = Path(__file__).parent / "alembic.ini"
         alembic_cfg = AlembicConfig(str(ini_path))
         command.upgrade(alembic_cfg, "head")
@@ -168,10 +194,11 @@ if __name__ == "__main__":
         import secrets
 
         from cryptography.fernet import Fernet
+
         args = sys.argv
         idx = args.index("--generate-key")
-        key_type  = args[idx + 1] if idx + 1 < len(args) else ""
-        out_file  = args[idx + 2] if idx + 2 < len(args) else ""
+        key_type = args[idx + 1] if idx + 1 < len(args) else ""
+        out_file = args[idx + 2] if idx + 2 < len(args) else ""
         if key_type == "fernet":
             key = Fernet.generate_key().decode()
         elif key_type == "secret":
@@ -185,5 +212,17 @@ if __name__ == "__main__":
             print(key)
         sys.exit(0)
 
+    import webbrowser
+
     import uvicorn
+
+    # Open the browser after a short delay so uvicorn is ready to accept connections.
+    # Only do this in packaged mode — dev mode uses the Vite dev server URL.
+    if getattr(sys, "frozen", False):
+        import threading
+        def _open_browser():
+            time.sleep(1.5)
+            webbrowser.open("http://localhost:8000")
+        threading.Thread(target=_open_browser, daemon=True).start()
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

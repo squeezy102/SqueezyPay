@@ -2,7 +2,9 @@ import json
 import logging
 import logging.handlers
 import os
+import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
 LOG_FILENAME = "squeezypay.log"
 MAX_LOG_BYTES = 5 * 1024 * 1024
@@ -22,10 +24,18 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_entry)
 
 
+def _resolve_log_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        # Packaged: write logs to %APPDATA%\SqueezyPay\logs\
+        log_dir = Path(os.environ.get("APPDATA", "")) / "SqueezyPay" / "logs"
+    else:
+        log_dir = Path(__file__).resolve().parent.parent / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
+
 def configure_logging() -> None:
-    log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, LOG_FILENAME)
+    log_path = _resolve_log_dir() / LOG_FILENAME
 
     root = logging.getLogger()
     root.setLevel(logging.INFO)

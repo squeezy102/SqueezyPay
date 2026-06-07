@@ -43,7 +43,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: pip install -r requirements.txt pyinstaller
+        run: pip install -r requirements.txt
 
       - name: Build backend.exe
         working-directory: backend
@@ -51,45 +51,84 @@ jobs:
         # Output: backend/dist/backend.exe
 
       # ----------------------------------------------------------------
+      # 2b. Smoke-test backend.exe before packaging
+      #     Sets dummy env vars so the lifespan env check passes.
+      #     --migrate runs Alembic against a temp DB and exits 0.
+      # ----------------------------------------------------------------
+      - name: Smoke-test backend.exe --migrate
+        working-directory: backend
+        shell: pwsh
+        env:
+          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST || 'dGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0LXRlc3Q=' }}
+          SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-smoke-test-only
+          APPDATA: ${{ runner.temp }}
+        run: |
+          $exe = "dist\backend.exe"
+          if (-not (Test-Path $exe)) { Write-Error "backend.exe not found"; exit 1 }
+          # --migrate exits 0 on success; capture output for debug
+          $out = & $exe --migrate 2>&1
+          Write-Host $out
+          if ($LASTEXITCODE -ne 0) { Write-Error "--migrate exited $LASTEXITCODE"; exit 1 }
+          Write-Host "Smoke test passed."
+
+      # ----------------------------------------------------------------
       # 3. Stage Playwright Chromium for the optional autofill component
       # ----------------------------------------------------------------
       - name: Install Playwright Chromium
         working-directory: backend
+        shell: pwsh
         run: |
           python -m playwright install chromium --with-deps
-          # Copy the installed browsers into the expected staging directory
-          $browsersDir = python -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executablePath)" 2>$null
           $playwrightDir = Join-Path $env:LOCALAPPDATA "ms-playwright"
           if (Test-Path $playwrightDir) {
+            Write-Host "Staging Playwright browsers from $playwrightDir"
             Copy-Item -Recurse -Force $playwrightDir "playwright_browsers"
+          } else {
+            Write-Host "ms-playwright dir not found, creating empty placeholder"
+            New-Item -ItemType Directory -Force -Path "playwright_browsers" | Out-Null
           }
-        shell: pwsh
 
       # ----------------------------------------------------------------
       # 4. Install Inno Setup and compile the installer
       # ----------------------------------------------------------------
       - name: Install Inno Setup
-        run: choco install innosetup --no-progress -y
         shell: pwsh
+        run: choco install innosetup --no-progress -y
 
       - name: Create dist output directory
-        run: New-Item -ItemType Directory -Force -Path dist
         shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path dist
 
       - name: Compile installer
         working-directory: installer
-        run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" squeezypay.iss
         shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { Write-Error "ISCC.exe not found"; exit 1 }
+          & $iscc squeezypay.iss
+          if ($LASTEXITCODE -ne 0) { Write-Error "ISCC exited $LASTEXITCODE"; exit 1 }
         # Output: dist/SqueezyPay-Setup.exe
+
+      - name: Verify installer artifact
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist\SqueezyPay-Setup.exe")) {
+            Write-Error "Installer artifact not found"
+            exit 1
+          }
+          $size = (Get-Item "dist\SqueezyPay-Setup.exe").Length
+          Write-Host "Installer size: $([math]::Round($size/1MB, 1)) MB"
 
       # ----------------------------------------------------------------
       # 5. Attach installer to the GitHub Release
+      #    prerelease is auto-detected from tag (alpha/beta/rc suffixes)
       # ----------------------------------------------------------------
       - name: Upload installer to release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/SqueezyPay-Setup.exe
           fail_on_unmatched_files: true
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
