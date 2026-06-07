@@ -4,8 +4,9 @@ import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
-import { getPlaidBlame, getPlaidItems } from "../utils/api";
-import type { BlameData, PlaidItem } from "../types";
+import { getPlaidBlame, getPlaidItems, getPlaidAccounts } from "../utils/api";
+import type { BlameData, PlaidItem, PlaidAccount } from "../types";
+import StalenessWarning from "./StalenessWarning";
 
 const DAYS_OPTIONS = [7, 30, 90] as const;
 type DaysOption = typeof DAYS_OPTIONS[number];
@@ -83,6 +84,15 @@ export default function SpendingBlame({ onNavigate }: SpendingBlameProps) {
     queryFn: getPlaidItems,
   });
 
+  const { data: accounts = [] } = useQuery<PlaidAccount[]>({
+    queryKey: ["plaid", "accounts"],
+    queryFn: getPlaidAccounts,
+  });
+
+  const oldestSync = accounts.length === 0
+    ? null
+    : accounts.map((a) => a.balanceSyncedAt).filter((s): s is string => !!s).sort()[0] ?? null;
+
   const { data, isLoading, isError } = useQuery<BlameData>({
     queryKey: ["plaid", "blame", { daysBack }],
     queryFn: () => getPlaidBlame(daysBack),
@@ -148,6 +158,7 @@ export default function SpendingBlame({ onNavigate }: SpendingBlameProps) {
 
       {!isLoading && !isError && totalSpending > 0 && (
         <>
+          {accounts.length > 0 && <StalenessWarning lastSyncedAt={oldestSync} />}
           {/* Headline */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-violet-500 dark:text-violet-400 mb-1">
