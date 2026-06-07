@@ -111,12 +111,7 @@ def write_wsb_config(staging_dir: Path, wsb_path: Path) -> None:
     installer_sandboxed = r"C:\TestAssets\SqueezyPay-Setup.exe"
     results_sandboxed   = r"C:\TestAssets\results.json"
 
-    logon_cmd = (
-        "powershell.exe -ExecutionPolicy Bypass -File "
-        f'"{exerciser_sandboxed}" '
-        f'-InstallerPath "{installer_sandboxed}" '
-        f'-ResultsPath "{results_sandboxed}"'
-    )
+    logon_cmd = r"C:\TestAssets\launch_exerciser.bat"
 
     wsb_content = f"""<Configuration>
   <VGpu>Disable</VGpu>
@@ -150,10 +145,40 @@ def compute_score(results: dict) -> tuple[int, list[str]]:
     return score, notes
 
 
+def write_launcher_bat(staging_dir: Path) -> None:
+    # LogonCommand fires at sandbox logon.
+    # Results are written to C:\results.json inside the sandbox (writable),
+    # then copied out to the mapped folder (C:\TestAssets) which has
+    # write permissions granted by prepare_staging_dir().
+    bat = staging_dir / "launch_exerciser.bat"
+    bat.write_text(
+        "@echo off\r\n"
+        # Headless delay — ping works without a TTY; timeout /nobreak does not.
+        "ping -n 11 127.0.0.1 >nul\r\n"
+        # Run exerciser synchronously (writes results.json when done).
+        "powershell.exe -ExecutionPolicy Bypass -File "
+        '"C:\\TestAssets\\sandbox_exerciser.ps1" '
+        '-InstallerPath "C:\\TestAssets\\SqueezyPay-Setup.exe" '
+        '-ResultsPath "C:\\TestAssets\\results.json"\r\n'
+        # Keep the session alive so the sandbox doesn't log off before the
+        # host has a chance to read results.json from the mapped folder.
+        # PowerShell Start-Sleep loop runs until the host writes a sentinel
+        # file (done.txt) or 10 minutes elapse.
+        "powershell.exe -Command \""
+        "$deadline = (Get-Date).AddMinutes(10); "
+        "while ((Get-Date) -lt $deadline) { "
+        "  if (Test-Path 'C:\\\\TestAssets\\\\done.txt') { break }; "
+        "  Start-Sleep 3 "
+        "}\"\r\n",
+        encoding="utf-8",
+    )
+
+
 def run_round(staging_dir: Path, round_num: int) -> dict:
     results_path = staging_dir / "results.json"
     results_path.unlink(missing_ok=True)
 
+    write_launcher_bat(staging_dir)
     wsb_path = staging_dir / f"test_round_{round_num}.wsb"
     write_wsb_config(staging_dir, wsb_path)
 
@@ -161,20 +186,30 @@ def run_round(staging_dir: Path, round_num: int) -> dict:
     print(f"Round {round_num} — launching Windows Sandbox")
     print(f"  Config: {wsb_path}")
     print(f"  This will open a Sandbox window. It closes automatically when done.")
-    print(f"  Waiting for results (timeout: 5 min)...")
+    print(f"  Waiting for results (timeout: 8 min)...")
 
-    proc = subprocess.Popen([str(SANDBOX_EXE), str(wsb_path)])
+    # Use ShellExecute via PowerShell so the sandbox window attaches to the
+    # interactive desktop session. Direct Popen launches into a non-interactive
+    # context where WindowsSandboxRemoteSession (the visible UI) never spawns.
+    proc = subprocess.Popen([
+        "powershell.exe", "-Command",
+        f'Start-Process "{SANDBOX_EXE}" -ArgumentList \'"{wsb_path}"\''
+    ])
+
+    done_path = staging_dir / "done.txt"
+    done_path.unlink(missing_ok=True)
 
     # Poll for results.json (written by exerciser when done)
-    deadline = time.time() + 300  # 5 minute timeout
+    deadline = time.time() + 480  # 8 minute timeout
     while time.time() < deadline:
         time.sleep(5)
         if results_path.exists():
             try:
                 data = json.loads(results_path.read_text(encoding="utf-8"))
-                # Give sandbox a moment to fully write the file
-                time.sleep(2)
-                proc.wait(timeout=10)
+                # Signal the sandbox keepalive loop to exit, then wait for it
+                done_path.write_text("done")
+                time.sleep(5)
+                proc.wait(timeout=30)
                 return data
             except (json.JSONDecodeError, OSError):
                 continue  # still writing
@@ -205,6 +240,12 @@ def main():
     # Set up staging dir (persists between rounds so installer can be reused)
     staging_dir = Path(tempfile.mkdtemp(prefix="squeezypay_sandbox_"))
     print(f"Staging dir: {staging_dir}")
+    # Grant Everyone write access so the sandbox user (WDAGUtilityAccount)
+    # can write results.json back through the mapped folder.
+    subprocess.run(
+        ["icacls", str(staging_dir), "/grant", "Everyone:(OI)(CI)F", "/T"],
+        capture_output=True,
+    )
 
     try:
         # Get installer

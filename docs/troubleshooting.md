@@ -118,19 +118,21 @@ The backend cannot reach the Plaid API. Check:
 
 ### "Invalid passphrase" on login
 
-The passphrase is stored as a bcrypt hash in the `settings` table. If you forgot the passphrase and cannot log in:
+If you forgot your passphrase, reset it from the **Settings → Security** tab in the app while you still have a valid session on another device, or use the passphrase change endpoint directly.
+
+If you are completely locked out, reset via the database:
 
 ```powershell
 cd backend
 .\venv\Scripts\Activate.ps1
 python -c "
-from database.db import SessionLocal
-from services.encryption_service import encryption_service
 import bcrypt
+from database.db import SessionLocal
+from models.models import AuthConfig
 db = SessionLocal()
-new_hash = bcrypt.hashpw('your-new-passphrase'.encode(), bcrypt.gensalt()).decode()
-from repositories.settings_repository import SettingsRepository
-SettingsRepository.set(db, 'passphrase_hash', new_hash)
+cfg = db.query(AuthConfig).first()
+cfg.passphrase_hash = bcrypt.hashpw(b'your-new-passphrase', bcrypt.gensalt()).decode()
+db.commit()
 db.close()
 print('Passphrase reset.')
 "

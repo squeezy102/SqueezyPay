@@ -87,6 +87,18 @@ npx playwright test
 
 CI runs all three suites. A PR that drops coverage below the current threshold will not be merged. See [docs/testing.md](docs/testing.md) for details.
 
+**Warning gate:** CI scans all test output for unapproved warnings. Any warning not listed in `.ci-ignore-warnings` will fail the build. If your change introduces a new warning from a third-party library you cannot fix, add it to `.ci-ignore-warnings` with a comment explaining why it is accepted.
+
+**Manual installer test (Windows):** To verify a packaged install on a clean machine, use the Windows Sandbox scripts:
+```powershell
+# Enable Windows Sandbox (one-time, requires admin + reboot)
+.\scripts\sandbox\enable_sandbox.ps1
+
+# Build installer locally, then open a clean sandbox
+python scripts/sandbox/run_sandbox_test.py --installer dist\SqueezyPay-Setup.exe
+```
+The sandbox boots, installs the app silently, and the exerciser script verifies the backend starts and responds correctly.
+
 ## Database migrations
 
 If your change requires a schema change, create an Alembic migration:
@@ -116,6 +128,7 @@ Review the generated migration before committing. Autogenerate is not always cor
 Never commit:
 - `.env` files
 - `SQUEEZYPAY_ENCRYPTION_KEY` values
+- `SQUEEZYPAY_SECRET_KEY` values
 - Plaid credentials
 - Database files (`*.db`, `*.sqlite`)
 
