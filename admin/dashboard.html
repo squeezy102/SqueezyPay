@@ -188,64 +188,54 @@
     #log-body {
       flex: 1;
       overflow-y: auto;
-      padding: 10px 0;
-      display: flex;
-      flex-direction: column;
       min-height: 400px;
       max-height: 600px;
       scroll-behavior: smooth;
-      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
-      font-size: 0.75rem;
+      background: #0d1117;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      padding: 8px 0;
     }
 
     /* Date separators */
     .log-date-sep {
-      text-align: center;
+      padding: 6px 16px 2px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 0.7rem;
       color: var(--text-muted);
-      margin: 8px 20px 4px;
-      position: relative;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
     }
-    .log-date-sep::before, .log-date-sep::after {
-      content: '';
-      position: absolute;
-      top: 50%; width: 35%;
-      height: 1px; background: var(--border);
-    }
-    .log-date-sep::before { left: 0; }
-    .log-date-sep::after  { right: 0; }
 
-    /* Log rows */
+    /* Log rows — single inline line, no grid */
     .log-row {
-      display: grid;
-      grid-template-columns: 72px 72px 1fr;
-      align-items: baseline;
-      gap: 0 12px;
-      padding: 3px 20px;
-      line-height: 1.5;
-      border-left: 2px solid transparent;
+      display: block;
+      padding: 1px 16px;
+      line-height: 1.6;
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
-    .log-row:hover { background: var(--surface2); }
-    .log-row.level-ERROR   { border-left-color: var(--red); }
-    .log-row.level-WARNING { border-left-color: var(--amber); }
-    .log-row.level-REQUEST { border-left-color: var(--indigo); }
+    .log-row:hover { background: rgba(255,255,255,0.04); }
 
-    .log-ts  { color: var(--text-muted); white-space: nowrap; }
-    .log-lvl { font-weight: 700; white-space: nowrap; }
-    .log-lvl.level-INFO     { color: var(--text-muted); }
+    .log-ts  { color: #4b5563; }
+    .log-lvl { font-weight: 700; }
+    .log-lvl.level-INFO     { color: #6b7280; }
     .log-lvl.level-WARNING  { color: var(--amber); }
     .log-lvl.level-ERROR    { color: var(--red); }
     .log-lvl.level-REQUEST  { color: var(--indigo); }
     .log-lvl.level-RESPONSE { color: var(--green); }
-
-    .log-msg { color: var(--text); word-break: break-word; }
-    .log-svc { color: var(--text-muted); font-size: 0.65rem; margin-left: 8px; }
+    .log-msg { color: #e2e8f0; }
+    .log-svc { color: #4b5563; }
 
     /* Empty state */
     #log-empty {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      color: var(--text-muted); font-size: 0.875rem;
+      padding: 40px 16px;
+      text-align: center;
+      color: var(--text-muted);
       font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 0.8rem;
     }
 
     /* Toast */
@@ -371,12 +361,13 @@
     },
   ];
 
-  let activePresetId = 'errors';  // default: WARN + ERROR only
-  let customLevels   = new Set(); // used when no preset is active
-  let customRequests = false;
-  let customResponses= false;
-  let autoScroll     = true;
-  let allEntries     = [];
+  let activePresetId   = 'errors';  // default: WARN + ERROR only
+  let customLevels     = new Set(); // used when no preset is active
+  let customRequests   = false;
+  let customResponses  = false;
+  let autoScroll       = true;
+  let allEntries       = [];
+  let lastRenderedDate = null;     // tracks date separator state across appends
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -477,12 +468,12 @@
 
     let levelKey, levelLabel;
     if (req) {
-      levelKey = 'REQUEST';  levelLabel = 'REQ';
+      levelKey = 'REQUEST';  levelLabel = 'REQ ';
     } else if (res) {
-      levelKey = 'RESPONSE'; levelLabel = 'RES';
+      levelKey = 'RESPONSE'; levelLabel = 'RES ';
     } else {
       levelKey   = (entry.level || 'INFO').toUpperCase();
-      levelLabel = levelKey === 'WARNING' ? 'WARN' : levelKey;
+      levelLabel = levelKey === 'WARNING' ? 'WARN ' : levelKey + ' ';
     }
 
     const ts  = fmtTime(entry.timestamp);
@@ -493,32 +484,38 @@
     row.className     = `log-row level-${levelKey}`;
     row.dataset.level = levelKey;
 
+    // Single inline line: "HH:MM:SS  LEVEL  message  [svc]"
     row.innerHTML =
-      `<span class="log-ts">${escHtml(ts)}</span>` +
-      `<span class="log-lvl level-${levelKey}">${levelLabel}</span>` +
-      `<span class="log-msg">${escHtml(msg)}${svc ? `<span class="log-svc">${escHtml(svc)}</span>` : ''}</span>`;
+      `<span class="log-ts">${escHtml(ts)}  </span>` +
+      `<span class="log-lvl level-${levelKey}">${levelLabel} </span>` +
+      `<span class="log-msg">${escHtml(msg)}</span>` +
+      (svc ? `  <span class="log-svc">[${escHtml(svc)}]</span>` : '');
     return row;
+  }
+
+  function makeDateSep(d) {
+    const sep = document.createElement('div');
+    sep.className   = 'log-date-sep';
+    sep.textContent = '── ' + d + ' ──';
+    return sep;
   }
 
   function renderAll() {
     const body = document.getElementById('log-body');
     body.innerHTML = '';
+    lastRenderedDate = null;
 
     const filtered = allEntries.filter(levelAllowed);
     if (filtered.length === 0) {
-      body.innerHTML = '<div id="log-empty">Waiting for log events…</div>';
+      body.innerHTML = '<div id="log-empty">No log entries match the current filter.</div>';
       return;
     }
 
-    let lastDate = null;
     for (const entry of filtered) {
       const d = fmtDate(entry.timestamp);
-      if (d && d !== lastDate) {
-        const sep = document.createElement('div');
-        sep.className = 'log-date-sep';
-        sep.textContent = d;
-        body.appendChild(sep);
-        lastDate = d;
+      if (d && d !== lastRenderedDate) {
+        body.appendChild(makeDateSep(d));
+        lastRenderedDate = d;
       }
       body.appendChild(buildLogRow(entry));
     }
@@ -530,17 +527,13 @@
     if (!levelAllowed(entry)) return;
 
     const body  = document.getElementById('log-body');
-    const empty = body.querySelector('#log-empty');
+    const empty = document.getElementById('log-empty');
     if (empty) empty.remove();
 
-    // Date separator if day changed
     const d = fmtDate(entry.timestamp);
-    const lastSep = body.querySelector('.log-date-sep:last-of-type');
-    if (d && (!lastSep || lastSep.textContent !== d)) {
-      const sep = document.createElement('div');
-      sep.className = 'log-date-sep';
-      sep.textContent = d;
-      body.appendChild(sep);
+    if (d && d !== lastRenderedDate) {
+      body.appendChild(makeDateSep(d));
+      lastRenderedDate = d;
     }
 
     body.appendChild(buildLogRow(entry));
