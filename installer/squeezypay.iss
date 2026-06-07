@@ -15,7 +15,11 @@
 ;   then copying the browsers directory into backend/playwright_browsers/
 
 #define AppName      "SqueezyPay"
-#define AppVersion   GetFileVersion("..\backend\dist\backend.exe")
+; AppVersion is injected by CI via /DAppVersion=<tag> (e.g. /DAppVersion=0.1.0-alpha.3).
+; When building locally without that flag, fall back to reading the EXE version resource.
+#ifndef AppVersion
+  #define AppVersion GetVersionNumbersString("..\backend\dist\backend.exe")
+#endif
 #define AppPublisher "SqueezyPay"
 #define AppURL       "https://github.com/squeezy102/SqueezyPay"
 #define AppExeName   "backend.exe"
@@ -53,7 +57,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; Core is always installed — no checkbox shown
 Name: "core";       Description: "SqueezyPay";    Types: full compact custom; Flags: fixed
 ; Playwright/Chromium is optional — checked by default
-Name: "autofill";   Description: "Biller Autofill (+~150 MB){newline}Attempts to open your biller's login page and fill in your credentials automatically. Works well on some sites, not at all on others — results vary by biller. Experimental."; Types: full
+Name: "autofill";   Description: "Biller Autofill (+~150 MB) — Attempts to open your biller's login page and fill in your credentials automatically. Works well on some sites, not at all on others. Experimental."; Types: full
 
 [Types]
 Name: "full";    Description: "Full installation (recommended)"
@@ -100,7 +104,7 @@ Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_PLA
 
 [Run]
 ; Run database migrations after install (headless, hidden window)
-Filename: "{app}\{#AppExeName}"; Parameters: "--migrate"; WorkingDir: "{app}"; Flags: runhidden waitprogress; StatusMsg: "Setting up database..."
+Filename: "{app}\{#AppExeName}"; Parameters: "--migrate"; WorkingDir: "{app}"; Flags: runhidden waituntilterminated; StatusMsg: "Setting up database..."
 
 ; Optionally open the app in the browser when done
 Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Description: "Launch {#AppName} now"; Flags: nowait postinstall skipifsilent
@@ -147,34 +151,38 @@ function GenerateFernetKey(): String;
 var
   TempFile: String;
   ResultCode: Integer;
+  FileContent: AnsiString;
 begin
+  Result := '';
   TempFile := ExpandConstant('{tmp}\fernet_key.txt');
   Exec(ExpandConstant('{app}\{#AppExeName}'),
        '--generate-key fernet "' + TempFile + '"',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   if (ResultCode = 0) and FileExists(TempFile) then
-    LoadStringFromFile(TempFile, Result)
-  else
-    Result := '';
+  begin
+    LoadStringFromFile(TempFile, FileContent);
+    Result := Trim(String(FileContent));
+  end;
   DeleteFile(TempFile);
-  Result := Trim(Result);
 end;
 
 function GenerateSecretKey(): String;
 var
   TempFile: String;
   ResultCode: Integer;
+  FileContent: AnsiString;
 begin
+  Result := '';
   TempFile := ExpandConstant('{tmp}\secret_key.txt');
   Exec(ExpandConstant('{app}\{#AppExeName}'),
        '--generate-key secret "' + TempFile + '"',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   if (ResultCode = 0) and FileExists(TempFile) then
-    LoadStringFromFile(TempFile, Result)
-  else
-    Result := '';
+  begin
+    LoadStringFromFile(TempFile, FileContent);
+    Result := Trim(String(FileContent));
+  end;
   DeleteFile(TempFile);
-  Result := Trim(Result);
 end;
 
 

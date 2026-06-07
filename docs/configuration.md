@@ -59,10 +59,10 @@ If Plaid credentials are not set, the app starts normally but the Accounts tab s
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SQUEEZYPAY_JWT_SECRET` | Yes | — | Secret used to sign JWT session tokens. Generate a random string (minimum 32 characters). |
+| `SQUEEZYPAY_SECRET_KEY` | Yes | — | Secret used to sign JWT session tokens. Generate a random string (minimum 32 characters). |
 | `SQUEEZYPAY_JWT_EXPIRE_MINUTES` | No | `1440` | Session token lifetime in minutes (default: 24 hours). |
 
-To generate a JWT secret:
+To generate a secret key:
 ```powershell
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
