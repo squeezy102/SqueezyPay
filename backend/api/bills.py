@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
+from core.logging_config import get_logger
 from database.db import get_db
 from services.bill_service import BillService
 from services.credential_service import CredentialService
-from core.logging_config import get_logger
 
 logger = get_logger("squeezypay.api.bills")
 

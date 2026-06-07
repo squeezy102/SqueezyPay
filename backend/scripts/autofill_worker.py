@@ -5,10 +5,12 @@ and verifies success. If the first attempt fails and the user has not yet
 interacted with the page, tries once more. Abandons silently if the user
 has begun manual entry or if both attempts fail.
 """
-import sys
 import base64
+import sys
 import threading
-from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+
+from playwright.sync_api import TimeoutError as PWTimeout
+from playwright.sync_api import sync_playwright
 
 USERNAME_SELECTORS = [
     'input[type="email"]',

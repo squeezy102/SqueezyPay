@@ -58,6 +58,11 @@ interface FilterState {
 
 const PAGE_SIZE = 50;
 
+function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
+  if (sortKey !== col) return <span className="text-slate-400">↕</span>;
+  return <span className="text-violet-500">{sortDir === "asc" ? "↑" : "↓"}</span>;
+}
+
 export default function TransactionTable() {
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>("date");
@@ -100,11 +105,6 @@ export default function TransactionTable() {
       setSortDir("desc");
     }
     setPage(0);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <span className="text-slate-400">↕</span>;
-    return <span className="text-violet-500">{sortDir === "asc" ? "↑" : "↓"}</span>;
   }
 
   if (isError) {
@@ -196,14 +196,14 @@ export default function TransactionTable() {
                 onClick={() => toggleSort("date")}
                 aria-sort={sortKey === "date" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
               >
-                Date <SortIcon col="date" />
+                Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} />
               </th>
               <th
                 className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-violet-600 select-none"
                 onClick={() => toggleSort("name")}
                 aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
               >
-                Merchant <SortIcon col="name" />
+                Merchant <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Account</th>
               <th
@@ -211,7 +211,7 @@ export default function TransactionTable() {
                 onClick={() => toggleSort("amount")}
                 aria-sort={sortKey === "amount" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
               >
-                Amount <SortIcon col="amount" />
+                Amount <SortIcon col="amount" sortKey={sortKey} sortDir={sortDir} />
               </th>
               <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Category</th>
