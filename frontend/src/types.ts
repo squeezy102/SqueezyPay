@@ -135,3 +135,16 @@ export interface BlameData {
   byCategory: BlameCategory[];
   byAccount: BlameAccount[];
 }
+
+// ── Diagnostics ───────────────────────────────────────────────────────────────
+
+export interface DiagnosticsReport {
+  app_version: string;
+  python_version: string;
+  frozen: boolean;
+  alembic_revision: string;
+  table_counts: Record<string, number>;
+  settings: Record<string, string>;
+  plaid_configured: boolean;
+  log_tail: string[];
+}

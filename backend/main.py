@@ -11,6 +11,7 @@ from api.auth import router as auth_router
 from api.bills import router as bills_router
 from api.categories import router as categories_router
 from api.credentials import router as credentials_router
+from api.diagnostics import router as diagnostics_router
 from api.frontend_log import router as frontend_log_router
 from api.income import router as income_router
 from api.payment_history import router as payment_history_router
@@ -128,6 +129,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(bills_router, dependencies=[Depends(require_auth)])
 app.include_router(credentials_router, dependencies=[Depends(require_auth)])
+app.include_router(diagnostics_router, dependencies=[Depends(require_auth)])
 app.include_router(payment_methods_router, dependencies=[Depends(require_auth)])
 app.include_router(payment_history_router, dependencies=[Depends(require_auth)])
 app.include_router(frontend_log_router, dependencies=[Depends(require_auth)])
