@@ -1,6 +1,6 @@
 # Roadmap
 
-Current development phase: **Phase 2** (bank integration and spending visibility).
+All core phases through Phase 2 are complete. Active work is Phase 2+ extensions (scheduled sync, CSV/OFX import) and Phase 4 admin tooling pulled forward.
 
 ## Phase status
 
@@ -8,9 +8,9 @@ Current development phase: **Phase 2** (bank integration and spending visibility
 |---|---|
 | Phase 0 — POC | Complete |
 | Phase 1 — Real Foundation | Complete |
-| Phase 2 — Bank Integration | In progress |
+| Phase 2 — Bank Integration | Complete |
 | Phase 3 — Budget and Projections | Not started |
-| Phase 4 — Analytics and Polish | Not started |
+| Phase 4 — Analytics and Polish | Partially started (admin dashboard pulled forward) |
 
 ---
 
@@ -34,7 +34,9 @@ Current development phase: **Phase 2** (bank integration and spending visibility
 - Biller autofill — `POST /api/bills/{id}/autofill` launches Playwright worker; fills username + password fields on biller site (**known limitation:** always opens a new browser window, cannot open a tab in an existing window)
 - Credential vault UI — `CredentialModal` for create/edit; credentials auto-displayed in payment modal with Copy buttons
 
-### In progress / next
+### Phase 2+ backlog
+
+Features in scope for this phase but not yet built.
 
 | Feature | Priority | Notes |
 |---|---|---|
@@ -75,7 +77,7 @@ Current development phase: **Phase 2** (bank integration and spending visibility
 |---|---|
 | LLM-assisted insights panel | High |
 | Year-over-year spending comparison | Medium |
-| Auto-start on Windows login | High (tech debt) |
+| Auto-start on Windows login | High |
 | Streamlined installer script | Medium |
 | Export data to CSV | Low |
 | Savings goals | Low |
@@ -174,7 +176,7 @@ Webhook-based sync (immediate on Plaid SYNC_UPDATES_AVAILABLE events) requires a
 | ESLint + typescript-eslint | Frontend linting |
 | Recharts | Chart library for spend graphs |
 | Dark mode | System preference, persists per device |
-| Admin dashboard | Service start/stop, live log viewer |
-| Unified request logging | `[REQUEST]`/`[RESPONSE]` middleware, filter chips |
+| Admin dashboard | Service start/stop, live log viewer with named filter presets |
+| Unified request logging | `[REQUEST]`/`[RESPONSE]` middleware; filter presets in log viewer |
 | Passphrase change UI | Settings tab |
 | Mobile payment history | Card layout for small screens |

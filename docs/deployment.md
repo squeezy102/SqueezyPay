@@ -69,7 +69,7 @@ The app opens in standalone mode (no browser chrome) and behaves like a native a
 
 ## Auto-start on Windows login
 
-Planned, not yet implemented. Target: a Task Scheduler entry that starts the backend and admin dashboard on user login without requiring a visible terminal. Until then, use the desktop shortcut to launch the admin dashboard, then start services from there.
+Not yet implemented. The target is a Task Scheduler entry that starts the backend and admin dashboard on user login without requiring a visible terminal. Until then, use the desktop shortcut to launch the admin dashboard, then start services from there.
 
 ## Building for production
 

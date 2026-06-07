@@ -66,7 +66,7 @@ const [activeTab, setActiveTab] = useState("dashboard");
 
 The **credential key button** in `ManageBillers` opens `CredentialModal` for the selected biller. The **"Go to {bill.name}" button** in the `PayBills` view calls the autofill endpoint when credentials exist and the user is not on mobile; on mobile (or when autofill returns false) it falls back to `window.open`.
 
-Mobile detection is done inline: `window.innerWidth < 768` at call time.
+Mobile detection is done via `navigator.userAgent` at call time (`/Mobi|Android|iPhone|iPad/i`).
 
 ## CredentialModal — `CredentialModal.tsx`
 
