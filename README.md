@@ -60,23 +60,22 @@ All configuration is via Windows User environment variables (HKCU\Environment). 
 
 ## Running the app
 
-```powershell
-# Terminal 1 — backend (from /backend)
-.\venv\Scripts\Activate.ps1
-python main.py
+Start the admin dashboard — it manages all other services:
 
-# Terminal 2 — frontend (from /frontend)
-npm run dev
+```powershell
+# From /admin
+cd admin
+python main.py
 ```
 
-Or use the admin dashboard at `http://localhost:9000` (see [docs/deployment.md](docs/deployment.md)) to start/stop services from a browser.
+Then open **http://localhost:9000** and click **Start** on each service card.
 
 | Service | URL |
 |---|---|
-| App | `http://localhost:5173` |
+| Admin dashboard | `http://localhost:9000` |
+| App (frontend) | `http://localhost:5173` |
 | Backend API | `http://localhost:8000` |
 | API docs (Swagger) | `http://localhost:8000/docs` |
-| Admin dashboard | `http://localhost:9000` |
 
 To access from other devices on your home network, replace `localhost` with your PC's local IP (`ipconfig` → IPv4 Address).
 

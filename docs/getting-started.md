@@ -77,22 +77,14 @@ npm install
 
 ## 7. Start the app
 
-Open two terminals:
+Start the admin dashboard — it manages all other services:
 
-**Terminal 1 — backend:**
 ```powershell
-cd backend
-.\venv\Scripts\Activate.ps1
+cd admin
 python main.py
 ```
 
-**Terminal 2 — frontend:**
-```powershell
-cd frontend
-npm run dev
-```
-
-Open `http://localhost:5173` in your browser. You should see the SqueezyPay dashboard.
+Open **http://localhost:9000** in your browser. Click **Start & Launch** to start the backend and frontend and open the app. Running `python main.py` a second time will focus the existing instance rather than starting a second one.
 
 ## 8. Connect your bank (optional)
 
