@@ -44,11 +44,11 @@ List all active bills.
   {
     "id": 1,
     "name": "Electric",
-    "amount": 120.00,
-    "due_day": 15,
+    "expected_amount": 120.00,
+    "day_of_month": 15,
     "url": "https://...",
     "category": "Utilities",
-    "is_active": true,
+    "active": true,
     "notes": null,
     "created_at": "2025-01-01T00:00:00"
   }
@@ -64,8 +64,8 @@ Create a bill.
 ```json
 {
   "name": "Electric",
-  "amount": 120.00,
-  "due_day": 15,
+  "expected_amount": 120.00,
+  "day_of_month": 15,
   "url": "https://...",
   "category": "Utilities",
   "notes": null
@@ -80,7 +80,7 @@ Update a bill.
 ---
 
 ### `DELETE /api/bills/{id}`
-Soft-delete a bill (`is_active = false`).
+Soft-delete a bill (`active = false`).
 
 ---
 
@@ -105,7 +105,7 @@ Launch a Playwright browser worker that navigates to the bill's URL and fills th
 
 ## Payments
 
-### `GET /api/payments`
+### `GET /api/payment-history`
 List all payment records, newest first.
 
 **Query params:**
@@ -123,15 +123,15 @@ List all payment records, newest first.
 
 ---
 
-### `POST /api/payments`
+### `POST /api/payment-history`
 Log a payment.
 
 **Request:**
 ```json
 {
   "bill_id": 1,
-  "amount": 120.00,
-  "paid_date": "2025-06-01",
+  "amount_paid": 120.00,
+  "payment_date": "2025-06-01",
   "confirmation_number": "ABC123",
   "notes": null
 }
@@ -139,7 +139,7 @@ Log a payment.
 
 ---
 
-### `DELETE /api/payments/{id}`
+### `DELETE /api/payment-history/{id}`
 Delete a payment record.
 
 ---
@@ -157,7 +157,7 @@ Create an income stream.
 **Request:**
 ```json
 {
-  "name": "Salary",
+  "source_name": "Salary",
   "amount": 3000.00,
   "frequency": "biweekly",
   "next_expected_date": "2025-06-14"
@@ -506,6 +506,37 @@ Delete a payment method.
 
 **Response `204`:** Deleted.
 **Response `404`:** Not found.
+
+---
+
+## Diagnostics
+
+### `GET /api/diagnostics/`
+Returns safe system diagnostics used by the in-app bug report feature. No authentication required. Never returns financial data, credentials, or environment variable values.
+
+**Response `200`:**
+```json
+{
+  "app_version": "0.1.0-alpha.3",
+  "python_version": "3.11.9",
+  "frozen": true,
+  "alembic_revision": "5a43611da40e",
+  "table_counts": {
+    "bills": 4,
+    "credentials": 2,
+    "payment_methods": 1
+  },
+  "safe_settings": {
+    "due_soon_days": 7,
+    "large_payment_threshold": 500.0
+  },
+  "plaid_configured": true,
+  "log_tail": ["2026-06-07 ... INFO ...", "..."]
+}
+```
+
+`frozen` indicates whether the backend is running as a PyInstaller-packaged binary (`true`) or from source (`false`).
+`log_tail` contains the last 50 log lines with sensitive patterns redacted.
 
 ---
 

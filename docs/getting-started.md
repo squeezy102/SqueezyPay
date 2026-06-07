@@ -41,6 +41,7 @@ Open **System Properties → Environment Variables → User variables** and add:
 | Variable | Value |
 |---|---|
 | `SQUEEZYPAY_ENCRYPTION_KEY` | The key generated in step 2 |
+| `SQUEEZYPAY_SECRET_KEY` | A random 32+ character string for signing JWT tokens. Generate with: `python -c "import secrets; print(secrets.token_hex(32))"` |
 | `SQUEEZYPAY_PLAID_CLIENTID` | Your Plaid client ID (optional) |
 | `SQUEEZYPAY_PLAID_SECRET` | Your Plaid secret (optional) |
 | `SQUEEZYPAY_PLAID_ENV` | `sandbox` or `production` (optional, defaults to `sandbox`) |
