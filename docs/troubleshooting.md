@@ -212,6 +212,24 @@ Check the backend logs for `autofill:` entries to see whether the worker complet
 
 ---
 
+## Admin log viewer
+
+### I can't see INFO logs in the activity panel
+
+The log viewer opens with the **Errors & Warnings** preset active, which shows only WARN and ERROR entries. Click the **All** preset chip to see all log levels including INFO.
+
+### I want to filter to a specific area of the app
+
+Use one of the named presets:
+- **API Traffic** — shows only REQ and RES entries (all HTTP traffic)
+- **Billing** — shows any log entry whose message or service name contains billing-related keywords
+- **Auth** — shows any log entry related to authentication events
+- **All** — no filtering, full firehose
+
+For custom combinations, click the **Custom** button to open the level checkbox drawer. Ticking any checkbox deactivates the active preset and puts you in manual mode.
+
+---
+
 ## CI failures
 
 ### ruff check fails

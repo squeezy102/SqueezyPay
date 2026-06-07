@@ -147,7 +147,7 @@ Deduplication strategy: match on date + amount + merchant_name. A transaction im
 
 A separate FastAPI app running on `:9000`. Provides:
 - Service status cards (backend, frontend) with start/stop controls
-- Live log viewer with level and source filters
+- Live log viewer with named filter presets (Errors & Warnings, API Traffic, Billing, Auth, All) and a Custom toggle for raw level checkboxes; default view shows WARN + ERROR only via the "Errors & Warnings" preset
 
 The admin dashboard is a developer/operator tool, not a user-facing feature. It runs independently of the main backend.
 
