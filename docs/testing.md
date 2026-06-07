@@ -29,10 +29,9 @@ testpaths = ["tests"]
 
 **What is tested:**
 - All API routes (via FastAPI `TestClient`)
-- Service layer logic (bill date math, blame computation, transaction deduplication)
+- Service layer logic (bill date math, blame computation, category mapping)
 - Encryption round-trips
 - Repository methods
-- Category mapping
 
 **Database in tests:** Tests use a fresh in-memory SQLite database per session, not the production database file. The fixture is in `backend/tests/conftest.py`.
 
@@ -130,7 +129,7 @@ Workflow file: `.github/workflows/ci.yml`
 The CI job:
 1. Sets up Python and Node
 2. Installs backend and frontend dependencies
-3. Runs `ruff check` and `ruff format --check`
+3. Runs `ruff check`
 4. Runs `pytest --cov` with coverage threshold
 5. Runs `npm run lint`
 6. Runs `npm test`

@@ -40,15 +40,17 @@ Household bills tracked for due date monitoring and payment navigation.
 |---|---|---|
 | `id` | INTEGER PK | |
 | `name` | TEXT | Display name |
-| `amount` | REAL | Expected amount (null if variable) |
-| `due_day` | INTEGER | Day of month the bill is due |
+| `category` | TEXT | Category label |
+| `expected_amount` | REAL | Expected amount (null if variable) |
+| `day_of_month` | INTEGER | Day of month the bill is due |
 | `url` | TEXT | Biller payment page URL |
-| `category` | TEXT | Optional category label |
-| `is_active` | BOOLEAN | Soft delete |
+| `recurring` | BOOLEAN | Whether this is a recurring bill |
+| `active` | BOOLEAN | Soft delete |
 | `notes` | TEXT | Free-text notes |
 | `created_at` | DATETIME | |
+| `updated_at` | DATETIME | |
 
-### `payments`
+### `payment_history`
 
 Log of recorded payments.
 
@@ -56,37 +58,41 @@ Log of recorded payments.
 |---|---|---|
 | `id` | INTEGER PK | |
 | `bill_id` | INTEGER FK → bills | |
-| `amount` | REAL | Amount paid |
-| `paid_date` | DATE | |
+| `payment_date` | DATETIME | |
+| `amount_paid` | REAL | Amount paid |
+| `payment_method` | TEXT | Free-text label (e.g. "Visa ···4242") |
 | `confirmation_number` | TEXT | Optional |
 | `notes` | TEXT | |
 | `created_at` | DATETIME | |
 
 ### `credentials`
 
-Encrypted biller credentials (usernames, passwords).
+Biller login credentials. Passwords are encrypted; usernames are stored in plaintext.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | INTEGER PK | |
 | `bill_id` | INTEGER FK → bills | |
-| `username` | TEXT | Encrypted (Fernet) |
-| `password` | TEXT | Encrypted (Fernet) |
+| `username` | TEXT | Plaintext |
+| `password_encrypted` | TEXT | Fernet-encrypted |
 | `notes` | TEXT | |
 | `created_at` | DATETIME | |
 | `updated_at` | DATETIME | |
 
 ### `payment_methods`
 
-Encrypted payment method details.
+Saved payment method references (card or bank account). Stored in plaintext — this table holds identifying metadata only, not sensitive card data.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | INTEGER PK | |
-| `name` | TEXT | Display label (e.g. "Visa ···4242") |
-| `type` | TEXT | `card` or `bank_account` |
-| `details` | TEXT | Encrypted (Fernet) — JSON blob of card/account data |
+| `nickname` | TEXT | Display label (e.g. "Visa ···4242") |
+| `payment_type` | TEXT | `credit_card`, `debit_card`, or `bank_account` |
+| `last_four` | TEXT | Last four digits |
+| `expiration_date` | TEXT | Optional, MM/YY format |
+| `notes` | TEXT | |
 | `created_at` | DATETIME | |
+| `updated_at` | DATETIME | |
 
 ### `income_streams`
 
@@ -113,22 +119,17 @@ Key-value store for app-wide settings. One row per key.
 | `value` | TEXT | JSON-encoded value |
 | `updated_at` | DATETIME | |
 
-Known keys:
-- `passphrase_hash` — bcrypt hash of the household passphrase
-- `plaid_balance_sync_enabled` — boolean
-- `plaid_balance_sync_interval_hours` — integer, minimum 4
-- `plaid_transaction_sync_enabled` — boolean
+The household passphrase hash is stored in the separate `auth_config` table, not in `settings`.
 
-### `categories`
+### `transaction_categories`
 
-Transaction categories. Pre-populated by migration from Plaid's `personal_finance_category` taxonomy.
+Transaction categories used for manual category assignment on Plaid transactions.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | INTEGER PK | |
-| `name` | TEXT UNIQUE | Internal name |
-| `display_name` | TEXT | Human-readable label |
-| `parent_id` | INTEGER FK → categories | Hierarchical; null for top-level |
+| `name` | TEXT UNIQUE | Category name |
+| `created_at` | DATETIME | |
 
 ### `plaid_items`
 
@@ -161,15 +162,26 @@ Bank accounts associated with the connected item.
 | `available_balance` | REAL | Available balance (null for credit) |
 | `balance_synced_at` | DATETIME | Timestamp of last balance sync |
 
+### `auth_config`
+
+Stores the bcrypt-hashed household passphrase.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | INTEGER PK | |
+| `passphrase_hash` | TEXT | bcrypt hash |
+| `created_at` | DATETIME | |
+| `updated_at` | DATETIME | |
+
 ### `plaid_transactions`
 
-Transactions synced from Plaid or imported via CSV/OFX.
+Transactions synced from Plaid.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | INTEGER PK | |
 | `plaid_account_id` | INTEGER FK → plaid_accounts | |
-| `transaction_id` | TEXT UNIQUE | Plaid transaction ID (null for imports) |
+| `transaction_id` | TEXT UNIQUE | Plaid transaction ID |
 | `amount` | REAL | Positive = debit/spend, negative = credit/deposit |
 | `date` | DATE | Posted date |
 | `name` | TEXT | Merchant or description |
@@ -181,7 +193,6 @@ Transactions synced from Plaid or imported via CSV/OFX.
 | `pending` | BOOLEAN | True until transaction settles |
 | `logo_url` | TEXT | Merchant logo URL from Plaid |
 | `iso_currency_code` | TEXT | e.g. `USD` |
-| `source` | TEXT | `plaid` or `import` |
 | `created_at` | DATETIME | |
 
 ## Backup

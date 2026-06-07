@@ -10,8 +10,8 @@ A self-hosted personal finance dashboard for households. Connect your financial 
 - **Bill management** — track bills with due dates, overdue alerts, and one-click navigation to biller payment pages
 - **Payment history** — log payments with confirmation numbers
 - **Income tracking** — configure expected income streams and reconcile against real deposits
-- **Credential vault** — AES-Fernet encrypted storage for biller credentials and payment methods
-- **CSV / OFX import** — supplemental transaction ingestion from your institution's own export
+- **Credential vault** — AES-Fernet encrypted storage for biller login credentials (username + password per biller)
+- **Payment method vault** — store card nicknames and last-four digits; referenced when logging payments
 - **PWA** — installs on iPhone and Android from any browser on your home network
 
 ## Architecture at a glance
