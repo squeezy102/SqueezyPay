@@ -77,14 +77,13 @@ npm install
 
 ## 7. Start the app
 
-Start the admin dashboard — it manages all other services:
+Start the admin dashboard — it manages all other services and runs without a console window:
 
 ```powershell
-cd admin
-python main.py
+pythonw admin\launch.pyw
 ```
 
-Open **http://localhost:9000** in your browser. Click **Start & Launch** to start the backend and frontend and open the app. Running `python main.py` a second time will focus the existing instance rather than starting a second one.
+This opens **http://localhost:9000** automatically. Click **Start & Launch** to start the backend and frontend and open the app. Running the launcher again when the admin is already running just re-focuses the browser tab — no duplicate processes.
 
 ## 8. Connect your bank (optional)
 

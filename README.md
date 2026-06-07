@@ -60,15 +60,13 @@ All configuration is via Windows User environment variables (HKCU\Environment). 
 
 ## Running the app
 
-Start the admin dashboard — it manages all other services:
+Start the admin dashboard — it manages all other services and runs without a console window:
 
 ```powershell
-# From /admin
-cd admin
-python main.py
+pythonw admin\launch.pyw
 ```
 
-Then open **http://localhost:9000** and click **Start** on each service card.
+This opens **http://localhost:9000** automatically. Running it again when already running just re-focuses the browser tab.
 
 | Service | URL |
 |---|---|
