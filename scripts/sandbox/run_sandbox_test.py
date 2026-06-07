@@ -111,12 +111,7 @@ def write_wsb_config(staging_dir: Path, wsb_path: Path) -> None:
     installer_sandboxed = r"C:\TestAssets\SqueezyPay-Setup.exe"
     results_sandboxed   = r"C:\TestAssets\results.json"
 
-    logon_cmd = (
-        "powershell.exe -ExecutionPolicy Bypass -File "
-        f'"{exerciser_sandboxed}" '
-        f'-InstallerPath "{installer_sandboxed}" '
-        f'-ResultsPath "{results_sandboxed}"'
-    )
+    logon_cmd = r"C:\TestAssets\launch_exerciser.bat"
 
     wsb_content = f"""<Configuration>
   <VGpu>Disable</VGpu>
@@ -150,10 +145,27 @@ def compute_score(results: dict) -> tuple[int, list[str]]:
     return score, notes
 
 
+def write_launcher_bat(staging_dir: Path) -> None:
+    # LogonCommand fires before mapped folders are guaranteed mounted.
+    # This launcher waits 15s then invokes the exerciser, avoiding a race
+    # where C:\TestAssets doesn't exist yet when PowerShell starts.
+    bat = staging_dir / "launch_exerciser.bat"
+    bat.write_text(
+        "@echo off\r\n"
+        "timeout /t 15 /nobreak >nul\r\n"
+        "powershell.exe -ExecutionPolicy Bypass -File "
+        '"C:\\TestAssets\\sandbox_exerciser.ps1" '
+        '-InstallerPath "C:\\TestAssets\\SqueezyPay-Setup.exe" '
+        '-ResultsPath "C:\\TestAssets\\results.json"\r\n',
+        encoding="utf-8",
+    )
+
+
 def run_round(staging_dir: Path, round_num: int) -> dict:
     results_path = staging_dir / "results.json"
     results_path.unlink(missing_ok=True)
 
+    write_launcher_bat(staging_dir)
     wsb_path = staging_dir / f"test_round_{round_num}.wsb"
     write_wsb_config(staging_dir, wsb_path)
 
@@ -161,12 +173,12 @@ def run_round(staging_dir: Path, round_num: int) -> dict:
     print(f"Round {round_num} — launching Windows Sandbox")
     print(f"  Config: {wsb_path}")
     print(f"  This will open a Sandbox window. It closes automatically when done.")
-    print(f"  Waiting for results (timeout: 5 min)...")
+    print(f"  Waiting for results (timeout: 8 min)...")
 
     proc = subprocess.Popen([str(SANDBOX_EXE), str(wsb_path)])
 
     # Poll for results.json (written by exerciser when done)
-    deadline = time.time() + 300  # 5 minute timeout
+    deadline = time.time() + 480  # 8 minute timeout
     while time.time() < deadline:
         time.sleep(5)
         if results_path.exists():
