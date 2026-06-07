@@ -79,8 +79,21 @@ Features in scope for this phase but not yet built.
 | Year-over-year spending comparison | Medium |
 | Auto-start on Windows login | High |
 | Streamlined installer script | Medium |
+| Update-available badge in admin dashboard | Medium |
 | Export data to CSV | Low |
 | Savings goals | Low |
+
+---
+
+## Continuous deployment / update awareness
+
+SqueezyPay is self-hosted — there is no remote server to push to. CD for a home app means the running instance becoming aware of a new release and applying it.
+
+**Planned approach (two phases):**
+
+1. **Update-available badge (Phase 4)** — the admin dashboard polls the GitHub Releases API on startup, compares the running git SHA to the latest release tag, and shows a notification when a newer version exists. No automatic action; the user initiates the update manually.
+
+2. **Auto-update (post-installer)** — once the Windows installer exists, an upgrade path follows naturally: the admin dashboard offers a one-click "pull and restart" that runs `git pull`, `pip install -r requirements.txt`, `npm install`, and `alembic upgrade head` in sequence, then restarts the backend and frontend. Gated on the installer work being complete first.
 
 ---
 
