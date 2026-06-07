@@ -177,7 +177,13 @@ def run_round(staging_dir: Path, round_num: int) -> dict:
     print(f"  This will open a Sandbox window. It closes automatically when done.")
     print(f"  Waiting for results (timeout: 8 min)...")
 
-    proc = subprocess.Popen([str(SANDBOX_EXE), str(wsb_path)])
+    # Use ShellExecute via PowerShell so the sandbox window attaches to the
+    # interactive desktop session. Direct Popen launches into a non-interactive
+    # context where WindowsSandboxRemoteSession (the visible UI) never spawns.
+    proc = subprocess.Popen([
+        "powershell.exe", "-Command",
+        f'Start-Process "{SANDBOX_EXE}" -ArgumentList \'"{wsb_path}"\''
+    ])
 
     # Poll for results.json (written by exerciser when done)
     deadline = time.time() + 480  # 8 minute timeout
