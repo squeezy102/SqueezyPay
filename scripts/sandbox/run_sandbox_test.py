@@ -153,12 +153,13 @@ def write_launcher_bat(staging_dir: Path) -> None:
     bat = staging_dir / "launch_exerciser.bat"
     bat.write_text(
         "@echo off\r\n"
-        "timeout /t 10 /nobreak >nul\r\n"
+        # ping-based delay works headlessly; timeout /nobreak exits immediately
+        # when there is no console attached (LogonCommand has no TTY).
+        "ping -n 11 127.0.0.1 >nul\r\n"
         "powershell.exe -ExecutionPolicy Bypass -File "
         '"C:\\TestAssets\\sandbox_exerciser.ps1" '
         '-InstallerPath "C:\\TestAssets\\SqueezyPay-Setup.exe" '
-        '-ResultsPath "C:\\results.json"\r\n'
-        "copy /Y C:\\results.json C:\\TestAssets\\results.json\r\n",
+        '-ResultsPath "C:\\TestAssets\\results.json"\r\n',
         encoding="utf-8",
     )
 
