@@ -140,10 +140,17 @@ jobs:
           Write-Host "Passphrase bootstrap written."
 
           # --- Install ---
+          # /SP-           suppresses "This will install..." prompt (needed on headless runners)
+          # /VERYSILENT    no UI
+          # /SUPPRESSMSGBOXES  suppress error dialogs
+          # /NORESTART     don't reboot
+          # /LOG           write install log for diagnostics
           Write-Host "Running installer..."
+          $installerLog = "$env:TEMP\squeezypay_install.log"
           $proc = Start-Process -FilePath "dist\SqueezyPay-Setup.exe" `
-            -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" `
+            -ArgumentList "/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/LOG=$installerLog" `
             -Wait -PassThru
+          if (Test-Path $installerLog) { Get-Content $installerLog | Select-Object -Last 20 }
           if ($proc.ExitCode -ne 0) {
             Write-Error "Installer failed with exit code $($proc.ExitCode)"; exit 1
           }
