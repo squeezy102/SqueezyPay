@@ -214,8 +214,9 @@
       line-height: 1.6;
       font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
       font-size: 0.75rem;
-      white-space: pre-wrap;
-      word-break: break-all;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .log-row:hover { background: rgba(255,255,255,0.04); }
 
@@ -478,7 +479,8 @@
 
     const ts  = fmtTime(entry.timestamp);
     const svc = (entry.service || '').replace('squeezypay.', '');
-    const msg = entry.message || '';
+    // Collapse multiline messages (e.g. tracebacks) to their first line
+    const msg = (entry.message || '').split('\n')[0].trim();
 
     const row = document.createElement('div');
     row.className     = `log-row level-${levelKey}`;
