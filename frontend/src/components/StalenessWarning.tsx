@@ -1,28 +1,13 @@
+import { staleness } from "../utils/stalenessUtils";
+
 interface StalenessWarningProps {
   lastSyncedAt: string | null | undefined;
-  thresholdHours?: number;
   className?: string;
 }
 
-const STALE_HOURS = 12;
-
-export function isStale(lastSyncedAt: string | null | undefined, thresholdHours = STALE_HOURS): boolean {
-  if (!lastSyncedAt) return true;
-  const diff = (Date.now() - new Date(lastSyncedAt).getTime()) / (1000 * 60 * 60);
-  return diff >= thresholdHours;
-}
-
-export default function StalenessWarning({ lastSyncedAt, thresholdHours = STALE_HOURS, className = "" }: StalenessWarningProps) {
-  if (!isStale(lastSyncedAt, thresholdHours)) return null;
-
-  const label = lastSyncedAt
-    ? (() => {
-        const diffH = (Date.now() - new Date(lastSyncedAt).getTime()) / (1000 * 60 * 60);
-        if (diffH < 24) return `Last synced ${Math.floor(diffH)}h ago`;
-        const diffD = Math.floor(diffH / 24);
-        return `Last synced ${diffD}d ago`;
-      })()
-    : "Never synced";
+export default function StalenessWarning({ lastSyncedAt, className = "" }: StalenessWarningProps) {
+  const { stale, label } = staleness(lastSyncedAt);
+  if (!stale) return null;
 
   return (
     <div className={`flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 ${className}`}>
