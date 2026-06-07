@@ -1,11 +1,13 @@
 """
 Launched as a detached subprocess by the autofill endpoint.
-Receives url, username, password as CLI args (base64-encoded to avoid shell quoting issues).
-Opens a headed Chromium window, fills the login fields, and stays open.
-Exits with code 0 on success, 1 on failure.
+Navigates to the biller login page, attempts to fill username/password fields,
+and verifies success. If the first attempt fails and the user has not yet
+interacted with the page, tries once more. Abandons silently if the user
+has begun manual entry or if both attempts fail.
 """
 import sys
 import base64
+import threading
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
 USERNAME_SELECTORS = [
@@ -26,6 +28,56 @@ PASSWORD_SELECTORS = [
     'input[autocomplete="current-password"]',
 ]
 
+
+def user_has_interacted(page, username_sel: str, password_sel: str) -> bool:
+    """Returns True if the user has focused or typed in either field."""
+    try:
+        return page.evaluate("""
+            ([uSel, pSel]) => {
+                const active = document.activeElement;
+                const uEl = document.querySelector(uSel);
+                const pEl = document.querySelector(pSel);
+                const focused = active === uEl || active === pEl;
+                const hasValue = (uEl && uEl.value.length > 0) || (pEl && pEl.value.length > 0);
+                return focused || hasValue;
+            }
+        """, [username_sel, password_sel])
+    except Exception:
+        return False
+
+
+def find_field(page, selectors: list[str]):
+    """Returns the first visible matching locator, or None."""
+    for sel in selectors:
+        try:
+            el = page.locator(sel).first
+            if el.count() > 0 and el.is_visible():
+                return el, sel
+        except Exception:
+            continue
+    return None, None
+
+
+def attempt_fill(page, username: str, password: str):
+    """
+    Try to locate and fill both fields.
+    Returns (success, username_sel, password_sel).
+    """
+    u_field, u_sel = find_field(page, USERNAME_SELECTORS)
+    if u_field is None:
+        return False, None, None
+
+    p_field, p_sel = find_field(page, PASSWORD_SELECTORS)
+    if p_field is None:
+        return False, None, None
+
+    u_field.fill(username)
+    p_field.fill(password)
+
+    filled = (u_field.input_value() == username and p_field.input_value() == password)
+    return filled, u_sel, p_sel
+
+
 def main():
     if len(sys.argv) != 4:
         sys.exit(1)
@@ -43,44 +95,29 @@ def main():
         except PWTimeout:
             sys.exit(1)
 
-        username_field = None
-        for sel in USERNAME_SELECTORS:
-            try:
-                el = page.locator(sel).first
-                if el.count() > 0 and el.is_visible():
-                    username_field = el
-                    break
-            except Exception:
-                continue
+        # First attempt
+        filled, u_sel, p_sel = attempt_fill(page, username, password)
 
-        if username_field is None:
-            sys.exit(1)
+        if not filled:
+            # Check whether the user has already started interacting
+            if u_sel and p_sel and user_has_interacted(page, u_sel, p_sel):
+                # User is already typing — step aside
+                pass
+            else:
+                # Wait briefly and try once more
+                page.wait_for_timeout(1500)
+                if u_sel and p_sel and user_has_interacted(page, u_sel, p_sel):
+                    pass  # User started typing during the wait — abandon
+                else:
+                    filled, u_sel, p_sel = attempt_fill(page, username, password)
 
-        password_field = None
-        for sel in PASSWORD_SELECTORS:
-            try:
-                el = page.locator(sel).first
-                if el.count() > 0 and el.is_visible():
-                    password_field = el
-                    break
-            except Exception:
-                continue
-
-        if password_field is None:
-            sys.exit(1)
-
-        username_field.fill(username)
-        password_field.fill(password)
-
-        if username_field.input_value() != username or password_field.input_value() != password:
-            sys.exit(1)
-
-        # Fields filled — block until the user closes the browser
-        import threading
+        # Whether or not fill succeeded, leave the browser open for the user
         done = threading.Event()
         browser.on("disconnected", lambda: done.set())
         done.wait()
-        sys.exit(0)
+
+    sys.exit(0 if filled else 1)
+
 
 if __name__ == "__main__":
     main()

@@ -123,11 +123,12 @@ def _try_autofill(url: str, username: str, password: str) -> bool:
     from pathlib import Path
 
     worker = Path(__file__).parent.parent / "scripts" / "autofill_worker.py"
-    python = sys.executable
+    # Use the venv python explicitly — sys.executable is correct here but
+    # DETACHED_PROCESS strips the inherited env so Chromium can't be found.
+    python = Path(sys.executable)
 
-    # Encode args as base64 to avoid any shell quoting issues with special characters
     args = [
-        python,
+        str(python),
         str(worker),
         base64.b64encode(url.encode()).decode(),
         base64.b64encode(username.encode()).decode(),
@@ -135,25 +136,25 @@ def _try_autofill(url: str, username: str, password: str) -> bool:
     ]
 
     try:
-        # Wait briefly for the worker to attempt the fill, then detach
         proc = subprocess.Popen(
             args,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
-            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+            # No DETACHED_PROCESS — inherits the full environment so Chromium is locatable.
+            # The process outlives the request because we don't wait for it to finish.
         )
-        # Give it up to 10s to navigate and fill — then return regardless
+        # Give it up to 12s to navigate and fill fields
         try:
-            proc.wait(timeout=10)
+            proc.wait(timeout=12)
             if proc.returncode == 0:
                 logger.info(f"autofill: credentials filled for {url}")
                 return True
             else:
-                err = proc.stderr.read().decode(errors="replace") if proc.stderr else ""
+                err = (proc.stderr.read() or b"").decode(errors="replace")
                 logger.warning(f"autofill: worker exited {proc.returncode} — {err.strip()}")
                 return False
         except subprocess.TimeoutExpired:
-            # Worker is still running (browser open, waiting for page close) — that's success
+            # Still running means browser is open with fields filled — success
             logger.info(f"autofill: worker running, browser open for {url}")
             return True
 
