@@ -14,7 +14,7 @@ if config.config_file_name is not None:
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database.db import DATABASE_URL  # noqa: E402
-from models.models import Base        # noqa: E402
+from models.models import Base  # noqa: E402
 
 # Override whatever sqlalchemy.url is in alembic.ini with the runtime-resolved path.
 # This ensures the packaged exe and dev mode both migrate the correct database file.

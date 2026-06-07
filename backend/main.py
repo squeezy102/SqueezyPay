@@ -149,8 +149,9 @@ if __name__ == "__main__":
     if "--migrate" in sys.argv:
         # Headless migration mode — used by the installer and upgrade flow.
         # Runs Alembic upgrade head against the resolved database path, then exits.
-        from alembic import command
         from alembic.config import Config as AlembicConfig
+
+        from alembic import command
         ini_path = Path(__file__).parent / "alembic.ini"
         alembic_cfg = AlembicConfig(str(ini_path))
         command.upgrade(alembic_cfg, "head")
@@ -162,8 +163,8 @@ if __name__ == "__main__":
         # Usage:
         #   backend.exe --generate-key fernet <output_file>
         #   backend.exe --generate-key secret <output_file>
-        import os
         import secrets
+
         from cryptography.fernet import Fernet
         args = sys.argv
         idx = args.index("--generate-key")
