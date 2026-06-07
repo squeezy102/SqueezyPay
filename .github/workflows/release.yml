@@ -150,8 +150,8 @@ jobs:
           $proc = Start-Process -FilePath "dist\SqueezyPay-Setup.exe" `
             -ArgumentList "/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/LOG=$installerLog" `
             -Wait -PassThru
-          if (Test-Path $installerLog) { Get-Content $installerLog | Select-Object -Last 20 }
           if ($proc.ExitCode -ne 0) {
+            if (Test-Path $installerLog) { Get-Content -Path $installerLog -Tail 20 }
             Write-Error "Installer failed with exit code $($proc.ExitCode)"; exit 1
           }
           Write-Host "Installer completed (exit 0)"
