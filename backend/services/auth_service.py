@@ -1,16 +1,21 @@
+import os
+from datetime import UTC, datetime, timedelta
+
 import bcrypt
 import jwt
-import os
-from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
-from models.models import AuthConfig
+
+from core.auth import ALGORITHM
 from core.logging_config import get_logger
+from models.models import AuthConfig
 
 logger = get_logger("squeezypay.services.auth")
 
-SECRET_KEY = os.environ.get("SQUEEZYPAY_SECRET_KEY", "")
-ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 12
+
+
+def _get_secret_key() -> str:
+    return os.environ.get("SQUEEZYPAY_SECRET_KEY", "")
 
 
 class AuthService:
@@ -36,18 +41,18 @@ class AuthService:
         return bcrypt.checkpw(passphrase.encode(), config.passphrase_hash.encode())
 
     def create_token(self) -> str:
-        secret = os.environ.get("SQUEEZYPAY_SECRET_KEY", "")
+        secret = _get_secret_key()
         if not secret:
             raise RuntimeError("SQUEEZYPAY_SECRET_KEY environment variable not set")
         payload = {
             "sub": "household",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(hours=TOKEN_EXPIRE_HOURS),
+            "iat": datetime.now(UTC),
         }
         return jwt.encode(payload, secret, algorithm=ALGORITHM)
 
     def decode_token(self, token: str) -> dict:
-        secret = os.environ.get("SQUEEZYPAY_SECRET_KEY", "")
+        secret = _get_secret_key()
         if not secret:
             raise RuntimeError("SQUEEZYPAY_SECRET_KEY environment variable not set")
         return jwt.decode(token, secret, algorithms=[ALGORITHM])

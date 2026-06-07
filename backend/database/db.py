@@ -1,6 +1,6 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from models.models import Base
 
 DATABASE_URL = "sqlite:///./squeezypay.db"
@@ -27,12 +27,13 @@ def init_db():
 
 
 def _seed_default_settings():
+    from core.constants import DEFAULT_DUE_SOON_DAYS, DEFAULT_LARGE_PAYMENT_THRESHOLD
     from models.models import Setting
     db = SessionLocal()
     try:
         defaults = {
-            "due_soon_days": "7",
-            "large_payment_threshold": "500.0",
+            "due_soon_days": str(DEFAULT_DUE_SOON_DAYS),
+            "large_payment_threshold": str(DEFAULT_LARGE_PAYMENT_THRESHOLD),
         }
         for key, value in defaults.items():
             if not db.query(Setting).filter(Setting.key == key).first():

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from models.models import Setting
+
 from core.logging_config import get_logger
+from models.models import Setting
 
 logger = get_logger("squeezypay.repositories.settings")
 

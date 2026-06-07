@@ -1,11 +1,15 @@
 import os
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
+from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("SQUEEZYPAY_ENCRYPTION_KEY", "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXJlc3Q=")
 os.environ.setdefault("SQUEEZYPAY_SECRET_KEY", "test-secret-key-for-testing-only-32chars!!")
+os.environ.setdefault("SQUEEZYPAY_PLAID_CLIENTID", "test-plaid-client-id")
+os.environ.setdefault("SQUEEZYPAY_PLAID_SECRET", "test-plaid-secret")
+os.environ["SQUEEZYPAY_TESTING"] = "1"
 
 import database.db as db_module
 from models.models import Base
@@ -19,9 +23,9 @@ def client():
     which is the only way to make :memory: databases visible across threads
     (the FastAPI TestClient runs requests in a worker thread).
     """
-    from main import app
-    from database.db import get_db
     from core.auth import require_auth
+    from database.db import get_db
+    from main import app
 
     engine = create_engine(
         "sqlite:///:memory:",
@@ -47,7 +51,12 @@ def client():
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[require_auth] = override_require_auth
 
-    with TestClient(app) as c:
+    import uuid
+    # Each test gets a unique rate-limit bucket so tests never share quotas.
+    # The key function in main.py reads X-Test-Rate-Key when present.
+    test_rate_key = str(uuid.uuid4())
+
+    with TestClient(app, headers={"X-Test-Rate-Key": test_rate_key}) as c:
         yield c
 
     app.dependency_overrides.clear()

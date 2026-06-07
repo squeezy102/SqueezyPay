@@ -1,194 +1,119 @@
 # SqueezyPay
 
-A self-hosted, open-source household bill management and personal finance dashboard. Self-hosted on your home network - accessible from any device in the house.
+A self-hosted personal finance dashboard for households. Connect your financial institution via Plaid to see live account balances, transaction history, and a spending blame graph. Track bills, log payments, manage income streams, and keep credentials in an encrypted local vault — all on your home network, with no cloud dependency.
 
-**The problem it solves:** Managing household finances is fragmented. Credentials are scattered. Paying a bill means hunting down URLs and navigating forgot-password flows. There is no single place to see the full picture, track spending, or have an honest conversation about where the money is going.
+## What it does
 
-SqueezyPay is the single source of truth for household finances. Every bill, every credential, every payment record, every transaction - all in one place, on your own hardware, accessible from any browser on your home network.
+- **Dashboard** — at-a-glance view of account balances, upcoming bills, income streams, and spending snapshots
+- **Plaid bank integration** — connect one financial institution to sync live balances and transactions
+- **Spending blame graph** — category and account breakdowns of where money went over a rolling window
+- **Bill management** — track bills with due dates, overdue alerts, and one-click navigation to biller payment pages
+- **Payment history** — log payments with confirmation numbers
+- **Income tracking** — configure expected income streams and reconcile against real deposits
+- **Credential vault** — AES-Fernet encrypted storage for biller credentials and payment methods
+- **CSV / OFX import** — supplemental transaction ingestion from your institution's own export
+- **PWA** — installs on iPhone and Android from any browser on your home network
 
----
+## Architecture at a glance
 
-## What It Does
+| Layer | Technology |
+|---|---|
+| Backend | Python 3.11+, FastAPI, SQLAlchemy, SQLite, Alembic |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
+| Data fetching | TanStack Query v5 (React Query) |
+| Plaid | `plaid-python` SDK, Transactions + Accounts products |
+| Encryption | `cryptography` (Fernet / AES-128-CBC) |
+| Testing | pytest, Vitest, Playwright |
+| CI | GitHub Actions |
 
-**Currently live:**
-
-- **Bill dashboard** - all household bills at a glance, sorted by due date, with overdue and due-soon status badges
-- **One-click navigation** - open any biller's payment page directly from the dashboard
-- **Secure credential vault** - encrypted storage for biller usernames and passwords
-- **Payment method storage** - encrypted storage for cards and bank accounts
-- **Dark mode** - defaults to system preference, persists per device
-- **PWA** - installs as a home screen app on iPhone and Android
-
-**Planned** (see [ROADMAP.md](docs/ai-assistant/ROADMAP.md)):
-
-- Payment history log with confirmation numbers
-- Bill management UI (add, edit, deactivate)
-- Bank account integration via Plaid (connect your financial institution)
-- Blame graph - spending breakdown by card and category
-- Budget tracking and spending projections
-- Net worth snapshot
-- Income tracking
-
----
+SQLite lives at `backend/squeezypay.db` and never leaves your machine. The Plaid access token is encrypted at rest using a key you generate and store as a Windows environment variable. See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ## Prerequisites
 
-| Tool | Purpose |
+| Tool | Version |
 |---|---|
-| [Git](https://git-scm.com) | Version control |
-| [Node.js LTS](https://nodejs.org) | React frontend |
-| [Python 3.11+](https://python.org) | FastAPI backend |
+| Python | 3.11 or later |
+| Node.js | 18 LTS or later |
+| Windows | 10 / 11 (primary target — macOS/Linux works with minor path adjustments) |
 
----
+A free [Plaid developer account](https://dashboard.plaid.com/) is required to use the bank integration. The app runs without it for bill tracking and credential vault features.
 
-## Setup
-
-### 1. Clone the repository
+## Quick start
 
 ```
-git clone https://github.com/squeezy102/SqueezyPay.git
-cd SqueezyPay
+git clone https://github.com/your-username/squeezypay.git
+cd squeezypay
 ```
 
-### 2. Generate your encryption key
+See [docs/getting-started.md](docs/getting-started.md) for the full walkthrough: environment variable setup, encryption key generation, dependency install, and first run.
 
-The encryption key protects all stored credentials and payment methods. Generate it once and store it as a Windows environment variable:
+## Key environment variables
 
-```
-python scripts/generate_key.py
-```
+| Variable | Purpose |
+|---|---|
+| `SQUEEZYPAY_ENCRYPTION_KEY` | Fernet key — encrypts credentials and Plaid tokens |
+| `SQUEEZYPAY_PLAID_CLIENTID` | Plaid client ID |
+| `SQUEEZYPAY_PLAID_SECRET` | Plaid secret |
+| `SQUEEZYPAY_PLAID_ENV` | `sandbox` or `production` |
 
-Follow the instructions the script prints. **If this key is lost, encrypted data cannot be recovered.**
+All configuration is via Windows User environment variables (HKCU\Environment). No `.env` file is committed. See [docs/configuration.md](docs/configuration.md).
 
-### 3. Set up environment variables
-
-```
-cp .env.example .env
-```
-
-Fill in the values in `.env`. This file is gitignored - never commit it.
-
-### 4. Install dependencies
-
-**Frontend:**
-```
-cd frontend
-npm install
-```
-
-**Backend:**
-```
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1    # Windows
-# source venv/bin/activate      # Mac/Linux
-pip install -r requirements.txt
-```
-
-**Admin dashboard:**
-```
-cd admin
-pip install -r requirements.txt
-```
-
-### 5. Seed the database
-
-On a fresh install, seed the database with example bills to get started. The seed data contains placeholder bills - replace them with your own after setup:
-
-```
-cd backend
-python seed.py
-```
-
----
-
-## Running the App
-
-### Preferred: Admin dashboard
-
-Run `scripts/launch-admin.ps1` or double-click the "SqueezyPay Admin" desktop shortcut (created by `scripts/create-shortcut.ps1`).
-
-The admin server starts and opens your browser at `http://localhost:9000`. Use the **Start** buttons there to bring up the backend and frontend.
-
-### Manual fallback
+## Running the app
 
 ```powershell
-# Terminal 1 - Backend (from /backend)
+# Terminal 1 — backend (from /backend)
 .\venv\Scripts\Activate.ps1
 python main.py
 
-# Terminal 2 - Frontend (from /frontend)
+# Terminal 2 — frontend (from /frontend)
 npm run dev
-
-# Optional: Terminal 3 - Admin dashboard (from /admin)
-python -m uvicorn main:app --host 0.0.0.0 --port 9000
 ```
 
-**URLs:**
+Or use the admin dashboard at `http://localhost:9000` (see [docs/deployment.md](docs/deployment.md)) to start/stop services from a browser.
 
 | Service | URL |
 |---|---|
 | App | `http://localhost:5173` |
 | Backend API | `http://localhost:8000` |
-| API docs | `http://localhost:8000/docs` |
+| API docs (Swagger) | `http://localhost:8000/docs` |
 | Admin dashboard | `http://localhost:9000` |
 
----
+To access from other devices on your home network, replace `localhost` with your PC's local IP (`ipconfig` → IPv4 Address).
 
-## Accessing From Other Devices
+## Documentation
 
-Once the app is running, any device on your home network can reach it. Find your PC's local IP:
-
-```
-ipconfig    # Windows - look for "IPv4 Address"
-```
-
-Then navigate to `http://<your-ip>:5173` in any browser on the network.
-
-**To install as a home screen app:**
-- **iPhone:** Open in Safari → Share → "Add to Home Screen"
-- **Android:** Open in Chrome → menu → "Install app"
-
----
-
-## Project Documentation
-
-The `docs/ai-assistant/` directory is the living documentation for this project. Reading it is the fastest way to understand what has been built, what is planned, and why decisions were made. If the docs are out of date, the project is broken - even if the code works.
-
-| File | Contents |
+| Document | Contents |
 |---|---|
-| [CONTEXT.md](docs/ai-assistant/CONTEXT.md) | Current app state, file structure, session handoff notes |
-| [REQUIREMENTS.md](docs/ai-assistant/REQUIREMENTS.md) | Feature requirements (REQ-001 through REQ-015) |
-| [ROADMAP.md](docs/ai-assistant/ROADMAP.md) | Build phases and priorities |
-| [DECISIONS.md](docs/ai-assistant/DECISIONS.md) | Vision, philosophy, and architecture decision log |
-| [USERPREFERENCES.md](docs/ai-assistant/USERPREFERENCES.md) | Working style and AI collaboration guidelines |
-| [TESTCASES.md](docs/ai-assistant/TESTCASES.md) | Manual test cases |
+| [Getting Started](docs/getting-started.md) | Install, configure, and run for the first time |
+| [Configuration](docs/configuration.md) | All environment variables and settings |
+| [Architecture](docs/architecture.md) | System design, data flow, and key decisions |
+| [Database](docs/database.md) | Schema, migrations, and data model |
+| [API Reference](docs/api-reference.md) | All backend endpoints |
+| [Frontend](docs/frontend.md) | Component structure, routing, and state management |
+| [Testing](docs/testing.md) | Running backend, frontend, and E2E test suites |
+| [Deployment](docs/deployment.md) | Serving on your local network |
+| [Roadmap](docs/roadmap.md) | Planned features and design decisions |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
 
----
-
-## Development
-
-### Branching strategy
-
-**For contributors:**
+## Branching strategy
 
 | Branch | Purpose |
 |---|---|
-| `master` | Tested, complete, ready-to-ship. Protected branch. Merges from `dev` only at milestones. CI must pass. |
-| `dev` | Integration branch. All feature/fix branches merge here first. CI must pass. |
-| `feature/short-description` | Branch from `dev`. PR into `dev` when complete. |
-| `fix/short-description` | Branch from `dev`. PR into `dev` when complete. |
-| `docs/short-description` | Documentation changes only. |
-| `chore/short-description` | Maintenance, dependency updates, cleanup. |
+| `master` | Protected. Merges from `dev` at milestones only. CI must pass. |
+| `dev` | Integration branch. All feature/fix PRs land here first. |
+| `feature/short-description` | Branch from `dev`, PR back to `dev`. |
+| `fix/short-description` | Branch from `dev`, PR back to `dev`. |
 
-PRs to `dev` require CI to pass. PRs to `master` require CI to pass and project maintainer approval.
+## Forking
 
-Note: The project owner works directly off `dev` without PRs. Contributors should use feature/fix branches and PR into `dev`.
+SqueezyPay is designed around a single financial institution. If you fork it and want multi-institution support, remove the guard in `backend/services/plaid_service.py` (`exchange_public_token`) and update `frontend/src/components/Accounts.tsx`. See [docs/architecture.md](docs/architecture.md#single-institution-design) for the full rationale.
 
-### Working with Claude Code
+Generate a new encryption key. Never reuse a key from another instance.
 
-This project is built with [Claude Code](https://claude.ai/code). Before starting any coding session, have Claude read the project docs:
+## Contributing
 
-> "Read the .md files in docs/ai-assistant/ before we start."
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-This gives Claude the context it needs to make decisions consistent with what has already been built.
+## License
+
+MIT

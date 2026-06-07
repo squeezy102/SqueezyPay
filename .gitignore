@@ -23,6 +23,9 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Node compile cache artifacts (created if %USERPROFILE% is not expanded)
+frontend/%USERPROFILE%/
+
 # IDE
 .vscode/
 .idea/
@@ -33,3 +36,18 @@ __pycache__/
 *.pyo
 venv/
 .venv/
+.coverage
+htmlcov/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# AI session context — local only, never published
+SqueezyContext/
+
+# Claude Code memory
+.claude/

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from models.models import TransactionCategory
+
 from core.logging_config import get_logger
+from models.models import TransactionCategory
 
 logger = get_logger("squeezypay.repositories.categories")
 

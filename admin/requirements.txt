@@ -1,3 +1,6 @@
 fastapi
 uvicorn
 psutil
+pystray
+Pillow
+requests

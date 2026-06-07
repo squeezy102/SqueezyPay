@@ -1,12 +1,14 @@
 from sqlalchemy.orm import Session
-from repositories.settings_repository import SettingsRepository
+
+from core.constants import DEFAULT_DUE_SOON_DAYS, DEFAULT_LARGE_PAYMENT_THRESHOLD
 from core.logging_config import get_logger
+from repositories.settings_repository import SettingsRepository
 
 logger = get_logger("squeezypay.services.settings")
 
 _DEFAULTS = {
-    "due_soon_days": 7,
-    "large_payment_threshold": 500.0,
+    "due_soon_days": DEFAULT_DUE_SOON_DAYS,
+    "large_payment_threshold": DEFAULT_LARGE_PAYMENT_THRESHOLD,
 }
 
 _CONVERTERS = {

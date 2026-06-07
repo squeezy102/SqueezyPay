@@ -1,9 +1,54 @@
-from fastapi import APIRouter, Depends, HTTPException
+from enum import StrEnum
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
+
 from database.db import get_db
 from services.income_service import IncomeService
 
 router = APIRouter(prefix="/api/income", tags=["income"])
+
+
+class IncomeFrequency(StrEnum):
+    weekly = "weekly"
+    bi_weekly = "bi-weekly"
+    semi_monthly = "semi-monthly"
+    monthly = "monthly"
+
+
+class IncomeCreate(BaseModel):
+    source_name: str = Field(..., min_length=1, max_length=255)
+    amount: float = Field(..., gt=0)
+    frequency: IncomeFrequency
+    next_expected_date: str | None = None
+    active: bool = True
+
+    @field_validator("source_name")
+    @classmethod
+    def strip_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("source_name cannot be blank")
+        return v
+
+
+class IncomeUpdate(BaseModel):
+    source_name: str | None = Field(None, min_length=1, max_length=255)
+    amount: float | None = Field(None, gt=0)
+    frequency: IncomeFrequency | None = None
+    next_expected_date: str | None = None
+    active: bool | None = None
+
+    @field_validator("source_name")
+    @classmethod
+    def strip_name(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("source_name cannot be blank")
+        return v
 
 
 @router.get("/monthly-total")
@@ -13,7 +58,7 @@ def get_monthly_total(db: Session = Depends(get_db)):
 
 
 @router.get("/")
-def get_all_income(include_inactive: bool = False, db: Session = Depends(get_db)):
+def get_all_income(include_inactive: bool = Query(False), db: Session = Depends(get_db)):
     return IncomeService.get_all(db, include_inactive=include_inactive)
 
 
@@ -26,13 +71,13 @@ def get_income_by_id(income_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", status_code=201)
-def create_income(income_data: dict, db: Session = Depends(get_db)):
-    return IncomeService.create(db, income_data)
+def create_income(payload: IncomeCreate, db: Session = Depends(get_db)):
+    return IncomeService.create(db, payload.model_dump())
 
 
 @router.put("/{income_id}")
-def update_income(income_id: int, income_data: dict, db: Session = Depends(get_db)):
-    record = IncomeService.update(db, income_id, income_data)
+def update_income(income_id: int, payload: IncomeUpdate, db: Session = Depends(get_db)):
+    record = IncomeService.update(db, income_id, payload.model_dump(exclude_none=True))
     if not record:
         raise HTTPException(status_code=404, detail="Income record not found")
     return record

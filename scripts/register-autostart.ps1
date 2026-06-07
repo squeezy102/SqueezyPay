@@ -2,8 +2,8 @@
 # Requires running as Administrator (right-click PowerShell -> Run as Administrator).
 
 $root = Split-Path -Parent $PSScriptRoot
-$script = Join-Path $root "scripts\autostart.ps1"
-$taskName = "SqueezyPay Admin Auto-Start"
+$script = Join-Path $root "scripts\launch-tray.ps1"
+$taskName = "SqueezyPay Auto-Start"
 
 # Remove existing task if present (clean re-register)
 Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
@@ -25,7 +25,7 @@ Register-ScheduledTask `
     -Trigger $trigger `
     -Settings $settings `
     -RunLevel Highest `
-    -Description "Starts the SqueezyPay admin dashboard server on login." | Out-Null
+    -Description "Starts the SqueezyPay tray icon on login, which manages all services." | Out-Null
 
 Write-Host ""
 Write-Host "========================================="
@@ -36,8 +36,8 @@ Write-Host "Task name : $taskName"
 Write-Host "Runs as   : $env:USERNAME"
 Write-Host "Trigger   : On login"
 Write-Host ""
-Write-Host "The admin server will start automatically next time you log in."
-Write-Host "Admin dashboard: http://localhost:9000"
+Write-Host "The tray icon will appear automatically next time you log in."
+Write-Host "Right-click the tray icon to start/stop services or open the dashboard."
 Write-Host ""
 Write-Host "To remove auto-start, run:"
 Write-Host "  Unregister-ScheduledTask -TaskName '$taskName' -Confirm:`$false"

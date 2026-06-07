@@ -1,22 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+
+from core.limiter import limiter
 from database.db import get_db
 from services.auth_service import AuthService
 
-limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 class PassphraseRequest(BaseModel):
-    passphrase: str
+    passphrase: str = Field(..., min_length=8, max_length=1024)
 
 
 class ChangePassphraseRequest(BaseModel):
-    current_passphrase: str
-    new_passphrase: str
+    current_passphrase: str = Field(..., min_length=1)
+    new_passphrase: str = Field(..., min_length=8, max_length=1024)
 
 
 class TokenResponse(BaseModel):
@@ -31,7 +30,8 @@ def auth_status(db: Session = Depends(get_db)):
 
 
 @router.post("/setup", status_code=status.HTTP_201_CREATED)
-def setup(body: PassphraseRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def setup(request: Request, body: PassphraseRequest, db: Session = Depends(get_db)):
     svc = AuthService(db)
     if not svc.setup(body.passphrase):
         raise HTTPException(status_code=409, detail="Passphrase already configured")
@@ -55,7 +55,8 @@ def logout():
 
 
 @router.post("/change-passphrase")
-def change_passphrase(body: ChangePassphraseRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def change_passphrase(request: Request, body: ChangePassphraseRequest, db: Session = Depends(get_db)):
     svc = AuthService(db)
     if not svc.change_passphrase(body.current_passphrase, body.new_passphrase):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Current passphrase incorrect")

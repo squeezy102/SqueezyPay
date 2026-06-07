@@ -1,18 +1,19 @@
 from sqlalchemy.orm import Session
+
 from models.models import PaymentMethod
 
 
 class PaymentMethodRepository:
-    def __init__(self, db: Session):
-        self.db = db
+    @staticmethod
+    def get_all(db: Session) -> list[PaymentMethod]:
+        return db.query(PaymentMethod).all()
 
-    def get_all(self) -> list[PaymentMethod]:
-        return self.db.query(PaymentMethod).all()
+    @staticmethod
+    def get_by_id(db: Session, payment_method_id: int) -> PaymentMethod | None:
+        return db.query(PaymentMethod).filter(PaymentMethod.id == payment_method_id).first()
 
-    def get_by_id(self, payment_method_id: int) -> PaymentMethod | None:
-        return self.db.query(PaymentMethod).filter(PaymentMethod.id == payment_method_id).first()
-
-    def create(self, nickname: str, payment_type: str, last_four: str, expiration_date: str | None, notes: str | None) -> PaymentMethod:
+    @staticmethod
+    def create(db: Session, nickname: str, payment_type: str, last_four: str, expiration_date: str | None, notes: str | None) -> PaymentMethod:
         method = PaymentMethod(
             nickname=nickname,
             payment_type=payment_type,
@@ -20,18 +21,20 @@ class PaymentMethodRepository:
             expiration_date=expiration_date,
             notes=notes,
         )
-        self.db.add(method)
-        self.db.commit()
-        self.db.refresh(method)
+        db.add(method)
+        db.commit()
+        db.refresh(method)
         return method
 
-    def update(self, method: PaymentMethod, **kwargs) -> PaymentMethod:
+    @staticmethod
+    def update(db: Session, method: PaymentMethod, **kwargs) -> PaymentMethod:
         for key, value in kwargs.items():
             setattr(method, key, value)
-        self.db.commit()
-        self.db.refresh(method)
+        db.commit()
+        db.refresh(method)
         return method
 
-    def delete(self, method: PaymentMethod) -> None:
-        self.db.delete(method)
-        self.db.commit()
+    @staticmethod
+    def delete(db: Session, method: PaymentMethod) -> None:
+        db.delete(method)
+        db.commit()

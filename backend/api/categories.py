@@ -1,9 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
 from database.db import get_db
 from services.category_service import CategoryService
 
 router = APIRouter(prefix="/api/categories", tags=["categories"])
+
+
+class CategoryCreate(BaseModel):
+    name: str
+
+
+class CategoryUpdate(BaseModel):
+    name: str
 
 
 @router.get("/")
@@ -12,8 +22,8 @@ def get_all_categories(db: Session = Depends(get_db)):
 
 
 @router.post("/", status_code=201)
-def create_category(category_data: dict, db: Session = Depends(get_db)):
-    name = category_data.get("name", "").strip()
+def create_category(payload: CategoryCreate, db: Session = Depends(get_db)):
+    name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=422, detail="Category name is required")
     try:
@@ -23,8 +33,8 @@ def create_category(category_data: dict, db: Session = Depends(get_db)):
 
 
 @router.put("/{category_id}")
-def update_category(category_id: int, category_data: dict, db: Session = Depends(get_db)):
-    name = category_data.get("name", "").strip()
+def update_category(category_id: int, payload: CategoryUpdate, db: Session = Depends(get_db)):
+    name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=422, detail="Category name is required")
     try:

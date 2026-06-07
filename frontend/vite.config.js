@@ -7,4 +7,12 @@ export default defineConfig({
   server: {
     host: true,
   },
+  test: {
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/utils/**'],
+    },
+  },
 })

@@ -48,9 +48,11 @@ if ($proc -and !$proc.HasExited) {
 Write-Host "Waiting for server to be ready..."
 
 # Wait up to 15 seconds for the server to respond
+$maxRetries = 30
+$retryDelayMs = 500
 $ready = $false
-for ($i = 0; $i -lt 30; $i++) {
-    Start-Sleep -Milliseconds 500
+for ($i = 0; $i -lt $maxRetries; $i++) {
+    Start-Sleep -Milliseconds $retryDelayMs
     $result = curl.exe -s -o NUL -w "%{http_code}" --max-time 1 "$url/api/status" 2>$null
     if ($result -eq "200") {
         $ready = $true
