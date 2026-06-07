@@ -146,17 +146,19 @@ def compute_score(results: dict) -> tuple[int, list[str]]:
 
 
 def write_launcher_bat(staging_dir: Path) -> None:
-    # LogonCommand fires before mapped folders are guaranteed mounted.
-    # This launcher waits 15s then invokes the exerciser, avoiding a race
-    # where C:\TestAssets doesn't exist yet when PowerShell starts.
+    # LogonCommand fires at sandbox logon.
+    # Results are written to C:\results.json inside the sandbox (writable),
+    # then copied out to the mapped folder (C:\TestAssets) which has
+    # write permissions granted by prepare_staging_dir().
     bat = staging_dir / "launch_exerciser.bat"
     bat.write_text(
         "@echo off\r\n"
-        "timeout /t 15 /nobreak >nul\r\n"
+        "timeout /t 10 /nobreak >nul\r\n"
         "powershell.exe -ExecutionPolicy Bypass -File "
         '"C:\\TestAssets\\sandbox_exerciser.ps1" '
         '-InstallerPath "C:\\TestAssets\\SqueezyPay-Setup.exe" '
-        '-ResultsPath "C:\\TestAssets\\results.json"\r\n',
+        '-ResultsPath "C:\\results.json"\r\n'
+        "copy /Y C:\\results.json C:\\TestAssets\\results.json\r\n",
         encoding="utf-8",
     )
 
@@ -217,6 +219,12 @@ def main():
     # Set up staging dir (persists between rounds so installer can be reused)
     staging_dir = Path(tempfile.mkdtemp(prefix="squeezypay_sandbox_"))
     print(f"Staging dir: {staging_dir}")
+    # Grant Everyone write access so the sandbox user (WDAGUtilityAccount)
+    # can write results.json back through the mapped folder.
+    subprocess.run(
+        ["icacls", str(staging_dir), "/grant", "Everyone:(OI)(CI)F", "/T"],
+        capture_output=True,
+    )
 
     try:
         # Get installer
