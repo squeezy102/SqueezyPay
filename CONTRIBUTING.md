@@ -2,6 +2,33 @@
 
 SqueezyPay is a household tool built for personal use and shared as open source. Contributions are welcome — bug fixes, documentation improvements, and new features that make sense for a single-household self-hosted finance app.
 
+---
+
+## Standards and expectations
+
+This project is built with the same standards expected of professional software. That expectation extends to every contribution.
+
+**Use established conventions, not invented ones.** Personal finance is a solved problem domain. There are thousands of applications in this space with decades of collective design, UX, and engineering knowledge behind them. Before proposing a new approach to anything — a data model, a UX pattern, a sync strategy, a security mechanism — research how existing tools handle it. Reference those decisions. Justify deviations from established practice.
+
+**Use reputable standards, guidelines, and literature.** Financial data handling, security, accessibility, and API design each have authoritative references. Use them:
+- Security: [OWASP Top 10](https://owasp.org/www-project-top-ten/), [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/), [NIST guidelines](https://www.nist.gov/cybersecurity)
+- Accessibility: [WCAG 2.1](https://www.w3.org/TR/WCAG21/), [WAI-ARIA 1.2](https://www.w3.org/TR/wai-aria-1.2/)
+- Testing: [ISTQB standards](https://www.istqb.org/), [pytest documentation](https://docs.pytest.org/), [Testing Library principles](https://testing-library.com/docs/guiding-principles)
+- Python: [PEP 8](https://peps.python.org/pep-0008/), [PEP 484](https://peps.python.org/pep-0484/), [PEP 257](https://peps.python.org/pep-0257/)
+- TypeScript/React: [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html), [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks)
+
+**Test-driven development is not optional.** Tests are written before or alongside the code they cover, not after. New functionality without tests will not be merged. The test coverage audit reports in `audit/test-coverage/` define the current gaps and the expected remediation approach — do not add to those gaps.
+
+**Do things correctly, not quickly.** Speed of delivery is not a value here. Correctness, integrity, and thoroughness are. A slower, well-reasoned, well-tested, well-documented contribution is always preferred over a fast one.
+
+**Documentation is a first-class deliverable.** If a change affects how the app behaves, the wiki must be updated in the same PR. If a change introduces a new concept, constraint, or configuration option, it must be documented. Undocumented behaviour is a defect.
+
+**Accuracy matters.** If you are uncertain about a design decision, a security implication, or the correct approach to a problem — say so explicitly. Do not paper over uncertainty with confident-sounding language. Flagging unknowns is respected; hiding them is not.
+
+**PRs are reviewed to a high standard.** Every PR is read in full. A PR that does not meet the bar — inadequate tests, undocumented behaviour, deviations from established conventions without justification, or code that prioritised speed over correctness — will be rejected. Repeated submissions that do not reflect the feedback from a prior rejection will result in no further reviews from that contributor.
+
+---
+
 ## Before you start
 
 Read the docs. The architecture and design decisions are documented in the [GitHub Wiki](https://github.com/squeezy102/SqueezyPay/wiki) and shape what "a good contribution" looks like here.
