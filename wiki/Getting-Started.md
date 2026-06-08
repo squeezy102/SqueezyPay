@@ -84,9 +84,9 @@ From here:
 
 ## Upgrading
 
-Download the new `SqueezyPay-Setup.exe` from the [Releases page](https://github.com/squeezy102/SqueezyPay/releases) and run it. The installer upgrades in place — your data, passphrase, and settings are preserved.
+**Before upgrading, back up your database.** It lives at `%APPDATA%\SqueezyPay\squeezypay.db` — copy that file somewhere safe first. Upgrades are designed to preserve your data, but a backup means you can always recover if something goes wrong.
 
-> **Before upgrading:** back up your database file. It lives at `%APPDATA%\SqueezyPay\squeezypay.db`. Copy that file somewhere safe before running the new installer.
+Once you have your backup, download the new `SqueezyPay-Setup.exe` from the [Releases page](https://github.com/squeezy102/SqueezyPay/releases) and run it. The installer upgrades in place.
 
 ---
 
