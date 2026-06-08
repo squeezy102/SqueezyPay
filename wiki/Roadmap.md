@@ -219,6 +219,18 @@ Audit findings that cite "LAN accessibility" as a risk should be read narrowly: 
 
 ---
 
+## Permanent non-goals
+
+These will never be implemented. They are not deferred — they are explicitly out of scope by design.
+
+| Item | Reason |
+|---|---|
+| Code signing the Windows installer | SqueezyPay is a free, self-hosted, open-source household tool. The cost of a code signing certificate is not justified. Users will see the Windows SmartScreen "Windows protected your PC" prompt and are expected to click **More info → Run anyway**. This is a known, accepted behavior, not a bug. |
+| Cloud hosting or telemetry | Fundamentally against the product's self-hosted, no-external-dependency design. |
+| Multi-institution Plaid support | Single-institution constraint is intentional product scope. |
+
+---
+
 ## Known limitations and deferred items
 
 These are tracked as GitHub Issues. Do not work around them — document and move on. The [v0.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/1) shows which are actively being addressed.

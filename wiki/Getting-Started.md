@@ -8,7 +8,7 @@ SqueezyPay installs like any other Windows program. Download the installer, run 
 
 Go to the [Releases page](https://github.com/squeezy102/SqueezyPay/releases) and download the latest `SqueezyPay-Setup.exe`.
 
-> If you see a SmartScreen warning ("Windows protected your PC"), click **More info** then **Run anyway**. This appears because SqueezyPay is not yet code-signed. It is safe to proceed.
+> **Windows SmartScreen prompt:** When you run the installer, Windows will show a "Windows protected your PC" screen. This is expected — SqueezyPay is not code-signed, by design. Click **More info**, then **Run anyway** to proceed.
 
 ---
 
