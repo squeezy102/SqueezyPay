@@ -116,9 +116,18 @@ Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Description: "Launch {#App
 // -----------------------------------------------------------------------
 
 var
-  // Security page
+  // Security page (pre-install: explains what is about to happen)
   SecurityPage: TWizardPage;
   SecurityLabel: TNewStaticText;
+
+  // Key reveal page (post-install: shows the generated key, gates Next on checkbox)
+  KeyRevealPage: TWizardPage;
+  KeyRevealIntro: TNewStaticText;
+  KeyRevealEdit: TNewEdit;
+  KeyRevealCopyBtn: TNewButton;
+  KeyRevealWarning: TNewStaticText;
+  KeyRevealCheck: TNewCheckBox;
+  KeyRevealError: TNewStaticText;
 
   // Plaid page
   PlaidPage: TWizardPage;
@@ -204,12 +213,23 @@ begin Result := PlaidSecretEdit.Text; end;
 
 
 // -----------------------------------------------------------------------
+// Clipboard helper for the Copy button on the key reveal page
+// -----------------------------------------------------------------------
+
+procedure CopyKeyToClipboard(Sender: TObject);
+begin
+  Clipboard.AsText := KeyRevealEdit.Text;
+  KeyRevealCopyBtn.Caption := 'Copied!';
+end;
+
+
+// -----------------------------------------------------------------------
 // Page creation
 // -----------------------------------------------------------------------
 
 procedure InitializeWizard();
 begin
-  // --- Security page ---
+  // --- Security page (pre-install explanation) ---
   SecurityPage := CreateCustomPage(wpSelectComponents,
     'Security Setup',
     'SqueezyPay will generate a unique encryption key for your installation.');
@@ -222,13 +242,80 @@ begin
   SecurityLabel.AutoSize := True;
   SecurityLabel.WordWrap := True;
   SecurityLabel.Caption :=
-    'SqueezyPay encrypts sensitive data (stored credentials and bank tokens) ' +
-    'using a key unique to your installation. This key will be generated ' +
-    'automatically and stored securely on your PC.' + #13#10 + #13#10 +
-    'You do not need to write anything down or enter anything here. ' +
-    'If you ever uninstall and reinstall SqueezyPay, a new key will be ' +
-    'generated — your previous data will not be recoverable, so back up ' +
-    '%APPDATA%\SqueezyPay\squeezypay.db before uninstalling.';
+    'SqueezyPay encrypts all stored credentials and bank tokens using a key ' +
+    'unique to your installation. The key will be generated automatically ' +
+    'during setup and stored on this PC.' + #13#10 + #13#10 +
+    'After the key is generated, the installer will show it to you. ' +
+    'You must save it before continuing — a password manager, a printed note ' +
+    'kept somewhere safe, or an encrypted USB drive are all good options.' + #13#10 + #13#10 +
+    'If this key is ever lost, all encrypted data stored by SqueezyPay ' +
+    'becomes permanently unrecoverable. There is no reset or recovery option.';
+
+  // --- Key reveal page (post-install: shown after key is generated) ---
+  // Inserted after wpInstalling so it appears once the key exists.
+  // The key text is populated in CurStepChanged(ssPostInstall).
+  KeyRevealPage := CreateCustomPage(wpInstalling,
+    'Save Your Encryption Key',
+    'Your encryption key has been generated. You must save it before continuing.');
+
+  KeyRevealIntro := TNewStaticText.Create(KeyRevealPage);
+  KeyRevealIntro.Parent   := KeyRevealPage.Surface;
+  KeyRevealIntro.Left     := 0;
+  KeyRevealIntro.Top      := 0;
+  KeyRevealIntro.Width    := KeyRevealPage.SurfaceWidth;
+  KeyRevealIntro.AutoSize := True;
+  KeyRevealIntro.WordWrap := True;
+  KeyRevealIntro.Caption  :=
+    'This is your encryption key. It is already stored on this PC, but if you ' +
+    'ever need to reinstall Windows, move to a new machine, or restore from a backup, ' +
+    'you will need this key to access your data.';
+
+  KeyRevealEdit := TNewEdit.Create(KeyRevealPage);
+  KeyRevealEdit.Parent    := KeyRevealPage.Surface;
+  KeyRevealEdit.Left      := 0;
+  KeyRevealEdit.Top       := KeyRevealIntro.Top + KeyRevealIntro.Height + 10;
+  KeyRevealEdit.Width     := KeyRevealPage.SurfaceWidth - 90;
+  KeyRevealEdit.ReadOnly  := True;
+  KeyRevealEdit.Text      := '(generating...)';
+  KeyRevealEdit.Font.Name := 'Courier New';
+  KeyRevealEdit.Font.Size := 8;
+
+  KeyRevealCopyBtn := TNewButton.Create(KeyRevealPage);
+  KeyRevealCopyBtn.Parent  := KeyRevealPage.Surface;
+  KeyRevealCopyBtn.Caption := 'Copy';
+  KeyRevealCopyBtn.Left    := KeyRevealEdit.Left + KeyRevealEdit.Width + 8;
+  KeyRevealCopyBtn.Top     := KeyRevealEdit.Top;
+  KeyRevealCopyBtn.Width   := 75;
+  KeyRevealCopyBtn.Height  := KeyRevealEdit.Height;
+  KeyRevealCopyBtn.OnClick := @CopyKeyToClipboard;
+
+  KeyRevealWarning := TNewStaticText.Create(KeyRevealPage);
+  KeyRevealWarning.Parent   := KeyRevealPage.Surface;
+  KeyRevealWarning.Left     := 0;
+  KeyRevealWarning.Top      := KeyRevealEdit.Top + KeyRevealEdit.Height + 12;
+  KeyRevealWarning.Width    := KeyRevealPage.SurfaceWidth;
+  KeyRevealWarning.AutoSize := True;
+  KeyRevealWarning.WordWrap := True;
+  KeyRevealWarning.Font.Style := [fsBold];
+  KeyRevealWarning.Caption  :=
+    'Save this key now. Once you click Next, it will not be shown again. ' +
+    'If this key is lost, your stored credentials and bank tokens cannot be recovered.';
+
+  KeyRevealCheck := TNewCheckBox.Create(KeyRevealPage);
+  KeyRevealCheck.Parent   := KeyRevealPage.Surface;
+  KeyRevealCheck.Left     := 0;
+  KeyRevealCheck.Top      := KeyRevealWarning.Top + KeyRevealWarning.Height + 12;
+  KeyRevealCheck.Width    := KeyRevealPage.SurfaceWidth;
+  KeyRevealCheck.Caption  := 'I have saved my encryption key in a safe place';
+
+  KeyRevealError := TNewStaticText.Create(KeyRevealPage);
+  KeyRevealError.Parent     := KeyRevealPage.Surface;
+  KeyRevealError.Left       := 0;
+  KeyRevealError.Top        := KeyRevealCheck.Top + KeyRevealCheck.Height + 6;
+  KeyRevealError.Width      := KeyRevealPage.SurfaceWidth;
+  KeyRevealError.AutoSize   := True;
+  KeyRevealError.Font.Color := clRed;
+  KeyRevealError.Caption    := '';
 
   // --- Plaid page ---
   PlaidPage := CreateCustomPage(SecurityPage.ID,
@@ -352,6 +439,16 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
 
+  if CurPageID = KeyRevealPage.ID then
+  begin
+    KeyRevealError.Caption := '';
+    if not KeyRevealCheck.Checked then
+    begin
+      KeyRevealError.Caption := 'You must confirm that you have saved your encryption key before continuing.';
+      Result := False;
+    end;
+  end;
+
   if CurPageID = PassphrasePage.ID then
   begin
     PassphraseError.Caption := '';
@@ -391,11 +488,19 @@ begin
     if GeneratedEncryptionKey = '' then
       MsgBox('Warning: encryption key generation failed. You will need to set ' +
              'SQUEEZYPAY_ENCRYPTION_KEY manually before starting the app. ' +
-             'See docs/configuration.md for instructions.', mbError, MB_OK);
+             'See the Configuration page in the wiki for instructions: ' +
+             'https://github.com/squeezy102/SqueezyPay/wiki/Configuration', mbError, MB_OK);
   end;
 
   if CurStep = ssPostInstall then
   begin
+    // Populate the key reveal page now that the key is known.
+    // The wizard will present this page next (it sits after wpInstalling).
+    if GeneratedEncryptionKey <> '' then
+      KeyRevealEdit.Text := GeneratedEncryptionKey
+    else
+      KeyRevealEdit.Text := '(key generation failed — see Configuration wiki page)';
+
     // Write the passphrase to a temp file for the backend to hash on first start.
     // The backend reads and deletes this file on startup — it is never stored as plaintext.
     SaveStringToFile(
