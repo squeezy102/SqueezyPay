@@ -134,6 +134,19 @@ Never commit:
 
 If you discover a security issue, open a private issue or contact the maintainer directly rather than filing a public bug report.
 
+## Documentation
+
+SqueezyPay maintains documentation in two places:
+
+| Location | Purpose | Priority |
+|---|---|---|
+| [GitHub Wiki](https://github.com/squeezy102/SqueezyPay/wiki) | User-facing setup, configuration, usage guides — readable without cloning | **Primary** |
+| [`docs/`](docs/) | Same content mirrored into the repo — available offline and colocated with code | Secondary |
+
+**Both must be kept in sync.** The Wiki is authoritative when they diverge. When updating documentation, update the Wiki first, then mirror the change to `docs/`. Never update only one side.
+
+---
+
 ## Project management
 
 SqueezyPay uses GitHub-native tooling as the primary PM layer. Local `.md` files provide narrative context, but the authoritative task list lives on GitHub.
