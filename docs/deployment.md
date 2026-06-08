@@ -69,7 +69,17 @@ The app opens in standalone mode (no browser chrome) and behaves like a native a
 
 ## Auto-start on Windows login
 
-Not yet implemented. The target is a Task Scheduler entry that starts the backend and admin dashboard on user login without requiring a visible terminal. Until then, use the desktop shortcut to launch the admin dashboard, then start services from there.
+Implemented via Windows Task Scheduler. The installer registers a scheduled task that runs `scripts\launch-tray.ps1` at login. To manually register or re-register the task on a dev machine:
+
+```powershell
+.\scripts\register-autostart.ps1
+```
+
+To remove the scheduled task:
+
+```powershell
+Unregister-ScheduledTask -TaskName "SqueezyPay" -Confirm:$false
+```
 
 ## Building for production
 

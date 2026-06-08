@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPlaidLinkToken, exchangePlaidPublicToken } from "../utils/api";
@@ -39,9 +39,9 @@ export default function PlaidLinkButton({ onConnected, label = "Connect Bank Acc
   });
 
   // Once we have a token and Link is ready, open immediately
-  if (linkToken && ready) {
-    open();
-  }
+  useEffect(() => {
+    if (linkToken && ready) open();
+  }, [linkToken, ready, open]);
 
   async function handleClick() {
     setTokenError(null);

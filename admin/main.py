@@ -297,6 +297,7 @@ def stream_logs():
 
 @app.get("/api/logs/recent")
 def recent_logs(lines: int = 100):
+    lines = min(lines, 1000)
     if not LOG_FILE.exists():
         return []
     with open(LOG_FILE, encoding="utf-8") as f:

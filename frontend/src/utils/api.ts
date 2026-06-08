@@ -200,18 +200,6 @@ export async function getBills(): Promise<Bill[]> {
   }
 }
 
-export async function getAllBills(): Promise<Bill[]> {
-  try {
-    const response = handle401(await fetch(`${API_BASE}/api/bills/`, { headers: { ...authHeaders() } }));
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    const data = await response.json() as RawBill[];
-    return data.map(mapBill);
-  } catch (error) {
-    logApiError("Failed to fetch all bills", error);
-    return [];
-  }
-}
-
 export async function createBill(payload: BillPayload): Promise<Bill | null> {
   try {
     const response = handle401(await fetch(`${API_BASE}/api/bills/`, {

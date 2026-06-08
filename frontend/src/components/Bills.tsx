@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import {
-  getAllBills,
+  getBills,
   getAllPayments,
   createBill,
   updateBill,
@@ -138,7 +138,7 @@ function RecentPaymentRow({ payment }: { payment: Payment }) {
 }
 
 function BillsOverview({ onStartSession }: { onStartSession: () => void }) {
-  const billsQuery    = useQuery({ queryKey: ["bills", "all"], queryFn: getAllBills });
+  const billsQuery    = useQuery({ queryKey: ["bills", "all"], queryFn: getBills });
   const paymentsQuery = useQuery({ queryKey: ["payments"],    queryFn: getAllPayments });
 
   if (billsQuery.isLoading || paymentsQuery.isLoading) return <Spinner />;
@@ -232,7 +232,7 @@ function BillsOverview({ onStartSession }: { onStartSession: () => void }) {
 function PayBills() {
   const { data: bills = [], isLoading } = useQuery({
     queryKey: ["bills", "all"],
-    queryFn:  getAllBills,
+    queryFn:  getBills,
   });
 
   if (isLoading) return <Spinner />;
@@ -566,7 +566,7 @@ function ManageBillers() {
   const billsQuery = useQuery({
     queryKey: ["bills", "all"],
     queryFn: async () => {
-      const data = await getAllBills();
+      const data = await getBills();
       data.sort((a, b) => a.dayOfMonth - b.dayOfMonth);
       return data;
     },

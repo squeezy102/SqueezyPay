@@ -5,9 +5,10 @@ interface Props {
   onChange: (val: number) => void;
   required?: boolean;
   className?: string;
+  id?: string;
 }
 
-export default function MoneyInput({ value, onChange, required, className = "" }: Props) {
+export default function MoneyInput({ value, onChange, required, className = "", id }: Props) {
   const [raw, setRaw] = useState<string>(() => value > 0 ? value.toFixed(2) : "");
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function MoneyInput({ value, onChange, required, className = "" }
     <div className="relative">
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400 pointer-events-none">$</span>
       <input
+        id={id}
         type="number"
         inputMode="decimal"
         min="0"

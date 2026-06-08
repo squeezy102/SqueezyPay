@@ -169,9 +169,10 @@ To reclaim space after deleting old records:
 cd backend
 .\venv\Scripts\Activate.ps1
 python -c "
+from sqlalchemy import text
 from database.db import engine
 with engine.connect() as conn:
-    conn.execute('VACUUM')
+    conn.execute(text('VACUUM'))
 print('VACUUM complete.')
 "
 ```

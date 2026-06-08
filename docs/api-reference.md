@@ -512,7 +512,7 @@ Delete a payment method.
 ## Diagnostics
 
 ### `GET /api/diagnostics/`
-Returns safe system diagnostics used by the in-app bug report feature. No authentication required. Never returns financial data, credentials, or environment variable values.
+Returns safe system diagnostics used by the in-app bug report feature. **Requires authentication** (Bearer token). Never returns financial data, credentials, or environment variable values.
 
 **Response `200`:**
 ```json

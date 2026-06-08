@@ -52,15 +52,15 @@ If Plaid credentials are not set, the app starts normally but the Accounts tab s
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SQUEEZYPAY_HOST` | No | `0.0.0.0` | Host the backend binds to. `0.0.0.0` makes it reachable on the local network. |
-| `SQUEEZYPAY_PORT` | No | `8000` | Port the backend listens on. |
+| `SQUEEZYPAY_HOST` | No | `0.0.0.0` | **Not currently implemented.** Host is hardcoded to `0.0.0.0` in `backend/main.py`. Documented for future use. |
+| `SQUEEZYPAY_PORT` | No | `8000` | **Not currently implemented.** Port is hardcoded to `8000` in `backend/main.py`. Documented for future use. |
 
 ### JWT authentication
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `SQUEEZYPAY_SECRET_KEY` | Yes | — | Secret used to sign JWT session tokens. Generate a random string (minimum 32 characters). |
-| `SQUEEZYPAY_JWT_EXPIRE_MINUTES` | No | `1440` | Session token lifetime in minutes (default: 24 hours). |
+| `SQUEEZYPAY_JWT_EXPIRE_MINUTES` | No | `1440` | **Not currently implemented.** Token expiry is hardcoded to 12 hours in `backend/services/auth_service.py`. Documented for future use. |
 
 To generate a secret key:
 ```powershell

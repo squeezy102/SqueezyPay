@@ -83,6 +83,9 @@ def _seed_default_categories():
                 "Personal Care",
                 "Kids",
                 "Miscellaneous",
+                "Income",
+                "Transfer",
+                "Bank Fees",
             ]
             for cat_name in categories:
                 db.add(TransactionCategory(name=cat_name))
