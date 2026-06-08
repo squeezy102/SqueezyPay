@@ -98,12 +98,9 @@ Your database and data files in `%APPDATA%\SqueezyPay\` are **not** deleted by t
 
 ---
 
-## Source install (developers only)
+## Running from source
 
-If you want to run from source rather than the installer, see the [Architecture](Architecture) page for the project structure, then follow the manual steps below.
-
-<details>
-<summary>Running from source</summary>
+Use this if the installer is unavailable, you prefer the command line, or you are working on the code itself.
 
 You will need Python 3.11+, Node.js 18 LTS, and Git installed.
 
@@ -112,15 +109,18 @@ git clone https://github.com/squeezy102/SqueezyPay.git
 cd SqueezyPay
 ```
 
-**Option A — setup script (recommended for CLI users)**
+**Using the setup script**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
-This installs all backend and frontend dependencies and initialises the database in one step.
+Installs all backend and frontend dependencies and initialises the database in one step.
 
-**Option B — manual steps**
+**If you prefer to run each step manually**
+
+<details>
+<summary>Expand manual steps</summary>
 
 ```powershell
 cd backend
@@ -132,16 +132,11 @@ cd ..\frontend
 npm install
 ```
 
-After either option, generate and store your environment variables (see [Configuration](Configuration)), create a desktop shortcut:
+</details>
+
+After setup, generate and store your environment variables (see [Configuration](Configuration)), then create a desktop shortcut and launch:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\create-shortcut.ps1
-```
-
-Then launch:
-
-```powershell
 .\scripts\launch-tray.ps1
 ```
-
-</details>
