@@ -15,6 +15,26 @@ jobs:
       - uses: actions/checkout@v6
 
       # ----------------------------------------------------------------
+      # 0. Verify all required secrets are present before doing any work.
+      #    Fails fast with a clear error rather than leaking fallback
+      #    plaintext values into workflow logs.
+      # ----------------------------------------------------------------
+      - name: Check required secrets
+        shell: pwsh
+        run: |
+          $missing = @()
+          if (-not "${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}") { $missing += "SQUEEZYPAY_ENCRYPTION_KEY_TEST" }
+          if (-not "${{ secrets.SANDBOX_TEST_PASSPHRASE }}")         { $missing += "SANDBOX_TEST_PASSPHRASE" }
+          if ($missing.Count -gt 0) {
+            foreach ($s in $missing) {
+              Write-Host "::error::Required secret is not set: $s"
+            }
+            Write-Host "::error::Set these secrets at Settings > Secrets and variables > Actions before triggering a release."
+            exit 1
+          }
+          Write-Host "All required secrets present."
+
+      # ----------------------------------------------------------------
       # 1. Build frontend static files
       # ----------------------------------------------------------------
       - uses: actions/setup-node@v6
@@ -59,7 +79,7 @@ jobs:
         working-directory: backend
         shell: pwsh
         env:
-          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST || 'dGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0LXRlc3Q=' }}
+          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}
           SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-smoke-test-only
           APPDATA: ${{ runner.temp }}
         run: |
@@ -135,7 +155,7 @@ jobs:
           # write the tmp file the backend reads on first start to set the passphrase.
           $appdataDir = "$env:APPDATA\SqueezyPay"
           New-Item -ItemType Directory -Force -Path $appdataDir | Out-Null
-          $testPassphrase = "${{ secrets.SANDBOX_TEST_PASSPHRASE || 'TestPassphrase123!' }}"
+          $testPassphrase = "${{ secrets.SANDBOX_TEST_PASSPHRASE }}"
           [System.IO.File]::WriteAllText("$appdataDir\initial_passphrase.tmp", $testPassphrase, [System.Text.Encoding]::UTF8)
           Write-Host "Passphrase bootstrap written."
 
@@ -201,7 +221,7 @@ jobs:
           Write-Host "Auth: configured."
 
           # --- Login ---
-          $loginBody = '{"passphrase":"' + "${{ secrets.SANDBOX_TEST_PASSPHRASE || 'TestPassphrase123!' }}" + '"}'
+          $loginBody = '{"passphrase":"' + "${{ secrets.SANDBOX_TEST_PASSPHRASE }}" + '"}'
           try {
             $loginResp = Invoke-RestMethod -Uri "http://localhost:8000/api/auth/login" `
               -Method POST -Body $loginBody -ContentType "application/json" -UseBasicParsing
