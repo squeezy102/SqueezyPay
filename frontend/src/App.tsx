@@ -38,11 +38,22 @@ function AppShell() {
       {/* Floating bug report button — always visible regardless of active tab */}
       <button
         onClick={() => setBugReportOpen(true)}
-        title="Report a bug"
-        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-violet-700 hover:bg-violet-800 active:scale-95 shadow-lg transition-all text-white text-xl"
-        aria-label="Report a bug"
+        title="Report an issue"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-violet-700 hover:bg-violet-800 active:scale-95 shadow-lg transition-all text-white"
+        aria-label="Report an issue"
       >
-        🐛
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="11" r="4" />
+          <path d="M12 7V3" />
+          <path d="M8 11H4" />
+          <path d="M20 11h-4" />
+          <path d="M6.3 6.3 4 4" />
+          <path d="M17.7 6.3 20 4" />
+          <path d="M6.3 15.7 4 18" />
+          <path d="M17.7 15.7 20 18" />
+          <path d="M12 15v4" />
+        </svg>
+        <span className="text-sm font-medium">Report issue</span>
       </button>
 
       {bugReportOpen && (

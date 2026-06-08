@@ -77,22 +77,13 @@ npm install
 
 ## 7. Start the app
 
-Open two terminals:
+Start via the system tray launcher — manages all services, no console window:
 
-**Terminal 1 — backend:**
 ```powershell
-cd backend
-.\venv\Scripts\Activate.ps1
-python main.py
+.\scripts\launch-tray.ps1
 ```
 
-**Terminal 2 — frontend:**
-```powershell
-cd frontend
-npm run dev
-```
-
-Open `http://localhost:5173` in your browser. You should see the SqueezyPay dashboard.
+A tray icon appears in the Windows system tray. Right-click for **Start All**, **Stop All**, **Open Dashboard**, and **Open App**. Running it again when already running does nothing — a named mutex prevents duplicate instances.
 
 ## 8. Connect your bank (optional)
 

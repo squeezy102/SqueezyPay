@@ -53,16 +53,18 @@ if _is_packaged():
     LOG_DIR     = Path(os.environ.get("APPDATA", "")) / "SqueezyPay" / "logs"
     _MODE       = "packaged"
 else:
-    REPO_ROOT   = _THIS_FILE.parent.parent
-    BACKEND_DIR = REPO_ROOT / "backend"
-    BACKEND_EXE = None
-    VENV_PYTHON = BACKEND_DIR / "venv" / "Scripts" / "python.exe"
-    LOG_DIR     = BACKEND_DIR / "logs"
-    _MODE       = "dev"
+    REPO_ROOT    = _THIS_FILE.parent.parent
+    BACKEND_DIR  = REPO_ROOT / "backend"
+    FRONTEND_DIR = REPO_ROOT / "frontend"
+    BACKEND_EXE  = None
+    VENV_PYTHON  = BACKEND_DIR / "venv" / "Scripts" / "python.exe"
+    LOG_DIR      = BACKEND_DIR / "logs"
+    _MODE        = "dev"
 
-LOG_FILE     = LOG_DIR / "squeezypay.log"
-BACKEND_PORT = 8000
-ADMIN_PORT   = 9000
+LOG_FILE      = LOG_DIR / "squeezypay.log"
+BACKEND_PORT  = 8000
+FRONTEND_PORT = 5173
+ADMIN_PORT    = 9000
 
 _processes:   dict[str, subprocess.Popen] = {}
 _log_handles: dict[str, object] = {}
@@ -163,14 +165,23 @@ def _kill_by_port(port: int) -> bool:
 
 
 def service_status() -> dict:
-    return {
-        "mode": _MODE,
+    status = {
         "backend": {
             "running": _process_alive("backend") or _is_port_in_use(BACKEND_PORT),
             "port": BACKEND_PORT,
             "url": f"http://localhost:{BACKEND_PORT}",
+            "browseable": False,
         },
     }
+    if _MODE == "dev":
+        frontend_running = _process_alive("frontend") or _is_port_in_use(FRONTEND_PORT)
+        status["frontend"] = {
+            "running": frontend_running,
+            "port": FRONTEND_PORT,
+            "url": f"http://localhost:{FRONTEND_PORT}",
+            "browseable": frontend_running,
+        }
+    return status
 
 
 # ---------------------------------------------------------------------------
@@ -202,53 +213,66 @@ def get_status():
 
 @app.post("/api/start/{service}")
 def start_service(service: str):
-    if service != "backend":
-        return {"ok": False, "message": f"Unknown service: {service}"}
+    if service == "backend":
+        if _process_alive("backend") or _is_port_in_use(BACKEND_PORT):
+            return {"ok": False, "message": "Backend is already running"}
+        env = {**_load_user_env(), "PYTHONUNBUFFERED": "1"}
+        log = _open_log("backend")
+        if _MODE == "packaged":
+            cmd = [str(BACKEND_EXE)]
+            cwd = str(APP_DIR)
+        else:
+            cmd = [str(VENV_PYTHON), "main.py"]
+            cwd = str(BACKEND_DIR)
+        proc = subprocess.Popen(
+            cmd, cwd=cwd, env=env, stdout=log, stderr=log,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
+        )
+        _processes["backend"] = proc
+        return {"ok": True, "message": "Backend started"}
 
-    if _process_alive("backend") or _is_port_in_use(BACKEND_PORT):
-        return {"ok": False, "message": "Backend is already running"}
+    if service == "frontend":
+        if _MODE == "packaged":
+            return {"ok": False, "message": "Frontend is served by the backend in packaged mode"}
+        if _process_alive("frontend") or _is_port_in_use(FRONTEND_PORT):
+            return {"ok": False, "message": "Frontend is already running"}
+        log = _open_log("frontend")
+        npm = str(FRONTEND_DIR / "node_modules" / ".bin" / "vite.cmd")
+        if not Path(npm).exists():
+            npm = "npm"
+        proc = subprocess.Popen(
+            [npm, "run", "dev"] if npm == "npm" else [npm],
+            cwd=str(FRONTEND_DIR),
+            env={**os.environ.copy()},
+            stdout=log, stderr=log,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
+        )
+        _processes["frontend"] = proc
+        return {"ok": True, "message": "Frontend started"}
 
-    env = {**_load_user_env(), "PYTHONUNBUFFERED": "1"}
-    log = _open_log("backend")
-
-    if _MODE == "packaged":
-        cmd = [str(BACKEND_EXE)]
-        cwd = str(APP_DIR)
-    else:
-        cmd = [str(VENV_PYTHON), "main.py"]
-        cwd = str(BACKEND_DIR)
-
-    proc = subprocess.Popen(
-        cmd,
-        cwd=cwd,
-        env=env,
-        stdout=log,
-        stderr=log,
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
-    )
-    _processes["backend"] = proc
-    return {"ok": True, "message": "Backend started"}
+    return {"ok": False, "message": f"Unknown service: {service}"}
 
 
 @app.post("/api/stop/{service}")
 def stop_service(service: str):
-    if service != "backend":
+    port = BACKEND_PORT if service == "backend" else FRONTEND_PORT if service == "frontend" else None
+    if port is None:
         return {"ok": False, "message": f"Unknown service: {service}"}
 
-    proc = _processes.get("backend")
+    proc = _processes.get(service)
     if proc and proc.poll() is None:
         proc.terminate()
         try:
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
-    _processes.pop("backend", None)
-    _kill_by_port(BACKEND_PORT)
+    _processes.pop(service, None)
+    _kill_by_port(port)
     for _ in range(6):
-        if not _is_port_in_use(BACKEND_PORT):
-            return {"ok": True, "message": "Backend stopped"}
+        if not _is_port_in_use(port):
+            return {"ok": True, "message": f"{service.capitalize()} stopped"}
         time.sleep(0.5)
-    return {"ok": False, "message": "Backend did not stop"}
+    return {"ok": False, "message": f"{service.capitalize()} did not stop"}
 
 
 @app.get("/api/logs")

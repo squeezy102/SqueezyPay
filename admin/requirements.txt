@@ -4,3 +4,5 @@ psutil
 pystray
 Pillow
 requests
+httpx
+pytest

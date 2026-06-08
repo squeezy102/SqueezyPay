@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SqueezyPay Admin</title>
+  <title>SqueezyPay</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,7 +19,6 @@
       --amber:       #f59e0b;
       --indigo:      #6366f1;
       --indigo-hover:#4f46e5;
-
     }
 
     body {
@@ -27,26 +26,124 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 24px;
+    }
+
+    /* ── Views ───────────────────────────────────────────────────────────── */
+    .view { display: none; min-height: 100vh; }
+    .view.active { display: flex; }
+
+    /* ── Home view ───────────────────────────────────────────────────────── */
+    #view-home {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      gap: 48px;
+    }
+
+    .home-header { text-align: center; }
+    .home-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+    .home-header p  { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; }
+
+    .home-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .panel-icon {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+    }
+    .panel-icon.green { background: rgba(34,197,94,0.12); }
+    .panel-icon.indigo { background: rgba(99,102,241,0.12); }
+
+    .panel h2 { font-size: 1.1rem; font-weight: 700; }
+    .panel p  { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 14px; border-radius: 99px;
+      font-size: 0.75rem; font-weight: 700;
+      background: var(--surface2); border: 1px solid var(--border);
+    }
+    .status-pill .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .status-pill .dot.running { background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .status-pill .dot.stopped { background: var(--red); }
+    .status-pill .dot.partial { background: var(--amber); }
+
+    .btn-primary {
+      width: 100%; padding: 13px;
+      border-radius: 12px; border: none;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+      background: var(--indigo); color: #fff;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--indigo-hover); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+      width: 100%; padding: 13px;
+      border-radius: 12px;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: var(--surface2); }
+
+    .btn-stop-sm {
+      width: 100%; padding: 10px;
+      border-radius: 10px;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border);
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-stop-sm:hover { background: rgba(239,68,68,0.08); color: var(--red); border-color: var(--red); }
+
+    /* ── Admin view ──────────────────────────────────────────────────────── */
+    #view-admin {
+      flex-direction: column;
+      padding: 24px;
       gap: 24px;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .admin-header {
+      display: flex; align-items: center; justify-content: space-between;
     }
+    .admin-header h1 { font-size: 1.1rem; font-weight: 700; }
 
-    header h1 { font-size: 1.25rem; font-weight: 700; }
-    header p  { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-
-    /* ── Service cards ───────────────────────────────────────────────────── */
+    .back-btn {
+      padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted);
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-btn:hover { background: var(--surface2); color: var(--text); }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 16px;
     }
 
@@ -58,20 +155,18 @@
     }
 
     .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 16px;
     }
 
     .card-title {
-      font-size: 0.875rem; font-weight: 600;
+      font-size: 0.8rem; font-weight: 600;
       color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
     }
 
     .status-row {
       display: flex; align-items: center; gap: 10px;
-      margin-bottom: 16px; min-height: 42px;
+      margin-bottom: 16px; min-height: 40px;
     }
 
     .dot {
@@ -81,35 +176,44 @@
     .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
     .dot.stopped { background: var(--red); }
 
-    .status-label { font-size: 1rem; font-weight: 600; }
-    .status-sub   { font-size: 0.75rem; color: var(--text-muted); }
+    .status-label { font-size: 0.95rem; font-weight: 600; }
+    .status-sub   { font-size: 0.72rem; color: var(--text-muted); }
 
     .btn-row { display: flex; gap: 8px; }
 
-    button {
+    button.btn-start {
       padding: 8px 16px; border-radius: 8px; border: none;
-      font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      background: var(--indigo); color: #fff;
       transition: background 0.15s, opacity 0.15s;
     }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.btn-start:hover:not(:disabled) { background: var(--indigo-hover); }
+    button.btn-start:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .btn-start { background: var(--indigo); color: #fff; }
-    .btn-start:hover:not(:disabled) { background: var(--indigo-hover); }
-    .btn-stop  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-stop:hover:not(:disabled)  { background: var(--border); }
-    .btn-link  { background: transparent; color: var(--indigo); padding: 0; font-size: 0.75rem; text-decoration: underline; }
+    button.btn-stop {
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    button.btn-stop:hover:not(:disabled) { background: var(--border); }
+    button.btn-stop:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-link {
+      background: transparent; border: none;
+      color: var(--indigo); padding: 0;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      text-decoration: underline;
+    }
     .btn-link:hover { color: #818cf8; }
 
     /* ── Log panel ───────────────────────────────────────────────────────── */
-
     .log-panel {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
+      display: flex; flex-direction: column;
+      flex: 1; min-height: 0;
     }
 
     .log-panel-header {
@@ -118,13 +222,9 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-
     .log-panel-header h2 { font-size: 0.875rem; font-weight: 600; }
 
-    /* ── Preset chips ─────────────────────────────────────────────────────── */
-    .log-presets {
-      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
-    }
+    .log-presets { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .preset-chip {
       padding: 4px 11px; border-radius: 99px;
       font-size: 0.72rem; font-weight: 600; cursor: pointer;
@@ -134,14 +234,9 @@
       white-space: nowrap;
     }
     .preset-chip:hover { border-color: var(--text-muted); color: var(--text); }
-    .preset-chip.active {
-      background: var(--indigo); border-color: var(--indigo); color: #fff;
-    }
+    .preset-chip.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
 
-    /* ── Custom filter toggle ─────────────────────────────────────────────── */
-    .log-controls-row {
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    }
+    .log-controls-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .btn-custom-filter {
       padding: 4px 11px; border-radius: 99px;
       font-size: 0.72rem; font-weight: 600; cursor: pointer;
@@ -152,28 +247,24 @@
       display: flex; align-items: center; gap: 5px;
     }
     .btn-custom-filter:hover { background: var(--surface2); color: var(--text); }
-    .btn-custom-filter.open  { border-color: var(--text-muted); color: var(--text); }
-    .btn-custom-filter svg   { width: 11px; height: 11px; transition: transform 0.15s; }
+    .btn-custom-filter.open { border-color: var(--text-muted); color: var(--text); }
+    .btn-custom-filter svg { width: 11px; height: 11px; transition: transform 0.15s; }
     .btn-custom-filter.open svg { transform: rotate(180deg); }
 
-    /* ── Custom filter drawer ─────────────────────────────────────────────── */
     .custom-filter-drawer {
       display: none;
       padding: 12px 20px 14px;
       border-top: 1px solid var(--border);
       background: var(--surface2);
-      gap: 14px;
-      align-items: center;
-      flex-wrap: wrap;
+      gap: 14px; align-items: center; flex-wrap: wrap;
     }
     .custom-filter-drawer.open { display: flex; }
     .drawer-label {
       font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.06em; color: var(--text-muted);
     }
-
     .level-checks { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .level-check  {
+    .level-check {
       display: flex; align-items: center; gap: 5px;
       font-size: 0.75rem; font-weight: 600; cursor: pointer; user-select: none;
     }
@@ -184,12 +275,9 @@
     .level-check.request  { color: var(--indigo); }
     .level-check.response { color: var(--green); }
 
-    /* Log body */
     #log-body {
-      flex: 1;
-      overflow-y: auto;
-      min-height: 400px;
-      max-height: 600px;
+      flex: 1; overflow-y: auto;
+      min-height: 400px; max-height: 600px;
       scroll-behavior: smooth;
       background: #0d1117;
       border-bottom-left-radius: 16px;
@@ -197,29 +285,20 @@
       padding: 8px 0;
     }
 
-    /* Date separators */
     .log-date-sep {
       padding: 6px 16px 2px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border);
-      margin-top: 4px;
+      font-family: monospace;
+      font-size: 0.7rem; color: var(--text-muted);
+      border-top: 1px solid var(--border); margin-top: 4px;
     }
 
-    /* Log rows — single inline line, no grid */
     .log-row {
-      display: block;
-      padding: 1px 16px;
-      line-height: 1.6;
+      display: block; padding: 1px 16px; line-height: 1.6;
       font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
-      font-size: 0.75rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 0.75rem; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
     }
     .log-row:hover { background: rgba(255,255,255,0.04); }
-
     .log-ts  { color: #4b5563; }
     .log-lvl { font-weight: 700; }
     .log-lvl.level-INFO     { color: #6b7280; }
@@ -230,16 +309,14 @@
     .log-msg { color: #e2e8f0; }
     .log-svc { color: #4b5563; }
 
-    /* Empty state */
     #log-empty {
-      padding: 40px 16px;
-      text-align: center;
+      padding: 40px 16px; text-align: center;
       color: var(--text-muted);
       font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
       font-size: 0.8rem;
     }
 
-    /* Toast */
+    /* ── Toast ───────────────────────────────────────────────────────────── */
     #toast {
       position: fixed; bottom: 24px; right: 24px;
       background: var(--surface2); border: 1px solid var(--border);
@@ -247,74 +324,112 @@
       font-size: 0.875rem; font-weight: 500;
       opacity: 0; transform: translateY(8px);
       transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none; max-width: 320px;
+      pointer-events: none; max-width: 320px; z-index: 99;
     }
     #toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 520px) {
+      .home-panels { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>SqueezyPay Admin</h1>
-    <p>Developer Dashboard</p>
+<!-- ══════════════════════════════════════════════════════════════════════
+     HOME VIEW
+════════════════════════════════════════════════════════════════════════ -->
+<div id="view-home" class="view active">
+  <div class="home-header">
+    <h1>SqueezyPay</h1>
+    <p>Home Finance Dashboard</p>
   </div>
-  <div style="display:flex; gap:10px; align-items:center;">
-    <a href="http://localhost:5173" target="_blank" rel="noreferrer"
-       style="font-size:0.75rem; color:var(--indigo); text-decoration:none; font-weight:600;">
-      To Site →
-    </a>
-    <button class="btn-stop" onclick="refreshStatus()" style="font-size:0.75rem; padding:6px 12px;">Refresh</button>
-  </div>
-</header>
 
-<div class="grid" id="service-grid">
-  <!-- Populated by JS -->
+  <div class="home-panels">
+    <!-- App panel -->
+    <div class="panel">
+      <div class="panel-icon green">🏠</div>
+      <h2>SqueezyPay App</h2>
+      <p>Launch the household finance dashboard on your home network.</p>
+      <div id="home-app-status" class="status-pill">
+        <span class="dot" id="home-app-dot"></span>
+        <span id="home-app-status-text">Checking…</span>
+      </div>
+      <button class="btn-primary" id="home-launch-btn" onclick="homeLaunchApp()" disabled>
+        Launch App
+      </button>
+      <button class="btn-stop-sm" id="home-stop-btn" onclick="homeStopAll()" style="display:none">
+        Stop services
+      </button>
+    </div>
+
+    <!-- Admin panel -->
+    <div class="panel">
+      <div class="panel-icon indigo">⚙️</div>
+      <h2>Admin</h2>
+      <p>Manage services, view logs, and monitor backend activity.</p>
+      <div style="height:31px"></div><!-- spacer to align buttons -->
+      <button class="btn-secondary" onclick="showAdmin()">
+        Open Admin →
+      </button>
+    </div>
+  </div>
 </div>
 
-<div class="log-panel">
-  <div class="log-panel-header">
-    <h2>Activity Log</h2>
-    <div class="log-controls-row">
-      <div class="log-presets" id="preset-chips">
-        <!-- Populated by JS -->
+<!-- ══════════════════════════════════════════════════════════════════════
+     ADMIN VIEW
+════════════════════════════════════════════════════════════════════════ -->
+<div id="view-admin" class="view">
+  <div class="admin-header">
+    <h1>Admin Dashboard</h1>
+    <button class="back-btn" onclick="showHome()">← Back</button>
+  </div>
+
+  <div class="grid" id="service-grid">
+    <!-- Populated by JS -->
+  </div>
+
+  <div class="log-panel">
+    <div class="log-panel-header">
+      <h2>Activity Log</h2>
+      <div class="log-controls-row">
+        <div class="log-presets" id="preset-chips"></div>
+        <button class="btn-custom-filter" id="btn-custom" onclick="toggleCustomDrawer()">
+          Custom
+          <svg viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <a href="/api/logs/raw" target="_blank" rel="noreferrer"
+           style="font-size:0.72rem; color:var(--indigo); text-decoration:underline; font-weight:600; white-space:nowrap;">
+          Raw log
+        </a>
       </div>
-      <button class="btn-custom-filter" id="btn-custom" onclick="toggleCustomDrawer()">
-        Custom
-        <svg viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <a href="/api/logs/raw" target="_blank" rel="noreferrer"
-         style="font-size:0.72rem; color:var(--indigo); text-decoration:underline; font-weight:600; white-space:nowrap;">
-        Raw log
-      </a>
     </div>
-  </div>
 
-  <div class="custom-filter-drawer" id="custom-drawer">
-    <span class="drawer-label">Levels</span>
-    <div class="level-checks">
-      <label class="level-check info">
-        <input type="checkbox" id="chk-info" onchange="applyCustomFilter()"> INFO
-      </label>
-      <label class="level-check warning">
-        <input type="checkbox" id="chk-warning" onchange="applyCustomFilter()"> WARN
-      </label>
-      <label class="level-check error">
-        <input type="checkbox" id="chk-error" onchange="applyCustomFilter()"> ERROR
-      </label>
-      <label class="level-check request">
-        <input type="checkbox" id="chk-request" onchange="applyCustomFilter()"> REQ
-      </label>
-      <label class="level-check response">
-        <input type="checkbox" id="chk-response" onchange="applyCustomFilter()"> RES
-      </label>
+    <div class="custom-filter-drawer" id="custom-drawer">
+      <span class="drawer-label">Levels</span>
+      <div class="level-checks">
+        <label class="level-check info">
+          <input type="checkbox" id="chk-info" onchange="applyCustomFilter()"> INFO
+        </label>
+        <label class="level-check warning">
+          <input type="checkbox" id="chk-warning" onchange="applyCustomFilter()"> WARN
+        </label>
+        <label class="level-check error">
+          <input type="checkbox" id="chk-error" onchange="applyCustomFilter()"> ERROR
+        </label>
+        <label class="level-check request">
+          <input type="checkbox" id="chk-request" onchange="applyCustomFilter()"> REQ
+        </label>
+        <label class="level-check response">
+          <input type="checkbox" id="chk-response" onchange="applyCustomFilter()"> RES
+        </label>
+      </div>
     </div>
-  </div>
 
-  <div id="log-body">
-    <div id="log-empty">Waiting for log events…</div>
+    <div id="log-body">
+      <div id="log-empty">Waiting for log events…</div>
+    </div>
   </div>
 </div>
 
@@ -323,231 +438,118 @@
 <script>
   const API = 'http://localhost:9000/api';
 
-  // ── Filter presets ────────────────────────────────────────────────────────────
-  // Each preset defines which level keys pass. levelAllowed() checks against activeFilter.
-  // levels: array of level keys that are SHOWN (empty = none, null = all).
-  // patterns: optional array of substring matches against entry.message or entry.service.
-  //   If present, entry must match at least one pattern IN ADDITION TO the level check.
-
-  const PRESETS = [
-    {
-      id:       'errors',
-      label:    'Errors & Warnings',
-      levels:   ['WARNING', 'ERROR'],
-      patterns: null,
-    },
-    {
-      id:       'api',
-      label:    'API Traffic',
-      levels:   ['REQUEST', 'RESPONSE'],
-      patterns: null,
-    },
-    {
-      id:       'billing',
-      label:    'Billing',
-      levels:   null,
-      patterns: ['bill', 'payment', 'pay', 'credential', 'autofill'],
-    },
-    {
-      id:       'auth',
-      label:    'Auth',
-      levels:   null,
-      patterns: ['auth', 'login', 'logout', 'passphrase', 'token', 'jwt'],
-    },
-    {
-      id:       'all',
-      label:    'All',
-      levels:   null,
-      patterns: null,
-    },
-  ];
-
-  let activePresetId   = 'errors';  // default: WARN + ERROR only
-  let customLevels     = new Set(); // used when no preset is active
-  let customRequests   = false;
-  let customResponses  = false;
-  let autoScroll       = true;
-  let allEntries       = [];
-  let lastRenderedDate = null;     // tracks date separator state across appends
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // ── View navigation ────────────────────────────────────────────────────
+  function showHome()  {
+    document.getElementById('view-home').classList.add('active');
+    document.getElementById('view-admin').classList.remove('active');
   }
-
-  function isRequest(entry) {
-    return (entry.message || '').startsWith('[REQUEST]');
-  }
-
-  function isResponse(entry) {
-    return (entry.message || '').startsWith('[RESPONSE]');
-  }
-
-  function entryLevelKey(entry) {
-    if (isRequest(entry))  return 'REQUEST';
-    if (isResponse(entry)) return 'RESPONSE';
-    return (entry.level || 'INFO').toUpperCase();
-  }
-
-  function levelAllowed(entry) {
-    const preset = PRESETS.find(p => p.id === activePresetId);
-
-    if (!preset) {
-      // custom mode
-      const lk = entryLevelKey(entry);
-      if (lk === 'REQUEST')  return customRequests;
-      if (lk === 'RESPONSE') return customResponses;
-      return customLevels.has(lk);
-    }
-
-    const lk = entryLevelKey(entry);
-
-    // Level gate: null means all levels pass
-    if (preset.levels !== null && !preset.levels.includes(lk)) return false;
-
-    // Pattern gate: null means no pattern restriction
-    if (preset.patterns !== null) {
-      const haystack = ((entry.message || '') + ' ' + (entry.service || '')).toLowerCase();
-      if (!preset.patterns.some(p => haystack.includes(p))) return false;
-    }
-
-    return true;
-  }
-
-  // ── Preset UI ─────────────────────────────────────────────────────────────────
-
-  function renderPresetChips() {
-    const container = document.getElementById('preset-chips');
-    container.innerHTML = PRESETS.map(p => `
-      <button class="preset-chip${p.id === activePresetId ? ' active' : ''}"
-              onclick="selectPreset('${p.id}')">${p.label}</button>
-    `).join('');
-  }
-
-  function selectPreset(id) {
-    activePresetId = id;
+  function showAdmin() {
+    document.getElementById('view-home').classList.remove('active');
+    document.getElementById('view-admin').classList.add('active');
     renderPresetChips();
-    renderAll();
   }
 
-  function toggleCustomDrawer() {
-    const drawer = document.getElementById('custom-drawer');
-    const btn    = document.getElementById('btn-custom');
-    const isOpen = drawer.classList.toggle('open');
-    btn.classList.toggle('open', isOpen);
-  }
+  // ── Home panel logic ───────────────────────────────────────────────────
+  let _lastStatus = null;
 
-  function applyCustomFilter() {
-    activePresetId  = null; // deactivate preset when user manually adjusts
-    customLevels    = new Set([
-      document.getElementById('chk-info').checked    ? 'INFO'    : null,
-      document.getElementById('chk-warning').checked ? 'WARNING' : null,
-      document.getElementById('chk-error').checked   ? 'ERROR'   : null,
-    ].filter(Boolean));
-    customRequests  = document.getElementById('chk-request').checked;
-    customResponses = document.getElementById('chk-response').checked;
-    renderPresetChips();
-    renderAll();
-  }
+  function updateHomePanel(data) {
+    _lastStatus = data;
+    const be = data['backend']  || {};
+    const fe = data['frontend'] || {};
 
-  function fmtTime(ts) {
-    if (!ts) return '';
-    return ts.replace('T', ' ').slice(11, 19);
-  }
+    const backendUp  = !!be.running;
+    const frontendUp = !!fe.running;
+    // In packaged mode there's no separate frontend service
+    const hasFrontend = 'frontend' in data;
+    const allUp = backendUp && (!hasFrontend || frontendUp);
+    const anyUp = backendUp || frontendUp;
 
-  function fmtDate(ts) {
-    if (!ts) return '';
-    return ts.slice(0, 10);
-  }
+    const dot  = document.getElementById('home-app-dot');
+    const txt  = document.getElementById('home-app-status-text');
+    const btn  = document.getElementById('home-launch-btn');
+    const stop = document.getElementById('home-stop-btn');
 
-  // ── Rendering ─────────────────────────────────────────────────────────────
-
-  function buildLogRow(entry) {
-    const req = isRequest(entry);
-    const res = isResponse(entry);
-
-    let levelKey, levelLabel;
-    if (req) {
-      levelKey = 'REQUEST';  levelLabel = 'REQ ';
-    } else if (res) {
-      levelKey = 'RESPONSE'; levelLabel = 'RES ';
+    if (allUp) {
+      dot.className = 'dot running';
+      txt.textContent = 'Running';
+      btn.textContent = 'Open App →';
+      btn.disabled = false;
+      btn.onclick = () => window.open(fe.url || be.url, '_blank');
+      stop.style.display = 'block';
+    } else if (anyUp) {
+      dot.className = 'dot partial';
+      txt.textContent = 'Partially running';
+      btn.textContent = hasFrontend && !frontendUp ? 'Start Frontend' : 'Start Backend';
+      btn.disabled = false;
+      btn.onclick = () => startMissing(data);
+      stop.style.display = 'block';
     } else {
-      levelKey   = (entry.level || 'INFO').toUpperCase();
-      levelLabel = levelKey === 'WARNING' ? 'WARN ' : levelKey + ' ';
+      dot.className = 'dot stopped';
+      txt.textContent = 'Stopped';
+      btn.textContent = 'Start & Launch';
+      btn.disabled = false;
+      btn.onclick = homeLaunchApp;
+      stop.style.display = 'none';
     }
-
-    const ts  = fmtTime(entry.timestamp);
-    const svc = (entry.service || '').replace('squeezypay.', '');
-    // Collapse multiline messages (e.g. tracebacks) to their first line
-    const msg = (entry.message || '').split('\n')[0].trim();
-
-    const row = document.createElement('div');
-    row.className     = `log-row level-${levelKey}`;
-    row.dataset.level = levelKey;
-
-    // Single inline line: "HH:MM:SS  LEVEL  message  [svc]"
-    row.innerHTML =
-      `<span class="log-ts">${escHtml(ts)}  </span>` +
-      `<span class="log-lvl level-${levelKey}">${levelLabel} </span>` +
-      `<span class="log-msg">${escHtml(msg)}</span>` +
-      (svc ? `  <span class="log-svc">[${escHtml(svc)}]</span>` : '');
-    return row;
   }
 
-  function makeDateSep(d) {
-    const sep = document.createElement('div');
-    sep.className   = 'log-date-sep';
-    sep.textContent = '── ' + d + ' ──';
-    return sep;
-  }
+  async function homeLaunchApp() {
+    const data = _lastStatus;
+    const hasFrontend = data && 'frontend' in data;
 
-  function renderAll() {
-    const body = document.getElementById('log-body');
-    body.innerHTML = '';
-    lastRenderedDate = null;
-
-    const filtered = allEntries.filter(levelAllowed);
-    if (filtered.length === 0) {
-      body.innerHTML = '<div id="log-empty">No log entries match the current filter.</div>';
-      return;
+    if (!data || !data['backend']?.running) {
+      const r = await fetch(`${API}/start/backend`, { method: 'POST' });
+      const d = await r.json();
+      showToast(d.message);
+    }
+    if (hasFrontend && !data['frontend']?.running) {
+      const r = await fetch(`${API}/start/frontend`, { method: 'POST' });
+      const d = await r.json();
+      showToast(d.message);
     }
 
-    for (const entry of filtered) {
-      const d = fmtDate(entry.timestamp);
-      if (d && d !== lastRenderedDate) {
-        body.appendChild(makeDateSep(d));
-        lastRenderedDate = d;
+    // Poll until services are up then open the app
+    showToast('Starting services…');
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      const res = await fetch(`${API}/status`).then(r => r.json()).catch(() => null);
+      if (!res) return;
+      updateHomePanel(res);
+      renderServices(res);
+      const be = res['backend']  || {};
+      const fe = res['frontend'] || {};
+      const allUp = be.running && (!('frontend' in res) || fe.running);
+      if (allUp || attempts > 30) {
+        clearInterval(poll);
+        if (allUp) {
+          const url = (res['frontend'] || res['backend']).url;
+          window.open(url, '_blank');
+        }
       }
-      body.appendChild(buildLogRow(entry));
-    }
-
-    if (autoScroll) body.scrollTop = body.scrollHeight;
+    }, 1000);
   }
 
-  function appendLogRow(entry) {
-    if (!levelAllowed(entry)) return;
-
-    const body  = document.getElementById('log-body');
-    const empty = document.getElementById('log-empty');
-    if (empty) empty.remove();
-
-    const d = fmtDate(entry.timestamp);
-    if (d && d !== lastRenderedDate) {
-      body.appendChild(makeDateSep(d));
-      lastRenderedDate = d;
-    }
-
-    body.appendChild(buildLogRow(entry));
-    if (autoScroll) body.scrollTop = body.scrollHeight;
+  async function homeStopAll() {
+    const data = _lastStatus;
+    if (data && data['frontend']?.running) await fetch(`${API}/stop/frontend`, { method: 'POST' });
+    if (data && data['backend']?.running)  await fetch(`${API}/stop/backend`,  { method: 'POST' });
+    showToast('Services stopped');
+    setTimeout(refreshStatus, 800);
   }
 
-  // ── Status ────────────────────────────────────────────────────────────────
+  function startMissing(data) {
+    const hasFe = 'frontend' in data;
+    if (!data['backend']?.running)              fetch(`${API}/start/backend`,  { method: 'POST' }).then(() => setTimeout(refreshStatus, 1500));
+    if (hasFe && !data['frontend']?.running)    fetch(`${API}/start/frontend`, { method: 'POST' }).then(() => setTimeout(refreshStatus, 1500));
+  }
 
+  // ── Admin service cards ────────────────────────────────────────────────
   async function refreshStatus() {
     try {
       const res  = await fetch(`${API}/status`);
       const data = await res.json();
+      updateHomePanel(data);
       renderServices(data);
     } catch {
       renderOffline();
@@ -599,16 +601,135 @@
     setTimeout(refreshStatus, 800);
   }
 
-  // ── Stream ────────────────────────────────────────────────────────────────
+  // ── Log presets ────────────────────────────────────────────────────────
+  const PRESETS = [
+    { id: 'errors',  label: 'Errors & Warnings', levels: ['WARNING', 'ERROR'], patterns: null },
+    { id: 'api',     label: 'API Traffic',        levels: ['REQUEST', 'RESPONSE'], patterns: null },
+    { id: 'billing', label: 'Billing',            levels: null, patterns: ['bill', 'payment', 'pay', 'credential', 'autofill'] },
+    { id: 'auth',    label: 'Auth',               levels: null, patterns: ['auth', 'login', 'logout', 'passphrase', 'token', 'jwt'] },
+    { id: 'all',     label: 'All',                levels: null, patterns: null },
+  ];
+
+  let activePresetId  = 'errors';
+  let customLevels    = new Set();
+  let customRequests  = false;
+  let customResponses = false;
+  let autoScroll      = true;
+  let allEntries      = [];
+  let lastRenderedDate = null;
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function isRequest(e)  { return (e.message || '').startsWith('[REQUEST]'); }
+  function isResponse(e) { return (e.message || '').startsWith('[RESPONSE]'); }
+  function entryLevelKey(e) {
+    if (isRequest(e))  return 'REQUEST';
+    if (isResponse(e)) return 'RESPONSE';
+    return (e.level || 'INFO').toUpperCase();
+  }
+  function levelAllowed(entry) {
+    const preset = PRESETS.find(p => p.id === activePresetId);
+    if (!preset) {
+      const lk = entryLevelKey(entry);
+      if (lk === 'REQUEST')  return customRequests;
+      if (lk === 'RESPONSE') return customResponses;
+      return customLevels.has(lk);
+    }
+    const lk = entryLevelKey(entry);
+    if (preset.levels !== null && !preset.levels.includes(lk)) return false;
+    if (preset.patterns !== null) {
+      const hay = ((entry.message || '') + ' ' + (entry.service || '')).toLowerCase();
+      if (!preset.patterns.some(p => hay.includes(p))) return false;
+    }
+    return true;
+  }
+
+  function renderPresetChips() {
+    const c = document.getElementById('preset-chips');
+    if (!c) return;
+    c.innerHTML = PRESETS.map(p => `
+      <button class="preset-chip${p.id === activePresetId ? ' active' : ''}"
+              onclick="selectPreset('${p.id}')">${p.label}</button>
+    `).join('');
+  }
+  function selectPreset(id) { activePresetId = id; renderPresetChips(); renderAll(); }
+  function toggleCustomDrawer() {
+    document.getElementById('custom-drawer').classList.toggle('open');
+    document.getElementById('btn-custom').classList.toggle('open');
+  }
+  function applyCustomFilter() {
+    activePresetId = null;
+    customLevels   = new Set(['info','warning','error'].map(k =>
+      document.getElementById(`chk-${k}`).checked ? k.toUpperCase() : null
+    ).filter(Boolean));
+    customRequests  = document.getElementById('chk-request').checked;
+    customResponses = document.getElementById('chk-response').checked;
+    renderPresetChips(); renderAll();
+  }
+
+  function fmtTime(ts) { return ts ? ts.replace('T',' ').slice(11,19) : ''; }
+  function fmtDate(ts) { return ts ? ts.slice(0,10) : ''; }
+
+  function buildLogRow(entry) {
+    const req = isRequest(entry), res = isResponse(entry);
+    let levelKey, levelLabel;
+    if (req)       { levelKey='REQUEST';  levelLabel='REQ '; }
+    else if (res)  { levelKey='RESPONSE'; levelLabel='RES '; }
+    else           { levelKey=(entry.level||'INFO').toUpperCase(); levelLabel=levelKey==='WARNING'?'WARN ':levelKey+' '; }
+    const ts  = fmtTime(entry.timestamp);
+    const svc = (entry.service||'').replace('squeezypay.','');
+    const msg = (entry.message||'').split('\n')[0].trim();
+    const row = document.createElement('div');
+    row.className = `log-row level-${levelKey}`;
+    row.dataset.level = levelKey;
+    row.innerHTML =
+      `<span class="log-ts">${escHtml(ts)}  </span>` +
+      `<span class="log-lvl level-${levelKey}">${levelLabel} </span>` +
+      `<span class="log-msg">${escHtml(msg)}</span>` +
+      (svc ? `  <span class="log-svc">[${escHtml(svc)}]</span>` : '');
+    return row;
+  }
+
+  function makeDateSep(d) {
+    const s = document.createElement('div');
+    s.className = 'log-date-sep'; s.textContent = '── ' + d + ' ──';
+    return s;
+  }
+
+  function renderAll() {
+    const body = document.getElementById('log-body');
+    body.innerHTML = ''; lastRenderedDate = null;
+    const filtered = allEntries.filter(levelAllowed);
+    if (!filtered.length) {
+      body.innerHTML = '<div id="log-empty">No log entries match the current filter.</div>';
+      return;
+    }
+    for (const entry of filtered) {
+      const d = fmtDate(entry.timestamp);
+      if (d && d !== lastRenderedDate) { body.appendChild(makeDateSep(d)); lastRenderedDate = d; }
+      body.appendChild(buildLogRow(entry));
+    }
+    if (autoScroll) body.scrollTop = body.scrollHeight;
+  }
+
+  function appendLogRow(entry) {
+    if (!levelAllowed(entry)) return;
+    const body  = document.getElementById('log-body');
+    const empty = document.getElementById('log-empty');
+    if (empty) empty.remove();
+    const d = fmtDate(entry.timestamp);
+    if (d && d !== lastRenderedDate) { body.appendChild(makeDateSep(d)); lastRenderedDate = d; }
+    body.appendChild(buildLogRow(entry));
+    if (autoScroll) body.scrollTop = body.scrollHeight;
+  }
 
   async function loadRecentLogs() {
     try {
       const res = await fetch(`${API}/logs/recent?lines=200`);
       allEntries = await res.json();
       renderAll();
-    } catch {
-      // Backend not yet running — SSE stream will populate when it starts
-    }
+    } catch {}
     startLogStream();
   }
 
@@ -624,25 +745,20 @@
     };
   }
 
-  // Pause auto-scroll when user manually scrolls up, resume when they return to bottom
   document.getElementById('log-body').addEventListener('scroll', function () {
-    const el = this;
-    autoScroll = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+    autoScroll = this.scrollTop + this.clientHeight >= this.scrollHeight - 20;
   });
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
-
+  // ── Toast ──────────────────────────────────────────────────────────────
   let toastTimer;
   function showToast(msg) {
     const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.classList.add('show');
+    el.textContent = msg; el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
   }
 
-  // ── Init ──────────────────────────────────────────────────────────────────
-
+  // ── Init ───────────────────────────────────────────────────────────────
   renderPresetChips();
   refreshStatus();
   loadRecentLogs();

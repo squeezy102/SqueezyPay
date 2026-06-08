@@ -60,23 +60,20 @@ All configuration is via Windows User environment variables (HKCU\Environment). 
 
 ## Running the app
 
-```powershell
-# Terminal 1 — backend (from /backend)
-.\venv\Scripts\Activate.ps1
-python main.py
+Start via the system tray launcher — manages all services, no console window:
 
-# Terminal 2 — frontend (from /frontend)
-npm run dev
+```powershell
+.\scripts\launch-tray.ps1
 ```
 
-Or use the admin dashboard at `http://localhost:9000` (see [docs/deployment.md](docs/deployment.md)) to start/stop services from a browser.
+A tray icon appears in the Windows system tray. Right-click for Start All / Stop All / Open Dashboard / Open App. Running it again when already running does nothing — a named mutex prevents duplicate instances.
 
 | Service | URL |
 |---|---|
-| App | `http://localhost:5173` |
+| Admin dashboard | `http://localhost:9000` |
+| App (frontend) | `http://localhost:5173` |
 | Backend API | `http://localhost:8000` |
 | API docs (Swagger) | `http://localhost:8000/docs` |
-| Admin dashboard | `http://localhost:9000` |
 
 To access from other devices on your home network, replace `localhost` with your PC's local IP (`ipconfig` → IPv4 Address).
 
@@ -109,6 +106,16 @@ To access from other devices on your home network, replace `localhost` with your
 SqueezyPay is designed around a single financial institution. If you fork it and want multi-institution support, remove the guard in `backend/services/plaid_service.py` (`exchange_public_token`) and update `frontend/src/components/Accounts.tsx`. See [docs/architecture.md](docs/architecture.md#single-institution-design) for the full rationale.
 
 Generate a new encryption key. Never reuse a key from another instance.
+
+## Project tracking
+
+| Resource | Link |
+|---|---|
+| Issues & bugs | [github.com/squeezy102/SqueezyPay/issues](https://github.com/squeezy102/SqueezyPay/issues) |
+| Milestones | [github.com/squeezy102/SqueezyPay/milestones](https://github.com/squeezy102/SqueezyPay/milestones) |
+| Project board | [github.com/squeezy102/SqueezyPay/projects](https://github.com/squeezy102/SqueezyPay/projects) |
+| Discussions | [github.com/squeezy102/SqueezyPay/discussions](https://github.com/squeezy102/SqueezyPay/discussions) |
+| Releases & installers | [github.com/squeezy102/SqueezyPay/releases](https://github.com/squeezy102/SqueezyPay/releases) |
 
 ## Contributing
 
