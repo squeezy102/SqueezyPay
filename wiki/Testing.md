@@ -25,13 +25,26 @@ Coverage threshold is enforced by CI. The current threshold is 80%. A PR that dr
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "slow: integration tests that run real migrations against on-disk SQLite",
+]
 ```
+
+**Test markers:**
+
+- `@pytest.mark.slow` — migration integration tests that write real SQLite files. Included in the full suite (CI runs all), excluded in fast local runs:
+  ```powershell
+  pytest -m "not slow"   # skip migration tests
+  pytest -m slow          # run only migration tests
+  ```
 
 **What is tested:**
 - All API routes (via FastAPI `TestClient`)
 - Service layer logic (bill date math, blame computation, category mapping)
 - Encryption round-trips
 - Repository methods
+- JWT authentication boundary (`test_core_auth.py` — direct unit tests for `require_auth`, not HTTP-layer tests)
+- Alembic migration chain integrity (`test_migrations.py` — full upgrade/downgrade/round-trip on real SQLite files)
 
 **Database in tests:** Tests use a fresh in-memory SQLite database per session, not the production database file. The fixture is in `backend/tests/conftest.py`.
 
@@ -76,11 +89,24 @@ npm test -- --coverage
 - `billUtils.ts` — due date calculation, overdue detection, sort order (16 tests)
 - `api.ts` — fetch function behaviour with mocked responses (22 tests)
 
+**Coverage configuration:** `frontend/vite.config.js` includes all of `src/**` in the coverage denominator and uses `jsdom` as the test environment — required for React component tests.
+
+```js
+test: {
+  environment: 'jsdom',
+  coverage: {
+    provider: 'v8',
+    include: ['src/**'],
+    exclude: ['src/**/*.test.*', 'src/main.tsx'],
+  },
+}
+```
+
 **Adding a test:**
 
 Create `frontend/src/utils/__tests__/<module>.test.ts` for utility functions or `frontend/src/components/__tests__/<Component>.test.tsx` for components.
 
-Use `vi.fn()` to mock `fetch` responses when testing API functions.
+Use `vi.fn()` to mock `fetch` responses when testing API functions. For React component tests, use `@testing-library/react` with `render` + `screen` queries.
 
 ---
 
