@@ -4,17 +4,17 @@ SqueezyPay is a household tool built for personal use and shared as open source.
 
 ## Before you start
 
-Read the docs. The architecture and design decisions are documented in [docs/](docs/) and shape what "a good contribution" looks like here.
+Read the docs. The architecture and design decisions are documented in the [GitHub Wiki](https://github.com/squeezy102/SqueezyPay/wiki) and shape what "a good contribution" looks like here.
 
 Key constraints to understand before proposing changes:
 
-- **Single institution** — the app intentionally supports exactly one connected financial institution. See [docs/architecture.md](docs/architecture.md#single-institution-design). Changes that break this constraint will not be merged; changes that make it more configurable (e.g. an opt-in multi-institution mode) may be discussed.
+- **Single institution** — the app intentionally supports exactly one connected financial institution. See [Architecture](https://github.com/squeezy102/SqueezyPay/wiki/Architecture#single-institution-design). Changes that break this constraint will not be merged; changes that make it more configurable (e.g. an opt-in multi-institution mode) may be discussed.
 - **Self-hosted, local network** — no cloud dependency, no external accounts, no telemetry. Changes that introduce these will not be accepted.
 - **No financial institution names hardcoded** — institution names are always fetched from the user's active Plaid connection or derived from imported data, never hardcoded in source.
 
 ## Development setup
 
-See [docs/getting-started.md](docs/getting-started.md) for the full setup walkthrough.
+See [Getting Started](https://github.com/squeezy102/SqueezyPay/wiki/Getting-Started) for the full setup walkthrough.
 
 Quick summary:
 
@@ -85,7 +85,7 @@ cd frontend
 npx playwright test
 ```
 
-CI runs all three suites. A PR that drops coverage below the current threshold will not be merged. See [docs/testing.md](docs/testing.md) for details.
+CI runs all three suites. A PR that drops coverage below the current threshold will not be merged. See [Testing](https://github.com/squeezy102/SqueezyPay/wiki/Testing) for details.
 
 **Warning gate:** CI scans all test output for unapproved warnings. Any warning not listed in `.ci-ignore-warnings` will fail the build. If your change introduces a new warning from a third-party library you cannot fix, add it to `.ci-ignore-warnings` with a comment explaining why it is accepted.
 
@@ -136,14 +136,11 @@ If you discover a security issue, open a private issue or contact the maintainer
 
 ## Documentation
 
-SqueezyPay maintains documentation in two places:
+Documentation lives in [`wiki/`](wiki/) in this repo. CI pushes `wiki/` to the [GitHub Wiki](https://github.com/squeezy102/SqueezyPay/wiki) on every push to `dev`, so the wiki is always current with the branch.
 
-| Location | Purpose | Priority |
-|---|---|---|
-| [GitHub Wiki](https://github.com/squeezy102/SqueezyPay/wiki) | User-facing setup, configuration, usage guides — readable without cloning | **Primary** |
-| [`docs/`](docs/) | Same content mirrored into the repo — available offline and colocated with code | Secondary |
+**To update docs:** edit the relevant file in `wiki/` and commit. The push-to-wiki step in CI does the rest.
 
-**Both must be kept in sync.** The Wiki is authoritative when they diverge. When updating documentation, update the Wiki first, then mirror the change to `docs/`. Never update only one side.
+`docs/` does not exist. All documentation writes go to `wiki/`.
 
 ---
 

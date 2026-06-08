@@ -116,3 +116,26 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+  publish-wiki:
+    name: Publish Wiki
+    runs-on: ubuntu-latest
+    needs: [backend, admin, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Push wiki/ to GitHub Wiki
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/squeezy102/SqueezyPay.wiki.git" wiki-remote
+          cp -r wiki/. wiki-remote/
+          cd wiki-remote
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add -A
+          git diff --cached --quiet && echo "No wiki changes" && exit 0
+          git commit -m "wiki: sync from repo wiki/ (${GITHUB_SHA::8})"
+          git push origin master

@@ -26,7 +26,7 @@ A self-hosted personal finance dashboard for households. Connect your financial 
 | Testing | pytest, Vitest, Playwright |
 | CI | GitHub Actions |
 
-SQLite lives at `backend/squeezypay.db` and never leaves your machine. The Plaid access token is encrypted at rest using a key you generate and store as a Windows environment variable. See [docs/architecture.md](docs/architecture.md) for the full design.
+SQLite lives at `backend/squeezypay.db` and never leaves your machine. The Plaid access token is encrypted at rest using a key you generate and store as a Windows environment variable. See the [Architecture wiki page](https://github.com/squeezy102/SqueezyPay/wiki/Architecture) for the full design.
 
 ## Prerequisites
 
@@ -45,7 +45,7 @@ git clone https://github.com/your-username/squeezypay.git
 cd squeezypay
 ```
 
-See [docs/getting-started.md](docs/getting-started.md) for the full walkthrough: environment variable setup, encryption key generation, dependency install, and first run.
+See the [Getting Started wiki page](https://github.com/squeezy102/SqueezyPay/wiki/Getting-Started) for the full walkthrough: environment variable setup, encryption key generation, dependency install, and first run.
 
 ## Key environment variables
 
@@ -56,7 +56,7 @@ See [docs/getting-started.md](docs/getting-started.md) for the full walkthrough:
 | `SQUEEZYPAY_PLAID_SECRET` | Plaid secret |
 | `SQUEEZYPAY_PLAID_ENV` | `sandbox` or `production` |
 
-All configuration is via Windows User environment variables (HKCU\Environment). No `.env` file is committed. See [docs/configuration.md](docs/configuration.md).
+All configuration is via Windows User environment variables (HKCU\Environment). No `.env` file is committed. See the [Configuration wiki page](https://github.com/squeezy102/SqueezyPay/wiki/Configuration).
 
 ## Running the app
 
@@ -79,18 +79,20 @@ To access from other devices on your home network, replace `localhost` with your
 
 ## Documentation
 
-| Document | Contents |
+Full documentation lives in the [GitHub Wiki](https://github.com/squeezy102/SqueezyPay/wiki). Wiki source files are in [`wiki/`](wiki/) — edits go there, and CI pushes them to the wiki on every merge to `dev`.
+
+| Page | Contents |
 |---|---|
-| [Getting Started](docs/getting-started.md) | Install, configure, and run for the first time |
-| [Configuration](docs/configuration.md) | All environment variables and settings |
-| [Architecture](docs/architecture.md) | System design, data flow, and key decisions |
-| [Database](docs/database.md) | Schema, migrations, and data model |
-| [API Reference](docs/api-reference.md) | All backend endpoints |
-| [Frontend](docs/frontend.md) | Component structure, routing, and state management |
-| [Testing](docs/testing.md) | Running backend, frontend, and E2E test suites |
-| [Deployment](docs/deployment.md) | Serving on your local network |
-| [Roadmap](docs/roadmap.md) | Planned features and design decisions |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
+| [Getting Started](https://github.com/squeezy102/SqueezyPay/wiki/Getting-Started) | Install, configure, and run for the first time |
+| [Configuration](https://github.com/squeezy102/SqueezyPay/wiki/Configuration) | All environment variables and settings |
+| [Architecture](https://github.com/squeezy102/SqueezyPay/wiki/Architecture) | System design, data flow, and key decisions |
+| [Database](https://github.com/squeezy102/SqueezyPay/wiki/Database) | Schema, migrations, and data model |
+| [API Reference](https://github.com/squeezy102/SqueezyPay/wiki/API-Reference) | All backend endpoints |
+| [Frontend](https://github.com/squeezy102/SqueezyPay/wiki/Frontend) | Component structure, routing, and state management |
+| [Testing](https://github.com/squeezy102/SqueezyPay/wiki/Testing) | Running backend, frontend, and E2E test suites |
+| [Deployment](https://github.com/squeezy102/SqueezyPay/wiki/Deployment) | Serving on your local network |
+| [Roadmap](https://github.com/squeezy102/SqueezyPay/wiki/Roadmap) | Planned features and design decisions |
+| [Troubleshooting](https://github.com/squeezy102/SqueezyPay/wiki/Troubleshooting) | Common issues and fixes |
 
 ## Branching strategy
 
@@ -103,7 +105,7 @@ To access from other devices on your home network, replace `localhost` with your
 
 ## Forking
 
-SqueezyPay is designed around a single financial institution. If you fork it and want multi-institution support, remove the guard in `backend/services/plaid_service.py` (`exchange_public_token`) and update `frontend/src/components/Accounts.tsx`. See [docs/architecture.md](docs/architecture.md#single-institution-design) for the full rationale.
+SqueezyPay is designed around a single financial institution. If you fork it and want multi-institution support, remove the guard in `backend/services/plaid_service.py` (`exchange_public_token`) and update `frontend/src/components/Accounts.tsx`. See the [Architecture wiki page](https://github.com/squeezy102/SqueezyPay/wiki/Architecture#single-institution-design) for the full rationale.
 
 Generate a new encryption key. Never reuse a key from another instance.
 
