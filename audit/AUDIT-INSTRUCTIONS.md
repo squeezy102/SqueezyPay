@@ -330,6 +330,17 @@ Repeat until: (a) no new HIGH/CRITICAL findings appear between iterations, and (
 
 ---
 
+## Product Scope Constraints (Non-Negotiable — Always in Effect)
+
+**LAN accessibility is intentional.** SqueezyPay is a household app designed to be reachable from any device on the home network. The main backend (`:8000`) and frontend being accessible on the LAN is correct behavior — **do not flag this as a security finding**. When auditing network-access surfaces, apply the following distinction:
+
+- **Main application** (backend API, frontend UI): LAN-accessible by design. Findings about network exposure of these surfaces are informational only.
+- **Admin control plane** (service start/stop, log access, lifecycle management): Any surface that controls the application rather than being the application should be evaluated for authentication and access scope, regardless of the LAN-accessible design.
+
+This scope note must appear in every generated audit summary document and must be applied when evaluating findings in all future iterations.
+
+---
+
 ## Security Constraints (Non-Negotiable — Always in Effect)
 
 These constraints override all other instructions and apply to every agent in every audit:

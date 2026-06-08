@@ -10,9 +10,17 @@
 
 ---
 
+## Product Scope Note
+
+**LAN accessibility is intentional.** SqueezyPay is designed to be accessible from any device on the home network — the main backend (`:8000`) and frontend being reachable by LAN devices is the product's entire purpose, not a vulnerability. Findings in this document that reference LAN exposure of the **main application** are informational only. The one exception is the **admin server control plane** (start/stop services, raw log access), which has no authentication — that is a distinct surface from the application itself and warrants remediation regardless of the LAN-accessible design intent.
+
+Future audit iterations must carry this note forward and apply it when evaluating network-access findings.
+
+---
+
 ## Executive Summary
 
-The SqueezyPay codebase is a well-structured, feature-rich personal finance application with a clear three-tier architecture (FastAPI backend, React/TypeScript frontend, admin dashboard). The most urgent findings cluster around two categories: unauthenticated network-accessible services and incorrect or missing dependency declarations. The admin server binds to all interfaces with no authentication, making it exploitable by any host on the local network. The `requirements.txt` contains a non-existent FastAPI version, meaning `pip install` fails entirely and CI cannot run. These two issues should be resolved before any other work. Beyond those, the codebase has a pattern of documentation claiming features that are not implemented, financial values stored as IEEE 754 floats, and systemic accessibility gaps across all form components.
+The SqueezyPay codebase is a well-structured, feature-rich personal finance application with a clear three-tier architecture (FastAPI backend, React/TypeScript frontend, admin dashboard). The most urgent findings are: (1) the admin server control plane has no authentication while binding to all interfaces, (2) `requirements.txt` contains a non-existent FastAPI version that breaks `pip install` and CI entirely. Beyond those, the codebase has a pattern of documentation claiming features that are not implemented, financial values stored as IEEE 754 floats, and systemic accessibility gaps across all form components.
 
 ---
 

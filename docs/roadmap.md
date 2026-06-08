@@ -14,6 +14,7 @@ All core phases through Phase 2 are complete. Active work is Phase 2+ extensions
 | Phase 1 — Real Foundation | — | Complete |
 | Phase 2 — Bank Integration | — | Complete |
 | v0.1 — Installer & Distribution | [v0.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/1) | In progress |
+| v0.1.1 — Audit Remediation | [v0.1.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/6) | Next up |
 | v0.2 — Scheduled Sync & CSV Import | [v0.2 milestone](https://github.com/squeezy102/SqueezyPay/milestone/2) | Not started |
 | v0.3 — Per-Cardholder Attribution | [v0.3 milestone](https://github.com/squeezy102/SqueezyPay/milestone/3) | Not started |
 | v0.4 — Budget & Projections | [v0.4 milestone](https://github.com/squeezy102/SqueezyPay/milestone/4) | Not started |
@@ -207,6 +208,14 @@ Plaid's recommended minimum refresh interval for balances is 4 hours. Transactio
 - Manual sync buttons remain available regardless of schedule settings
 
 Webhook-based sync (immediate on Plaid SYNC_UPDATES_AVAILABLE events) requires a publicly reachable URL, which a home network does not have by default. Webhooks are a stretch goal pending documentation on tunnel options (Cloudflare Tunnel, ngrok).
+
+---
+
+## Product Scope — LAN Accessibility is Intentional
+
+SqueezyPay is designed to run on a home LAN and be accessible from any device on that network. The main backend (`:8000`) and frontend being reachable by any LAN device is the intended behavior — not a security finding.
+
+Audit findings that cite "LAN accessibility" as a risk should be read narrowly: the concern applies only to unauthenticated **control-plane** surfaces (e.g., the admin server's start/stop/log API), not to the main application. Findings that recommend restricting access to the application UI or API have been scoped down accordingly. See [v0.1.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/6) issue comments for per-issue scope clarifications.
 
 ---
 
