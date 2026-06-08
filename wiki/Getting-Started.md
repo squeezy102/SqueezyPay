@@ -1,314 +1,147 @@
 # Getting Started
 
-This guide walks you through setting up SqueezyPay on a Windows PC. You do not need to be a programmer to follow it. Each step explains what you are doing and why before telling you how.
+SqueezyPay installs like any other Windows program. Download the installer, run it, and follow the wizard — it handles everything.
 
 ---
 
-## What you will need
+## Step 1 — Download the installer
 
-Before you start, install these three programs. All are free.
+Go to the [Releases page](https://github.com/squeezy102/SqueezyPay/releases) and download the latest `SqueezyPay-Setup.exe`.
 
-**Python 3.11 or later**
-Python is the programming language the app's backend is written in. The installer does the hard work.
-1. Go to [python.org/downloads](https://www.python.org/downloads/)
-2. Click the big yellow **Download Python** button
-3. Run the installer. **Important:** on the first screen, check the box that says **"Add Python to PATH"** before clicking Install
-
-**Node.js 18 LTS or later**
-Node.js runs the app's frontend interface.
-1. Go to [nodejs.org](https://nodejs.org)
-2. Download the **LTS** version (the left button)
-3. Run the installer with all default settings
-
-**Git**
-Git is used to download the SqueezyPay code.
-1. Go to [git-scm.com/downloads](https://git-scm.com/downloads)
-2. Click **Windows**
-3. Run the installer with all default settings
-
-After installing all three, restart your computer before continuing.
+> If you see a SmartScreen warning ("Windows protected your PC"), click **More info** then **Run anyway**. This appears because SqueezyPay is not yet code-signed. It is safe to proceed.
 
 ---
 
-## Step 1 — Download SqueezyPay
+## Step 2 — Run the installer
 
-You will use a program called **PowerShell** to download the code. PowerShell is built into Windows — you do not need to install it.
+Double-click `SqueezyPay-Setup.exe`. The wizard will walk you through:
 
-**How to open PowerShell:**
-- Press the **Windows key**, type `PowerShell`, and press **Enter**
-- A blue window with white text will appear. This is where you type commands.
+1. **Choose install type** — Full (recommended, includes biller autofill) or Core only (smaller download, no autofill)
+2. **Security setup** — the installer automatically generates your encryption key and stores it on your PC. You do not need to write anything down or enter anything here
+3. **Bank integration (optional)** — if you have a [Plaid developer account](https://dashboard.plaid.com), enter your credentials here. You can skip this and add them later from Settings
+4. **Set your passphrase** — choose a passphrase everyone in your household will use to log in
+5. **Options** — choose whether to create a desktop shortcut and whether to start SqueezyPay automatically when Windows starts (recommended)
 
-**How to run a command:**
-- Click inside the blue window
-- Type (or copy and paste) the command exactly as shown
-- Press **Enter**
-
-Run this command to download SqueezyPay to your computer. It will create a `SqueezyPay` folder wherever your PowerShell window is currently pointing (usually your user folder):
-
-```
-git clone https://github.com/squeezy102/SqueezyPay.git
-```
-
-Then move into the folder:
-
-```
-cd SqueezyPay
-```
-
-Keep this PowerShell window open — you will use it for the next few steps.
+Click **Install**. The installer sets up the database and configures everything automatically.
 
 ---
 
-## Step 2 — Run the setup script
+## Step 3 — Launch SqueezyPay
 
-SqueezyPay includes a setup script that handles the technical installation steps for you: creating the Python environment, installing dependencies, and setting up the database.
+If you kept the **"Launch SqueezyPay now"** checkbox checked at the end of the installer, the app will open in your browser automatically.
 
-In the same PowerShell window, run:
+Otherwise, double-click the **SqueezyPay** shortcut on your desktop, or find it in the Start menu.
 
-```
-.\scripts\setup.ps1
-```
-
-**If you see an error about "execution policy":**
-PowerShell has a safety setting that can block scripts from running. To allow it just for this command, run this instead:
-
-```
-powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
-```
-
-The setup script will print its progress. It may take a few minutes the first time. When it finishes, it will tell you what to do next.
-
-> **If there is no setup.ps1 yet:** Follow the [Manual Setup](#manual-setup) steps at the bottom of this page instead, then come back here.
+SqueezyPay runs as a small icon in your **system tray** — the row of icons in the bottom-right corner of your screen near the clock. Right-click the icon to start/stop services, open the app, or open the admin dashboard.
 
 ---
 
-## Step 3 — Generate your security keys
+## Step 4 — Connect your bank (optional)
 
-SqueezyPay needs two security keys that live only on your computer:
-
-- **Encryption key** — scrambles your stored passwords and bank tokens so they cannot be read if someone gets your database file
-- **Secret key** — signs your login sessions so the app knows you are who you say you are
-
-**These keys are never sent anywhere.** They stay on your PC.
-
-Run the key generator:
-
-```
-cd backend
-.\venv\Scripts\python.exe scripts\generate_key.py
-```
-
-The script will print something like:
-
-```
-Your encryption key:
-  z3Rm8...long string of characters...
-
-Store this as a Windows environment variable named SQUEEZYPAY_ENCRYPTION_KEY.
-```
-
-You will need to store this key (and one more) as **environment variables** in Step 4. Do not close this window yet.
-
-> **Important:** This key cannot be recovered if lost. Before moving on, copy the key and save it somewhere safe — a password manager, a printed note in a secure place, or a USB drive you keep offline. If the key is lost, all your encrypted data becomes unrecoverable.
-
----
-
-## Step 4 — Store your keys as environment variables
-
-An **environment variable** is a named value stored in Windows that programs can read. Think of it like a setting that lives in the operating system rather than inside a file. SqueezyPay reads its keys from here so they never have to be written into any code or config file.
-
-### How to open Environment Variables
-
-1. Press the **Windows key**, type `environment variables`, and press **Enter**
-2. Click **"Edit the system environment variables"**
-3. In the window that opens, click the **"Environment Variables..."** button near the bottom
-4. You will see two sections: **"User variables for [your name]"** (top) and System variables (bottom). You are adding to the **User variables** section.
-
-### Adding a variable
-
-1. Click **New...** under the User variables section
-2. In **Variable name**, type the name exactly as shown
-3. In **Variable value**, paste the value
-4. Click **OK**
-
-Repeat this for each variable below.
-
-### Variables to add
-
-**Variable 1 — Encryption key**
-
-| Field | Value |
-|---|---|
-| Variable name | `SQUEEZYPAY_ENCRYPTION_KEY` |
-| Variable value | The key printed by `generate_key.py` in Step 3 |
-
-**Variable 2 — Secret key**
-
-This one you generate yourself. Go back to your PowerShell window and run:
-
-```
-.\venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
-```
-
-It prints a string of random characters. Copy that string.
-
-| Field | Value |
-|---|---|
-| Variable name | `SQUEEZYPAY_SECRET_KEY` |
-| Variable value | The string you just generated |
-
-**Variable 3 — Plaid (optional, skip if you are not connecting a bank)**
-
-If you have a Plaid developer account and want to connect your real bank accounts, add these too. If you are just trying SqueezyPay out or only want to track bills manually, skip these for now — you can add them later.
-
-| Variable name | Variable value |
-|---|---|
-| `SQUEEZYPAY_PLAID_CLIENTID` | Your Client ID from [dashboard.plaid.com](https://dashboard.plaid.com) |
-| `SQUEEZYPAY_PLAID_SECRET` | Your Secret from the Plaid dashboard |
-| `SQUEEZYPAY_PLAID_ENV` | `sandbox` (for testing) or `production` (for real accounts) |
-
-### After adding variables
-
-Click **OK** on each window to close them. Then **close your PowerShell window and open a new one**. Environment variable changes do not take effect in windows that were already open.
-
-Open a new PowerShell window and navigate back to your SqueezyPay folder:
-
-```
-cd SqueezyPay
-```
-
-(If PowerShell opens in a different folder, you may need to type the full path, such as `cd C:\Users\YourName\SqueezyPay`)
-
----
-
-## Step 5 — Create a desktop shortcut
-
-SqueezyPay uses a system tray icon to manage all its services in the background — similar to how antivirus software or OneDrive runs quietly in your taskbar. You launch it from a shortcut just like any other program.
-
-Run this once to create the shortcut on your desktop:
-
-```
-powershell -ExecutionPolicy Bypass -File .\scripts\create-shortcut.ps1
-```
-
-A **SqueezyPay** shortcut will appear on your desktop.
-
----
-
-## Step 6 — Start SqueezyPay
-
-Double-click the **SqueezyPay** shortcut on your desktop.
-
-A small icon will appear in your **system tray** — the row of small icons in the bottom-right corner of your screen, near the clock. You may need to click the **^** arrow to see it if it is hidden.
-
-**Right-click the tray icon** to see your options:
-- **Start All** — starts the backend and frontend
-- **Stop All** — shuts everything down
-- **Open App** — opens SqueezyPay in your browser
-- **Open Dashboard** — opens the admin panel for service management and logs
-
-Click **Start All**, then click **Open App**. SqueezyPay will open in your browser.
-
-The first time you open it, you will be asked to create a household passphrase. This is the password everyone in your household uses to log in.
-
----
-
-## Step 7 — Start automatically on login (optional but recommended)
-
-So you do not have to double-click the shortcut every time your PC restarts, you can set SqueezyPay to start automatically when you log in.
-
-Open PowerShell **as Administrator** (right-click PowerShell in the Start menu and choose **Run as administrator**), navigate to your SqueezyPay folder, and run:
-
-```
-.\scripts\register-autostart.ps1
-```
-
-SqueezyPay will now start silently in the background every time you log in to Windows.
-
----
-
-## Step 8 — Connect your bank (optional)
-
-If you added Plaid credentials in Step 4:
+If you entered Plaid credentials during installation:
 
 1. In the app, click **Accounts** in the left sidebar
 2. Click **Connect Bank**
-3. Search for your bank in the Plaid window and log in
-4. After connecting, click **Sync Balances** and **Sync Transactions** to pull your data
+3. Search for your bank and log in through the secure Plaid window
+4. After connecting, click **Sync Balances** and **Sync Transactions**
 
-If you are using `sandbox` mode (testing with fake data), use the institution called **"First Platypus Bank"** with username `user_good` and password `pass_good`.
+If you skipped Plaid during installation, you can add your credentials later under **Settings → Bank Integration**.
 
 ---
 
-## Step 9 — Access from your phone or other devices
+## Step 5 — Access from your phone or other devices
 
-SqueezyPay is designed to work on any device in your home — phones, tablets, other PCs — without installing anything on those devices.
+SqueezyPay works on any device connected to your home Wi-Fi — phones, tablets, other PCs — without installing anything on those devices.
 
 **Find your PC's IP address:**
-1. Open PowerShell and run: `ipconfig`
-2. Look for **IPv4 Address** under your active network adapter (usually named "Wi-Fi" or "Ethernet")
-3. It will look something like `192.168.1.15`
+1. Press the **Windows key**, type `cmd`, and press **Enter**
+2. In the black window that opens, type `ipconfig` and press **Enter**
+3. Look for **IPv4 Address** under your active network adapter (usually "Wi-Fi" or "Ethernet")
+4. It will look something like `192.168.1.15`
 
-On any device connected to the same Wi-Fi, open a browser and go to:
+On any device on the same Wi-Fi, open a browser and go to:
 ```
-http://192.168.1.15:5173
+http://192.168.1.15:8000
 ```
 (replace `192.168.1.15` with your actual IP)
 
-**To install as a home screen app:**
-- **iPhone/iPad:** Open in Safari → tap the Share icon (box with arrow) → tap **"Add to Home Screen"**
-- **Android:** Open in Chrome → tap the three-dot menu → tap **"Install app"** or **"Add to Home Screen"**
+**Add to your phone's home screen:**
+- **iPhone/iPad:** Open in Safari → tap the Share icon → **Add to Home Screen**
+- **Android:** Open in Chrome → tap the three-dot menu → **Install app** or **Add to Home Screen**
 
 The app will open in full screen like a native app.
 
 ---
 
-## You are set up
+## That's it
 
 From here:
-- [Configuration](Configuration) — all available settings explained
-- [Troubleshooting](Troubleshooting) — if something is not working
+- [Configuration](Configuration) — environment variables and advanced settings
 - [Deployment](Deployment) — more about the admin dashboard and network setup
+- [Troubleshooting](Troubleshooting) — if something is not working
 
 ---
 
-## Manual setup
+## Upgrading
 
-Use this section only if the setup script in Step 2 did not work, or if you prefer to run each step yourself.
+Download the new `SqueezyPay-Setup.exe` from the [Releases page](https://github.com/squeezy102/SqueezyPay/releases) and run it. The installer upgrades in place — your data, passphrase, and settings are preserved.
+
+> **Before upgrading:** back up your database file. It lives at `%APPDATA%\SqueezyPay\squeezypay.db`. Copy that file somewhere safe before running the new installer.
+
+---
+
+## Uninstalling
+
+Open **Settings → Apps** (Windows 11) or **Control Panel → Programs and Features** (Windows 10), find **SqueezyPay**, and click **Uninstall**.
+
+Your database and data files in `%APPDATA%\SqueezyPay\` are **not** deleted by the uninstaller — remove that folder manually if you want a clean removal.
+
+---
+
+## Source install (developers only)
+
+If you want to run from source rather than the installer, see the [Architecture](Architecture) page for the project structure, then follow the manual steps below.
 
 <details>
-<summary>Click to expand manual setup steps</summary>
+<summary>Running from source</summary>
 
-### M1 — Create the Python environment
+You will need Python 3.11+, Node.js 18 LTS, and Git installed.
 
-Open PowerShell, navigate to your SqueezyPay folder, and run:
+```powershell
+git clone https://github.com/squeezy102/SqueezyPay.git
+cd SqueezyPay
+```
+
+**Option A — setup script (recommended for CLI users)**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+```
+
+This installs all backend and frontend dependencies and initialises the database in one step.
+
+**Option B — manual steps**
 
 ```powershell
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
-
-This creates an isolated Python environment in `backend\venv\` so SqueezyPay's dependencies do not interfere with anything else on your system.
-
-### M2 — Run database migrations
-
-```powershell
 alembic upgrade head
-```
-
-This creates the database file at `backend\squeezypay.db`.
-
-### M3 — Install frontend dependencies
-
-```powershell
 cd ..\frontend
 npm install
 ```
 
-### M4 — Complete setup
+After either option, generate and store your environment variables (see [Configuration](Configuration)), create a desktop shortcut:
 
-After these steps, return to [Step 3](#step-3--generate-your-security-keys) above and continue from there.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\create-shortcut.ps1
+```
+
+Then launch:
+
+```powershell
+.\scripts\launch-tray.ps1
+```
 
 </details>
