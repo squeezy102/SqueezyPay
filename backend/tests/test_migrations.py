@@ -29,12 +29,12 @@ CI runs the full suite including these tests on every push.
 """
 from pathlib import Path
 
-import database.db as _db_module
 import pytest
-from alembic import command
 from alembic.config import Config as AlembicConfig
 from sqlalchemy import create_engine, inspect, text
 
+import database.db as _db_module
+from alembic import command
 
 # ---------------------------------------------------------------------------
 # Helpers

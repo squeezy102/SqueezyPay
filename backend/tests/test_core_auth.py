@@ -28,7 +28,7 @@ def _credentials(token: str) -> HTTPAuthorizationCredentials:
 def _valid_token(secret: str = _SECRET) -> str:
     payload = {
         "sub": "household",
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1),
+        "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1),
     }
     return jwt.encode(payload, secret, algorithm=ALGORITHM)
 
@@ -36,7 +36,7 @@ def _valid_token(secret: str = _SECRET) -> str:
 def _expired_token(secret: str = _SECRET) -> str:
     payload = {
         "sub": "household",
-        "exp": datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1),
+        "exp": datetime.datetime.now(datetime.UTC) - datetime.timedelta(seconds=1),
     }
     return jwt.encode(payload, secret, algorithm=ALGORITHM)
 
