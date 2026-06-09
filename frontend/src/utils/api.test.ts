@@ -20,6 +20,7 @@ import {
   createPlaidLinkToken,
   getPlaidTransactions,
   getPlaidBlame,
+  checkHealth,
 } from "./api";
 
 // ── Fetch mock helper ─────────────────────────────────────────────────────────
@@ -656,6 +657,53 @@ describe("getPlaidTransactions", () => {
     mockFetch(500, {});
     const result = await getPlaidTransactions({ accountId: 3 });
     expect(result).toEqual({ transactions: [], total: 0 });
+  });
+});
+
+// ── checkHealth ───────────────────────────────────────────────────────────────
+
+describe("checkHealth", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  it("returns true when fetch responds 200", async () => {
+    /**
+     * Scenario: backend is healthy and returns HTTP 200
+     * EP class: valid/success — response.ok is true
+     * Expected: checkHealth resolves to true
+     */
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+    } as unknown as Response);
+    const result = await checkHealth();
+    expect(result).toBe(true);
+  });
+
+  it("returns false when fetch responds 503", async () => {
+    /**
+     * Scenario: backend is unavailable and returns HTTP 503
+     * EP class: invalid/error — response.ok is false for non-2xx
+     * Expected: checkHealth resolves to false
+     */
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+    } as unknown as Response);
+    const result = await checkHealth();
+    expect(result).toBe(false);
+  });
+
+  it("returns false when fetch throws a network error", async () => {
+    /**
+     * Scenario: network is unreachable and fetch rejects with TypeError
+     * EP class: invalid/boundary — exception in fetch, no response at all
+     * Expected: checkHealth resolves to false (no unhandled rejection)
+     */
+    globalThis.fetch = vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    const result = await checkHealth();
+    expect(result).toBe(false);
   });
 });
 

@@ -37,6 +37,17 @@ function logApiError(context: string, error: unknown): void {
   console.error(`[API] ${context}:`, error);
 }
 
+// ── Health ────────────────────────────────────────────────────────────────────
+
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ── Auth API ──────────────────────────────────────────────────────────────────
 
 export async function getAuthStatus(): Promise<AuthStatus> {

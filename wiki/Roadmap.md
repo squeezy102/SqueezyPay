@@ -41,6 +41,7 @@ All core phases through Phase 2 are complete. Active work is Phase 2+ extensions
 - Bills hub refactor — unified `Bills` tab with Overview, Pay Bills, Payment History, Manage Billers sub-views
 - Biller autofill — `POST /api/bills/{id}/autofill` launches Playwright worker; fills username + password fields on biller site (**known limitation:** always opens a new browser window, cannot open a tab in an existing window)
 - Credential vault UI — `CredentialModal` for create/edit; credentials auto-displayed in payment modal with Copy buttons
+- Backend disconnection resilience — `useBackendHealth` polls `GET /health` every 15s + on `window.online`; amber `OfflineBanner` appears when backend is unreachable; auto-dismisses on recovery and invalidates all TanStack Query cache
 
 ### Phase 2+ backlog
 
