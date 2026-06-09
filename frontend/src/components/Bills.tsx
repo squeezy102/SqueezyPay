@@ -630,8 +630,8 @@ function ManageBillers() {
       {/* Delete confirm */}
       {confirmDeleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl p-6 w-full max-w-sm mx-4">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">Delete biller?</h2>
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-biller-heading" className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl p-6 w-full max-w-sm mx-4">
+            <h2 id="delete-biller-heading" className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">Delete biller?</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-5">
               <span className="font-medium text-slate-800 dark:text-slate-200">{confirmBill?.name}</span> and all its payment history will be permanently deleted.
             </p>
