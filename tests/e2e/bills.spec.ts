@@ -38,7 +38,8 @@ async function createBill(page: Page, name: string): Promise<() => Promise<void>
   await dayInput.fill('15');
 
   await page.getByRole('button', { name: 'Add Bill', exact: true }).click();
-  await expect(page.getByText(name)).toBeVisible({ timeout: 8_000 });
+  // The bill name appears in both a card and a table row — .first() avoids strict-mode violation
+  await expect(page.getByText(name).first()).toBeVisible({ timeout: 8_000 });
 
   return async () => {
     // If the Manage Billers view is not visible, navigate back to it first
@@ -56,7 +57,7 @@ async function createBill(page: Page, name: string): Promise<() => Promise<void>
 
     // Click the destructive "Delete" button inside the confirm dialog
     await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
-    await expect(page.getByText(name)).not.toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText(name).first()).not.toBeVisible({ timeout: 8_000 });
   };
 }
 
@@ -76,7 +77,7 @@ test.describe('Bills', () => {
 
     const cleanup = await createBill(page, name);
     try {
-      await expect(page.getByText(name)).toBeVisible();
+      await expect(page.getByText(name).first()).toBeVisible();
     } finally {
       await cleanup();
     }
@@ -89,13 +90,13 @@ test.describe('Bills', () => {
     const cleanup = await createBill(page, name);
     try {
       // Verify it exists before deleting
-      await expect(page.getByText(name)).toBeVisible();
+      await expect(page.getByText(name).first()).toBeVisible();
       // Cleanup deletes it — this is the thing under test here
     } finally {
       await cleanup();
     }
 
     // After cleanup the bill must be gone
-    await expect(page.getByText(name)).not.toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText(name).first()).not.toBeVisible({ timeout: 8_000 });
   });
 });
