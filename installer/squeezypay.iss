@@ -486,6 +486,12 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
 
+  // In silent mode the wizard auto-advances through all pages.
+  // Validation is UI-only — the passphrase bootstrap file is written by
+  // the CI step (or a future unattended-install script) before the
+  // installer runs, so there is nothing to validate here.
+  if WizardSilent() then Exit;
+
   if CurPageID = KeyRevealPage.ID then
   begin
     KeyRevealError.Caption := '';
@@ -550,11 +556,13 @@ begin
 
     // Write the passphrase to a temp file for the backend to hash on first start.
     // The backend reads and deletes this file on startup — it is never stored as plaintext.
-    SaveStringToFile(
-      ExpandConstant('{userappdata}\SqueezyPay\initial_passphrase.tmp'),
-      PassphraseEdit.Text,
-      False
-    );
+    // In silent mode the file is pre-written by the calling script; skip to avoid overwriting it.
+    if not WizardSilent() then
+      SaveStringToFile(
+        ExpandConstant('{userappdata}\SqueezyPay\initial_passphrase.tmp'),
+        PassphraseEdit.Text,
+        False
+      );
 
     // Optional: register Task Scheduler entry for auto-start
     if IsTaskSelected('autostart') then
