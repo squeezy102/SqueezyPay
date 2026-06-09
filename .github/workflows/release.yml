@@ -149,6 +149,7 @@ jobs:
       # ----------------------------------------------------------------
       - name: Install SqueezyPay and run integration tests
         shell: pwsh
+        timeout-minutes: 10
         run: |
           # --- Pre-write passphrase bootstrap so auth is configured after install ---
           # The installer's passphrase wizard is skipped by /VERYSILENT, so we
@@ -195,9 +196,15 @@ jobs:
           Write-Host "Env vars loaded."
 
           # --- Start backend ---
+          # Pass env vars explicitly — Start-Process inherits a snapshot of the
+          # machine/user env taken at process start, not the current session's $env:.
           Write-Host "Starting backend..."
+          $backendEnv = [System.Environment]::GetEnvironmentVariables()
+          $backendEnv["SQUEEZYPAY_ENCRYPTION_KEY"] = $encKey
+          $backendEnv["SQUEEZYPAY_SECRET_KEY"]     = $secretKey
           $backend = Start-Process -FilePath $backendExe `
-            -WorkingDirectory $installDir -PassThru -WindowStyle Hidden
+            -WorkingDirectory $installDir -PassThru -WindowStyle Hidden `
+            -Environment $backendEnv
 
           # --- Wait for /health (up to 60s) ---
           $ready = $false
@@ -208,7 +215,13 @@ jobs:
               if ($r.StatusCode -eq 200) { $ready = $true; break }
             } catch {}
           }
-          if (-not $ready) { Stop-Process -Id $backend.Id -Force; Write-Error "Backend did not start"; exit 1 }
+          if (-not $ready) {
+            $exitCode = if ($backend.HasExited) { $backend.ExitCode } else { "still running" }
+            Write-Host "Backend exit code: $exitCode"
+            if (-not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
+            Write-Error "Backend did not respond to /health after 60s"
+            exit 1
+          }
           Write-Host "Backend healthy."
 
           # --- Auth configured (passphrase was bootstrapped by installer) ---
