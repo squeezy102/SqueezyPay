@@ -112,6 +112,53 @@ Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Description: "Launch {#App
 [Code]
 
 // -----------------------------------------------------------------------
+// WinAPI clipboard helpers (Inno Setup Pascal has no Clipboard object)
+// -----------------------------------------------------------------------
+
+function OpenClipboard(hWnd: HWND): BOOL;
+  external 'OpenClipboard@user32.dll stdcall';
+function EmptyClipboard(): BOOL;
+  external 'EmptyClipboard@user32.dll stdcall';
+function CloseClipboard(): BOOL;
+  external 'CloseClipboard@user32.dll stdcall';
+function GlobalAlloc(uFlags: UINT; dwBytes: DWORD): THandle;
+  external 'GlobalAlloc@kernel32.dll stdcall';
+function GlobalLock(hMem: THandle): DWORD;
+  external 'GlobalLock@kernel32.dll stdcall';
+function GlobalUnlock(hMem: THandle): BOOL;
+  external 'GlobalUnlock@kernel32.dll stdcall';
+function SetClipboardData(uFormat: UINT; hMem: THandle): THandle;
+  external 'SetClipboardData@user32.dll stdcall';
+procedure RtlMoveMemory(Dest: DWORD; const Source: AnsiString; Len: DWORD);
+  external 'RtlMoveMemory@kernel32.dll stdcall';
+
+const
+  CF_TEXT    = 1;
+  GMEM_FIXED = $0000;
+
+procedure SetTextToClipboard(const S: String);
+var
+  hMem: THandle;
+  pMem: DWORD;
+  Buf: AnsiString;
+begin
+  Buf := AnsiString(S) + #0;
+  hMem := GlobalAlloc(GMEM_FIXED, Length(Buf));
+  if hMem = 0 then Exit;
+  pMem := GlobalLock(hMem);
+  if pMem = 0 then Exit;
+  RtlMoveMemory(pMem, Buf, Length(Buf));
+  GlobalUnlock(hMem);
+  if OpenClipboard(0) then
+  begin
+    EmptyClipboard();
+    SetClipboardData(CF_TEXT, hMem);
+    CloseClipboard();
+  end;
+end;
+
+
+// -----------------------------------------------------------------------
 // Custom wizard pages
 // -----------------------------------------------------------------------
 
@@ -218,7 +265,7 @@ begin Result := PlaidSecretEdit.Text; end;
 
 procedure CopyKeyToClipboard(Sender: TObject);
 begin
-  Clipboard.AsText := KeyRevealEdit.Text;
+  SetTextToClipboard(KeyRevealEdit.Text);
   KeyRevealCopyBtn.Caption := 'Copied!';
 end;
 
