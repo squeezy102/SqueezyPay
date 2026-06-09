@@ -518,6 +518,7 @@ begin
         '<Triggers><LogonTrigger><Enabled>true</Enabled></LogonTrigger></Triggers>' +
         '<Actions><Exec>' +
         '<Command>"' + ExpandConstant('{app}\{#AppExeName}') + '"</Command>' +
+        '<Arguments>--tray</Arguments>' +
         '<WorkingDirectory>' + ExpandConstant('{app}') + '</WorkingDirectory>' +
         '</Exec></Actions>' +
         '<Settings><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>' +

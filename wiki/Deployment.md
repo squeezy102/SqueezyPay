@@ -69,17 +69,48 @@ The app opens in standalone mode (no browser chrome) and behaves like a native a
 
 ## Auto-start on Windows login
 
-Implemented via Windows Task Scheduler. The installer registers a scheduled task that runs `scripts\launch-tray.ps1` at login. To manually register or re-register the task on a dev machine:
+SqueezyPay can start automatically when you log in to Windows. Both the installer and the dev-mode script register a Windows Task Scheduler task named **"SqueezyPay"** that launches the system tray icon at login. The tray icon starts the admin, backend, and frontend services and shows a green/yellow/red status dot in the notification area.
+
+### Installer (packaged mode)
+
+When you select **"Start SqueezyPay automatically when Windows starts"** during installation, the installer registers a Task Scheduler task that runs:
+
+```
+backend.exe --tray
+```
+
+This starts the system tray icon. Right-click the tray icon to start/stop individual services or open the admin dashboard.
+
+### Dev mode
+
+To register the same auto-start task on a dev machine (uses `launch-tray.ps1` → `tray.py` instead of the bundled exe):
 
 ```powershell
 .\scripts\register-autostart.ps1
 ```
 
-To remove the scheduled task:
+This requires running PowerShell as Administrator. The task runs at your Windows login and launches the tray icon hidden.
+
+### Remove auto-start
 
 ```powershell
 Unregister-ScheduledTask -TaskName "SqueezyPay" -Confirm:$false
 ```
+
+### Tray icon reference
+
+| Icon color | Meaning |
+|---|---|
+| Green | All three services running (admin, backend, frontend) |
+| Yellow | One or two services running |
+| Red | All services stopped |
+
+Right-click the tray icon to:
+- Start All / Stop All
+- Toggle individual services
+- Open the Admin Dashboard (`http://localhost:9000`)
+- Open the App (`http://localhost:5173`)
+- Quit (stops all services)
 
 ## Building for production
 

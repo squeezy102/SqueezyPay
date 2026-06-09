@@ -3,7 +3,7 @@
 
 $root = Split-Path -Parent $PSScriptRoot
 $script = Join-Path $root "scripts\launch-tray.ps1"
-$taskName = "SqueezyPay Auto-Start"
+$taskName = "SqueezyPay"
 
 # Remove existing task if present (clean re-register)
 Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
@@ -30,6 +30,7 @@ Register-ScheduledTask `
 Write-Host ""
 Write-Host "========================================="
 Write-Host "  SqueezyPay Auto-Start Registered"
+Write-Host "  (Task name: SqueezyPay)"
 Write-Host "========================================="
 Write-Host ""
 Write-Host "Task name : $taskName"

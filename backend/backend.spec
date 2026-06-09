@@ -7,6 +7,7 @@
 #
 # Runtime flags:
 #   backend.exe              — start server, open browser, serve frontend
+#   backend.exe --tray       — start system tray icon (auto-start entry point)
 #   backend.exe --migrate    — run Alembic upgrade head and exit
 #   backend.exe --generate-key fernet <outfile>
 #   backend.exe --generate-key secret  <outfile>
@@ -30,6 +31,8 @@ a = Analysis(
         # Admin dashboard
         (str(repo_root / "admin" / "dashboard.html"), "admin"),
         (str(repo_root / "admin" / "main.py"),        "admin"),
+        # Tray icon — bundled so backend.exe --tray works without Python installed
+        (str(repo_root / "scripts" / "tray.py"),      "scripts"),
     ],
     hiddenimports=[
         # FastAPI / Starlette internals not always auto-detected
@@ -100,6 +103,14 @@ a = Analysis(
         "webbrowser",
         "threading",
         "logging.handlers",
+        # Tray icon dependencies (backend.exe --tray mode)
+        "pystray",
+        "PIL",
+        "PIL.Image",
+        "PIL.ImageDraw",
+        "psutil",
+        "requests",
+        "winreg",
     ],
     hookspath=[],
     hooksconfig={},

@@ -85,7 +85,7 @@ Features in scope for this phase but not yet built.
 |---|---|
 | LLM-assisted insights panel | High |
 | Year-over-year spending comparison | Medium |
-| Auto-start on Windows login | High |
+| ~~Auto-start on Windows login~~ | ~~High~~ **Done** — Task "SqueezyPay" registered by installer (`backend.exe --tray`) and `scripts/register-autostart.ps1` (dev); tray manages all three services |
 | Streamlined installer script | Medium |
 | Update-available badge in admin dashboard | Medium |
 | Export data to CSV | Low |

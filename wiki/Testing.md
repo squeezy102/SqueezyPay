@@ -24,7 +24,7 @@ Coverage threshold is enforced by CI. The current threshold is 80%. A PR that dr
 ```toml
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
+testpaths = ["tests", "../scripts/tests"]
 markers = [
     "slow: integration tests that run real migrations against on-disk SQLite",
 ]
@@ -45,6 +45,7 @@ markers = [
 - Repository methods
 - JWT authentication boundary (`test_core_auth.py` — direct unit tests for `require_auth`, not HTTP-layer tests)
 - Alembic migration chain integrity (`test_migrations.py` — full upgrade/downgrade/round-trip on real SQLite files)
+- Tray icon helpers (`scripts/tests/test_tray.py` — icon colour logic, status tooltip, service label; Windows-only dependencies are mocked so this runs on Linux CI)
 
 **Database in tests:** Tests use a fresh in-memory SQLite database per session, not the production database file. The fixture is in `backend/tests/conftest.py`.
 

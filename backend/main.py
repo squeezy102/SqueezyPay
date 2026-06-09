@@ -234,6 +234,22 @@ if __name__ == "__main__":
             print(key)
         sys.exit(0)
 
+    if "--tray" in sys.argv:
+        # Tray mode — start the system tray icon, which manages all services.
+        # This is the auto-start entry point in the packaged installer.
+        # scripts/tray.py is bundled into the exe via backend.spec datas.
+        _scripts_dir = Path(__file__).parent.parent / "scripts"
+        if _scripts_dir.exists() and str(_scripts_dir) not in sys.path:
+            sys.path.insert(0, str(_scripts_dir))
+        # In packaged mode, scripts/ is bundled at sys._MEIPASS/scripts/
+        if getattr(sys, "frozen", False):
+            _meipass_scripts = Path(sys._MEIPASS) / "scripts"  # type: ignore[attr-defined]
+            if str(_meipass_scripts) not in sys.path:
+                sys.path.insert(0, str(_meipass_scripts))
+        import tray as tray_module
+        tray_module.main()
+        sys.exit(0)
+
     import webbrowser
 
     import uvicorn
