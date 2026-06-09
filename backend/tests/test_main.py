@@ -9,8 +9,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker
 
-
-
 # ---------------------------------------------------------------------------
 # _is_allowed_origin tests
 # ---------------------------------------------------------------------------
@@ -112,11 +110,11 @@ def _make_test_client_without_key(missing_key: str):
     environment.  The lifespan startup should raise RuntimeError.
     Returns the missing key's original value so callers can restore it.
     """
-    from models.models import Base
     import database.db as db_module
-    from database.db import get_db
     from core.auth import require_auth
+    from database.db import get_db
     from main import app
+    from models.models import Base
 
     original = os.environ.pop(missing_key, None)
 
@@ -153,11 +151,11 @@ def test_startup_raises_when_encryption_key_missing():
     Expected: lifespan raises RuntimeError mentioning SQUEEZYPAY_ENCRYPTION_KEY,
               which TestClient surfaces as an exception on __enter__.
     """
-    from main import app
     import database.db as db_module
-    from models.models import Base
-    from database.db import get_db
     from core.auth import require_auth
+    from database.db import get_db
+    from main import app
+    from models.models import Base
 
     original = os.environ.pop("SQUEEZYPAY_ENCRYPTION_KEY", None)
     engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
@@ -190,11 +188,11 @@ def test_startup_raises_when_secret_key_missing():
     EP class: Invalid partition — required env var not set.
     Expected: lifespan raises RuntimeError mentioning SQUEEZYPAY_SECRET_KEY.
     """
-    from main import app
     import database.db as db_module
-    from models.models import Base
-    from database.db import get_db
     from core.auth import require_auth
+    from database.db import get_db
+    from main import app
+    from models.models import Base
 
     original = os.environ.pop("SQUEEZYPAY_SECRET_KEY", None)
     engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)

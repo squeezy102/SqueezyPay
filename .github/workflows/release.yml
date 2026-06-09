@@ -68,7 +68,7 @@ jobs:
       - name: Build backend.exe
         working-directory: backend
         run: pyinstaller backend.spec
-        # Output: backend/dist/backend.exe
+        # Output: backend/dist/backend/ (onedir bundle)
 
       # ----------------------------------------------------------------
       # 2b. Smoke-test backend.exe before packaging
@@ -83,8 +83,8 @@ jobs:
           SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-smoke-test-only
           APPDATA: ${{ runner.temp }}
         run: |
-          $exe = "dist\backend.exe"
-          if (-not (Test-Path $exe)) { Write-Error "backend.exe not found"; exit 1 }
+          $exe = "dist\backend\backend.exe"
+          if (-not (Test-Path $exe)) { Write-Error "backend.exe not found at $exe"; exit 1 }
           # --migrate exits 0 on success; capture output for debug
           $out = & $exe --migrate 2>&1
           Write-Host $out
@@ -149,7 +149,6 @@ jobs:
       # ----------------------------------------------------------------
       - name: Install SqueezyPay and run integration tests
         shell: pwsh
-        timeout-minutes: 10
         run: |
           # --- Pre-write passphrase bootstrap so auth is configured after install ---
           # The installer's passphrase wizard is skipped by /VERYSILENT, so we

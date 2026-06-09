@@ -123,11 +123,12 @@ a = Analysis(
 
 pyz = PYZ(a.pure)
 
+# --onedir mode: EXE is a small launcher; all binaries and data sit alongside it.
+# Cold-start is instant — no extraction to a temp dir on every run.
+# The installer packages the whole dist/backend/ directory.
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
     name="backend",
     debug=False,
@@ -143,4 +144,14 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="backend",
 )

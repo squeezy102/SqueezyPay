@@ -69,19 +69,8 @@ Name: "autostart";    Description: "Start {#AppName} automatically when Windows 
 Name: "desktopicon";  Description: "Create a desktop shortcut"; GroupDescription: "Options:"
 
 [Files]
-; Core — backend executable
-Source: "..\backend\dist\{#AppExeName}"; DestDir: "{app}"; Components: core; Flags: ignoreversion
-
-; Core — frontend static build
-Source: "..\frontend\dist\*"; DestDir: "{app}\frontend\dist"; Components: core; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; Core — admin dashboard
-Source: "..\admin\dashboard.html"; DestDir: "{app}\admin"; Components: core; Flags: ignoreversion
-Source: "..\admin\main.py";        DestDir: "{app}\admin"; Components: core; Flags: ignoreversion
-
-; Core — Alembic migrations (needed by --migrate at upgrade time)
-Source: "..\backend\alembic\*";   DestDir: "{app}\alembic";  Components: core; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\backend\alembic.ini"; DestDir: "{app}";          Components: core; Flags: ignoreversion
+; Core — backend (onedir bundle: exe + all dependency files)
+Source: "..\backend\dist\backend\*"; DestDir: "{app}"; Components: core; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Optional — Playwright Chromium browsers
 Source: "..\backend\playwright_browsers\*"; DestDir: "{app}\playwright_browsers"; Components: autofill; Flags: ignoreversion recursesubdirs createallsubdirs
