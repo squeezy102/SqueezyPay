@@ -2,8 +2,8 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import StaticPool, create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import StaticPool, create_engine, event
+from sqlalchemy.orm import Session, sessionmaker
 
 os.environ.setdefault("SQUEEZYPAY_ENCRYPTION_KEY", "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXJlc3Q=")
 os.environ.setdefault("SQUEEZYPAY_SECRET_KEY", "test-secret-key-for-testing-only-32chars!!")
@@ -13,6 +13,27 @@ os.environ["SQUEEZYPAY_TESTING"] = "1"
 
 import database.db as db_module
 from models.models import Base
+
+
+@pytest.fixture()
+def db():
+    """Standalone in-memory DB session for repository-layer tests."""
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+    @event.listens_for(engine, "connect")
+    def set_fk(dbapi_conn, connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
+    engine.dispose()
 
 
 @pytest.fixture()
@@ -32,6 +53,13 @@ def client():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_conn, connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(engine)
     TestSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
