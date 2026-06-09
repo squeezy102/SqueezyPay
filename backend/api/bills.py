@@ -117,32 +117,29 @@ def autofill_bill(bill_id: int, db: Session = Depends(get_db)):
 
 
 def _try_autofill(url: str, username: str, password: str) -> bool:
-    import base64
+    import json
     import subprocess
     import sys
     from pathlib import Path
 
     worker = Path(__file__).parent.parent / "scripts" / "autofill_worker.py"
-    # Use the venv python explicitly — sys.executable is correct here but
-    # DETACHED_PROCESS strips the inherited env so Chromium can't be found.
     python = Path(sys.executable)
 
-    args = [
-        str(python),
-        str(worker),
-        base64.b64encode(url.encode()).decode(),
-        base64.b64encode(username.encode()).decode(),
-        base64.b64encode(password.encode()).decode(),
-    ]
+    payload = json.dumps({"url": url, "username": username, "password": password}).encode()
 
     try:
         proc = subprocess.Popen(
-            args,
+            [str(python), str(worker)],
+            stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             # No DETACHED_PROCESS — inherits the full environment so Chromium is locatable.
             # The process outlives the request because we don't wait for it to finish.
         )
+        # Write credentials to stdin then close so the worker can read EOF
+        proc.stdin.write(payload)
+        proc.stdin.close()
+
         # Give it up to 12s to navigate and fill fields
         try:
             proc.wait(timeout=12)

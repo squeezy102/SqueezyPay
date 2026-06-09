@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       # ----------------------------------------------------------------
       # 0. Verify all required secrets are present before doing any work.
@@ -37,7 +37,7 @@ jobs:
       # ----------------------------------------------------------------
       # 1. Build frontend static files
       # ----------------------------------------------------------------
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: "24"
           cache: "npm"
@@ -55,7 +55,7 @@ jobs:
       # ----------------------------------------------------------------
       # 2. Build backend.exe with PyInstaller
       # ----------------------------------------------------------------
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.11"
           cache: "pip"
@@ -265,7 +265,7 @@ jobs:
       #    prerelease is auto-detected from tag (alpha/beta/rc suffixes)
       # ----------------------------------------------------------------
       - name: Upload installer to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: dist/SqueezyPay-Setup.exe
           fail_on_unmatched_files: true
