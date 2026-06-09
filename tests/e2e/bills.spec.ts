@@ -37,7 +37,7 @@ async function createBill(page: Page, name: string): Promise<() => Promise<void>
   await dayInput.fill('');
   await dayInput.fill('15');
 
-  await page.getByRole('button', { name: 'Add Bill' }).click();
+  await page.getByRole('button', { name: 'Add Bill', exact: true }).click();
   await expect(page.getByText(name)).toBeVisible({ timeout: 8_000 });
 
   return async () => {

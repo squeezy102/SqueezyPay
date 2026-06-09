@@ -15,8 +15,17 @@ export default defineConfig({
   },
   projects: [
     {
+      // Login once; save session to .auth/session.json for all test workers.
+      name: 'setup',
+      testMatch: /global\.setup\.ts/,
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/session.json',
+      },
+      dependencies: ['setup'],
     },
   ],
 });
