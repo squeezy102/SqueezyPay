@@ -45,6 +45,8 @@ describe("api.ts", () => {
 
   afterEach(() => {
     dispatchSpy.mockRestore();
+    vi.restoreAllMocks();
+    globalThis.fetch = undefined as unknown as typeof fetch;
   });
 
   // ── authHeaders ─────────────────────────────────────────────────────────────
