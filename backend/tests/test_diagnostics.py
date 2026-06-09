@@ -1,7 +1,6 @@
 """
 Tests for the /api/diagnostics/ endpoint and internal helper functions.
 """
-import pytest
 
 
 _EXPECTED_TABLES = [
@@ -88,7 +87,7 @@ def test_read_log_tail_returns_list_when_no_file(tmp_path, monkeypatch):
     Expected: returns an empty list []
     """
     from pathlib import Path
-    import api.diagnostics as diag_module
+
 
     # Point the module's Path resolution at a non-existent path by patching
     # the __file__ attribute used to locate the log file to an isolated tmp dir
@@ -124,14 +123,10 @@ def test_get_alembic_revision_error_path(monkeypatch):
     monkeypatch.setattr("api.diagnostics.DATABASE_URL", "postgresql://invalid:5432/nosuchdb", raising=False)
 
     # Also patch the create_engine import inside the function to force failure
-    import api.diagnostics as diag_module
-    original = None
-
     def broken_create_engine(*args, **kwargs):
         raise Exception("simulated DB unreachable")
 
     # Patch via monkeypatching the function itself using a fresh import trick
-    import importlib
     import unittest.mock as mock
 
     with mock.patch("sqlalchemy.create_engine", side_effect=Exception("simulated DB unreachable")):

@@ -1,7 +1,6 @@
 """
 Unit tests for EncryptionService (services/encryption_service.py).
 """
-import os
 
 import pytest
 

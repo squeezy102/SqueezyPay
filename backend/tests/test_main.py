@@ -1,9 +1,7 @@
 """
 Tests for helper functions in main.py — origin allow-list and rate-limit handler.
 """
-import uuid
 
-import pytest
 
 
 # ---------------------------------------------------------------------------

@@ -6,6 +6,12 @@ Coverage:
 - POST /api/bills/ then GET /api/bills/{id}     - data round-trips through repository
 - POST then DELETE then GET /                   - deletion confirmed, bill gone from list
 """
+import pytest
+from sqlalchemy import StaticPool, create_engine
+from sqlalchemy.orm import sessionmaker
+
+from models.models import Base
+from repositories.bill_repository import BillRepository
 
 BILL_PAYLOAD = {
     "name": "Spectrum",
@@ -56,13 +62,6 @@ def test_bill_repository_delete(client):
 # ---------------------------------------------------------------------------
 # Repository-layer (direct DB) tests
 # ---------------------------------------------------------------------------
-
-import pytest
-from sqlalchemy import StaticPool, create_engine
-from sqlalchemy.orm import sessionmaker
-
-from models.models import Base
-from repositories.bill_repository import BillRepository
 
 
 @pytest.fixture()

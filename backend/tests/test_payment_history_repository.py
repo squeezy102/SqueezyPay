@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker
 
-from models.models import Base, Bill, PaymentHistory
+from models.models import Base, Bill
 from repositories.payment_history_repository import PaymentHistoryRepository
 
 
