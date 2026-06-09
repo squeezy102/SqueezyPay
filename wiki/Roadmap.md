@@ -51,8 +51,8 @@ Features in scope for this phase but not yet built.
 |---|---|---|
 | Scheduled balance sync | High | APScheduler job; configurable interval, 4h minimum per Plaid guidelines |
 | Scheduled daily transaction sync | High | Replaces manual-only flow |
-| CSV/OFX import | High | Supplemental ingestion for the single connected institution |
-| Transaction deduplication | Required with CSV/OFX | Match on date + amount + merchant |
+| CSV/OFX import | Backlogged | No current demand. Plaid covers the single connected institution. Architecture keeps this path open — see design note below. |
+| Transaction deduplication | Backlogged | Required if CSV/OFX import is ever activated. |
 | Per-cardholder transaction ownership tagging | Medium | See design note below |
 | Blame graph — drill down to transactions | Medium | Click category → see transactions |
 | Recurring transaction detection | Medium | Auto-suggest bills from Plaid data |
@@ -64,6 +64,12 @@ Features in scope for this phase but not yet built.
 | Plaid webhook receiver | Requires public URL or tunnel (ngrok, Cloudflare Tunnel) |
 | Spend and deposit notifications | SendGrid + SMS gateway already scaffolded |
 | Windows installer | See design note below |
+
+### Design note — CSV/OFX import
+
+Not being built. The current user base uses Plaid with Navy Federal Credit Union, which covers all transaction data needs. No demand exists for supplemental file import.
+
+The architecture is intentionally kept open for it: the single-institution model, the deduplication-ready transaction schema (unique on `transaction_id`), and the `plaid_transactions` table structure are all compatible with a future file-import path. If this is ever needed, the entry point is a new `POST /api/import/upload` endpoint that parses OFX/CSV, deduplicates against existing transactions on `(date, amount, merchant_name)`, and inserts via `PlaidTransactionRepository.upsert`. No structural changes required.
 
 ---
 
