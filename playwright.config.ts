@@ -15,16 +15,14 @@ export default defineConfig({
   },
   projects: [
     {
-      // Login once; save session to .auth/session.json for all test workers.
+      // Login once; write token to .auth/session.json for all workers.
+      // Workers inject the token via addInitScript — see fixtures.ts.
       name: 'setup',
       testMatch: /global\.setup\.ts/,
     },
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: '.auth/session.json',
-      },
+      use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'],
     },
   ],
