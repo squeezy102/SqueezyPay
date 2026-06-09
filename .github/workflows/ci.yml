@@ -189,7 +189,7 @@ jobs:
       - name: Run Playwright E2E tests
         env:
           SQUEEZYPAY_E2E_PASSPHRASE: ${{ secrets.CI_E2E_PASSPHRASE }}
-        run: npx playwright test --project=chromium
+        run: npx playwright test
 
       - name: Upload Playwright report
         if: failure()
