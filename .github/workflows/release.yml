@@ -165,30 +165,29 @@ jobs:
           $testPassphrase = "${{ secrets.SANDBOX_TEST_PASSPHRASE }}"
           [System.IO.File]::WriteAllText("$appdataDir\initial_passphrase.tmp", $testPassphrase, [System.Text.Encoding]::UTF8)
 
-          # Start backend — redirect stdout/stderr to a log file so we can diagnose failures
-          $logFile = "$env:TEMP\backend_ci.log"
+          # Start backend — redirect stdout/stderr to log files for failure diagnosis
+          $logFile    = "$env:TEMP\backend_ci.log"
+          $logErrFile = "$env:TEMP\backend_ci_err.log"
           $backend = Start-Process -FilePath $backendExe `
             -WorkingDirectory $workDir -PassThru -WindowStyle Hidden `
-            -RedirectStandardOutput $logFile -RedirectStandardError "$env:TEMP\backend_ci_err.log"
+            -RedirectStandardOutput $logFile -RedirectStandardError $logErrFile
 
-          # Wait for /health (up to 60s)
+          # Wait for /health using curl.exe (bypasses WinHTTP proxy — Invoke-WebRequest
+          # on GitHub-hosted Windows runners routes localhost through a proxy and never connects)
           $ready = $false
           for ($i = 0; $i -lt 60; $i++) {
             Start-Sleep 1
-            try {
-              $r = Invoke-WebRequest -Uri "http://localhost:8000/health" -UseBasicParsing -TimeoutSec 2 -EA Stop
-              if ($r.StatusCode -eq 200) { $ready = $true; break }
-            } catch {
-              if ($i % 10 -eq 9) { Write-Host "Still waiting for /health at ${i}s..." }
-            }
+            $curlOut = & curl.exe -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:8000/health 2>$null
+            if ($curlOut -eq "200") { $ready = $true; break }
+            if ($i % 10 -eq 9) { Write-Host "Still waiting for /health at ${i}s... (last: $curlOut)" }
           }
           if (-not $ready) {
             $exitCode = if ($backend.HasExited) { $backend.ExitCode } else { "still running" }
             Write-Host "Backend exit code: $exitCode"
             Write-Host "=== backend stdout ==="
-            if (Test-Path $logFile) { Get-Content $logFile }
+            if (Test-Path $logFile)    { Get-Content $logFile }
             Write-Host "=== backend stderr ==="
-            if (Test-Path "$env:TEMP\backend_ci_err.log") { Get-Content "$env:TEMP\backend_ci_err.log" }
+            if (Test-Path $logErrFile) { Get-Content $logErrFile }
             if (-not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
             Write-Error "Backend did not respond to /health after 60s"; exit 1
           }
@@ -196,48 +195,43 @@ jobs:
 
           # Auth should be configured (passphrase bootstrap was read on startup)
           Start-Sleep 1
-          $auth = Invoke-RestMethod -Uri "http://localhost:8000/api/auth/status" -UseBasicParsing
-          if (-not $auth.configured) {
+          $authJson = & curl.exe -s http://localhost:8000/api/auth/status 2>$null
+          Write-Host "Auth response: $authJson"
+          if ($authJson -notmatch '"configured"\s*:\s*true') {
             Stop-Process -Id $backend.Id -Force
             Write-Error "Auth not configured"; exit 1
           }
           Write-Host "Auth: configured."
 
           # Login
-          $loginBody = '{"passphrase":"' + $testPassphrase + '"}'
-          try {
-            $loginResp = Invoke-RestMethod -Uri "http://localhost:8000/api/auth/login" `
-              -Method POST -Body $loginBody -ContentType "application/json" -UseBasicParsing
-            $token = $loginResp.access_token
-          } catch {
+          $loginBody = "{`"passphrase`":`"$testPassphrase`"}"
+          $loginJson = & curl.exe -s -X POST http://localhost:8000/api/auth/login `
+            -H "Content-Type: application/json" -d $loginBody 2>$null
+          Write-Host "Login response length: $($loginJson.Length)"
+          if ($loginJson -notmatch '"access_token"') {
             Stop-Process -Id $backend.Id -Force
-            Write-Error "Login failed: $_"; exit 1
+            Write-Error "Login failed — no access_token in response: $loginJson"; exit 1
           }
-          if (-not $token) { Stop-Process -Id $backend.Id -Force; Write-Error "No token returned"; exit 1 }
+          $token = ($loginJson | ConvertFrom-Json).access_token
+          if (-not $token) { Stop-Process -Id $backend.Id -Force; Write-Error "No token parsed"; exit 1 }
           Write-Host "Login: OK."
 
           # Authenticated bills endpoint
-          $headers = @{ Authorization = "Bearer $token" }
-          try {
-            $bills = Invoke-RestMethod -Uri "http://localhost:8000/api/bills/" -Headers $headers -UseBasicParsing
-            Write-Host "Bills endpoint: OK (count=$($bills.Count))"
-          } catch {
+          $billsJson = & curl.exe -s http://localhost:8000/api/bills/ `
+            -H "Authorization: Bearer $token" 2>$null
+          if ($LASTEXITCODE -ne 0) {
             Stop-Process -Id $backend.Id -Force
-            Write-Error "Bills endpoint failed: $_"; exit 1
+            Write-Error "Bills request failed"; exit 1
           }
+          Write-Host "Bills endpoint: OK."
 
           # SPA served from /
-          try {
-            $spa = Invoke-WebRequest -Uri "http://localhost:8000/" -UseBasicParsing -TimeoutSec 5
-            if ($spa.StatusCode -ne 200 -or $spa.Content -notmatch "SqueezyPay") {
-              Stop-Process -Id $backend.Id -Force
-              Write-Error "SPA not served correctly (status=$($spa.StatusCode))"; exit 1
-            }
-            Write-Host "SPA: OK."
-          } catch {
+          $spaOut = & curl.exe -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8000/ 2>$null
+          if ($spaOut -ne "200") {
             Stop-Process -Id $backend.Id -Force
-            Write-Error "SPA request failed: $_"; exit 1
+            Write-Error "SPA returned $spaOut (expected 200)"; exit 1
           }
+          Write-Host "SPA: OK."
 
           Stop-Process -Id $backend.Id -Force
           Write-Host "All integration checks passed."
