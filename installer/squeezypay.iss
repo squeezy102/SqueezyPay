@@ -83,10 +83,10 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}";     Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Registry]
-; Write Plaid credentials if provided on the custom pages (populated by Pascal script below)
-; HKCU\Environment — Windows User environment variables, readable without admin rights
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_ENCRYPTION_KEY"; ValueData: "{code:GetEncryptionKey}"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_SECRET_KEY";     ValueData: "{code:GetSecretKey}";     Flags: uninsdeletevalue
+; Plaid credentials from custom wizard pages — written by Pascal accessor functions.
+; Encryption/secret keys are written from CurStepChanged(ssPostInstall) via RegWriteStringValue
+; after backend.exe generates them — they cannot be populated here because [Registry] fires
+; before ssPostInstall and the binary is not yet available at [Registry] evaluation time.
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_PLAID_CLIENTID"; ValueData: "{code:GetPlaidClientId}"; Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_PLAID_SECRET";   ValueData: "{code:GetPlaidSecret}";   Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_PLAID_ENV";      ValueData: "production";              Flags: uninsdeletevalue
@@ -183,112 +183,9 @@ var
   PassphraseConfirmEdit: TNewEdit;
   PassphraseError: TNewStaticText;
 
-  // Generated values (held in memory, written to registry via [Registry] section)
-  GeneratedEncryptionKey: String;
-  GeneratedSecretKey: String;
-
-
-// -----------------------------------------------------------------------
-// Key generation — pure Pascal using Windows CryptGenRandom.
-// Avoids spawning backend.exe as a subprocess (which has no env vars
-// set at ssInstall time and may fail to import the Python runtime).
-// -----------------------------------------------------------------------
-
-// Windows CryptGenRandom via advapi32
-function CryptAcquireContext(var hProv: Cardinal; pszContainer: String;
-  pszProvider: String; dwProvType: Cardinal; dwFlags: Cardinal): Boolean;
-  external 'CryptAcquireContextW@advapi32.dll stdcall';
-function CryptGenRandom(hProv: Cardinal; dwLen: Cardinal;
-  var pbBuffer: AnsiString): Boolean;
-  external 'CryptGenRandom@advapi32.dll stdcall';
-function CryptReleaseContext(hProv: Cardinal; dwFlags: Cardinal): Boolean;
-  external 'CryptReleaseContext@advapi32.dll stdcall';
-
-// Generate cryptographically random bytes; returns empty string on failure.
-function GetRandomBytes(Count: Integer): AnsiString;
-var
-  hProv: Cardinal;
-  I: Integer;
-begin
-  Result := '';
-  if not CryptAcquireContext(hProv, '', '', 1 {PROV_RSA_FULL}, $F0000000 {CRYPT_VERIFYCONTEXT}) then
-    Exit;
-  SetLength(Result, Count);
-  if not CryptGenRandom(hProv, Count, Result) then
-    Result := '';
-  CryptReleaseContext(hProv, 0);
-end;
-
-// URL-safe base64 encoding (no line breaks) matching Python's base64.urlsafe_b64encode.
-function Base64UrlEncode(const Data: AnsiString): String;
-var
-  Alphabet: String;
-  I, Len, B0, B1, B2: Integer;
-begin
-  Alphabet := 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-  Result := '';
-  Len := Length(Data);
-  I := 1;
-  while I <= Len do
-  begin
-    B0 := Ord(Data[I]);
-    if I + 1 <= Len then B1 := Ord(Data[I+1]) else B1 := 0;
-    if I + 2 <= Len then B2 := Ord(Data[I+2]) else B2 := 0;
-    Result := Result + Alphabet[(B0 shr 2) + 1];
-    Result := Result + Alphabet[((B0 and 3) shl 4) or (B1 shr 4) + 1];
-    if I + 1 <= Len then
-      Result := Result + Alphabet[((B1 and 15) shl 2) or (B2 shr 6) + 1]
-    else
-      Result := Result + '=';
-    if I + 2 <= Len then
-      Result := Result + Alphabet[(B2 and 63) + 1]
-    else
-      Result := Result + '=';
-    I := I + 3;
-  end;
-end;
-
-// Fernet key = 32 random bytes, base64url-encoded with padding.
-function GenerateFernetKey(): String;
-var
-  Raw: AnsiString;
-begin
-  Raw := GetRandomBytes(32);
-  if Raw = '' then
-    Result := ''
-  else
-    Result := Base64UrlEncode(Raw);
-end;
-
-// Secret key = 64 random hex chars (32 bytes).
-function GenerateSecretKey(): String;
-var
-  HexChars: String;
-  Raw: AnsiString;
-  I: Integer;
-  B: Integer;
-begin
-  HexChars := '0123456789abcdef';
-  Result := '';
-  Raw := GetRandomBytes(32);
-  if Raw = '' then Exit;
-  for I := 1 to Length(Raw) do
-  begin
-    B := Ord(Raw[I]);
-    Result := Result + HexChars[(B shr 4) + 1] + HexChars[(B and 15) + 1];
-  end;
-end;
-
-
 // -----------------------------------------------------------------------
 // Accessor functions used by [Registry] ValueData entries
 // -----------------------------------------------------------------------
-
-function GetEncryptionKey(Param: String): String;
-begin Result := GeneratedEncryptionKey; end;
-
-function GetSecretKey(Param: String): String;
-begin Result := GeneratedSecretKey; end;
 
 function GetPlaidClientId(Param: String): String;
 begin Result := PlaidClientIdEdit.Text; end;
@@ -559,34 +456,62 @@ end;
 
 
 // -----------------------------------------------------------------------
-// Key generation — runs after files are extracted (wpInstalling)
-// and before [Registry] entries are written
+// Post-install: generate keys via backend.exe, write to HKCU\Environment
 // -----------------------------------------------------------------------
+// Keys are generated here (ssPostInstall) rather than ssInstall because
+// {app}\backend.exe is not yet present during ssInstall. By ssPostInstall
+// all files have been extracted so the binary is callable.
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
+  BackendExe: String;
+  EncKeyFile: String;
+  SecKeyFile: String;
+  EncKey: String;
+  SecKey: String;
   TaskXml: String;
   TaskFile: String;
   ResultCode: Integer;
 begin
-  if CurStep = ssInstall then
+  if CurStep = ssPostInstall then
   begin
-    GeneratedEncryptionKey := GenerateFernetKey();
-    GeneratedSecretKey     := GenerateSecretKey();
+    BackendExe := ExpandConstant('{app}\{#AppExeName}');
+    EncKeyFile := ExpandConstant('{tmp}\squeezypay_enc.key');
+    SecKeyFile := ExpandConstant('{tmp}\squeezypay_sec.key');
 
-    if (GeneratedEncryptionKey = '') and not WizardSilent() then
+    // Generate keys using the installed binary — it has cryptography available.
+    Exec(BackendExe, '--generate-key fernet "' + EncKeyFile + '"',
+         ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(BackendExe, '--generate-key secret "' + SecKeyFile + '"',
+         ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+    if FileExists(EncKeyFile) then
+    begin
+      LoadStringFromFile(EncKeyFile, EncKey);
+      EncKey := Trim(EncKey);
+      DeleteFile(EncKeyFile);
+    end;
+    if FileExists(SecKeyFile) then
+    begin
+      LoadStringFromFile(SecKeyFile, SecKey);
+      SecKey := Trim(SecKey);
+      DeleteFile(SecKeyFile);
+    end;
+
+    if EncKey <> '' then
+      RegWriteStringValue(HKCU, 'Environment', 'SQUEEZYPAY_ENCRYPTION_KEY', EncKey)
+    else if not WizardSilent() then
       MsgBox('Warning: encryption key generation failed. You will need to set ' +
              'SQUEEZYPAY_ENCRYPTION_KEY manually before starting the app. ' +
              'See the Configuration page in the wiki for instructions: ' +
              'https://github.com/squeezy102/SqueezyPay/wiki/Configuration', mbError, MB_OK);
-  end;
 
-  if CurStep = ssPostInstall then
-  begin
-    // Populate the key reveal page now that the key is known.
-    // The wizard will present this page next (it sits after wpInstalling).
-    if GeneratedEncryptionKey <> '' then
-      KeyRevealEdit.Text := GeneratedEncryptionKey
+    if SecKey <> '' then
+      RegWriteStringValue(HKCU, 'Environment', 'SQUEEZYPAY_SECRET_KEY', SecKey);
+
+    // Populate the key reveal page (shown next, after wpInstalling).
+    if EncKey <> '' then
+      KeyRevealEdit.Text := EncKey
     else
       KeyRevealEdit.Text := '(key generation failed — see Configuration wiki page)';
 
@@ -639,5 +564,8 @@ begin
   begin
     Exec('schtasks.exe', '/Delete /TN "SqueezyPay" /F',
          '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Remove keys written by CurStepChanged(ssPostInstall) — not tracked by [Registry]
+    RegDeleteValue(HKCU, 'Environment', 'SQUEEZYPAY_ENCRYPTION_KEY');
+    RegDeleteValue(HKCU, 'Environment', 'SQUEEZYPAY_SECRET_KEY');
   end;
 end;
