@@ -469,6 +469,8 @@ var
   SecKeyFile: String;
   EncKey: String;
   SecKey: String;
+  RawEncKey: AnsiString;
+  RawSecKey: AnsiString;
   TaskXml: String;
   TaskFile: String;
   ResultCode: Integer;
@@ -485,16 +487,17 @@ begin
     Exec(BackendExe, '--generate-key secret "' + SecKeyFile + '"',
          ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
+    // LoadStringFromFile requires AnsiString; promote to String after loading.
     if FileExists(EncKeyFile) then
     begin
-      LoadStringFromFile(EncKeyFile, EncKey);
-      EncKey := Trim(EncKey);
+      LoadStringFromFile(EncKeyFile, RawEncKey);
+      EncKey := Trim(String(RawEncKey));
       DeleteFile(EncKeyFile);
     end;
     if FileExists(SecKeyFile) then
     begin
-      LoadStringFromFile(SecKeyFile, SecKey);
-      SecKey := Trim(SecKey);
+      LoadStringFromFile(SecKeyFile, RawSecKey);
+      SecKey := Trim(String(RawSecKey));
       DeleteFile(SecKeyFile);
     end;
 
