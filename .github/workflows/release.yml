@@ -151,6 +151,7 @@ jobs:
         env:
           SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}
           SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-integration-test-only
+          SANDBOX_TEST_PASSPHRASE: ${{ secrets.SANDBOX_TEST_PASSPHRASE }}
         run: |
           $repoRoot   = (Get-Location).Path
           $backendExe = Join-Path $repoRoot "backend\dist\backend\backend.exe"
@@ -159,10 +160,11 @@ jobs:
             Write-Error "backend.exe not found at $backendExe"; exit 1
           }
 
-          # Bootstrap passphrase for auth setup
+          # Read passphrase via env var — avoids PowerShell double-quote string
+          # interpolation that would mangle chars like $ ` " in the secret value.
           $appdataDir = "$env:APPDATA\SqueezyPay"
           New-Item -ItemType Directory -Force -Path $appdataDir | Out-Null
-          $testPassphrase = "${{ secrets.SANDBOX_TEST_PASSPHRASE }}".Trim()
+          $testPassphrase = $env:SANDBOX_TEST_PASSPHRASE.Trim()
           Write-Host "Passphrase length (bootstrap): $($testPassphrase.Length)"
           [System.IO.File]::WriteAllText("$appdataDir\initial_passphrase.tmp", $testPassphrase, [System.Text.Encoding]::UTF8)
 
