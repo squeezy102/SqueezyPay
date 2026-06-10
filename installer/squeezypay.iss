@@ -202,7 +202,7 @@ begin
   TempFile := ExpandConstant('{tmp}\fernet_key.txt');
   Exec(ExpandConstant('{app}\{#AppExeName}'),
        '--generate-key fernet "' + TempFile + '"',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+       ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
   if (ResultCode = 0) and FileExists(TempFile) then
   begin
     LoadStringFromFile(TempFile, FileContent);
@@ -221,7 +221,7 @@ begin
   TempFile := ExpandConstant('{tmp}\secret_key.txt');
   Exec(ExpandConstant('{app}\{#AppExeName}'),
        '--generate-key secret "' + TempFile + '"',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+       ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
   if (ResultCode = 0) and FileExists(TempFile) then
   begin
     LoadStringFromFile(TempFile, FileContent);
