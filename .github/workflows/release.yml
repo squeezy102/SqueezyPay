@@ -249,7 +249,7 @@ jobs:
           }
           Write-Host "SPA: OK."
 
-          Stop-Process -Id $backend.Id -Force
+          Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue
           Write-Host "All integration checks passed."
 
       # ----------------------------------------------------------------
