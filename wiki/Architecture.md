@@ -165,6 +165,29 @@ Single-user, household passphrase model. On login, the backend validates the bcr
 
 There are no individual user accounts. The household shares one passphrase.
 
+## Installer
+
+`installer/squeezypay.iss` — Inno Setup 6 script. Compiled by `installer/build.yml` (GitHub Actions, Windows runner) on every version tag push. Output: `dist/SqueezyPay-Setup.exe`, attached to the GitHub Release.
+
+**Key generation:** Keys are generated at `CurStepChanged(ssPostInstall)` by invoking `backend.exe --generate-key` (a CLI mode in `backend/main.py`). This happens after all files are extracted to `{app}`, so the binary is available. Keys are written to temp files, read back by the Inno Setup Pascal script, written to `HKCU\Environment` via `RegWriteStringValue`, and the temp files are deleted. See the [Roadmap](Roadmap#key-generation-implementation-note) for the rationale behind this approach.
+
+**Install layout:**
+```
+C:\Program Files\SqueezyPay\
+  backend.exe        PyInstaller onedir bundle — FastAPI + uvicorn + all deps
+  _internal\         PyInstaller support files
+  frontend\          Vite static build — served by backend.exe
+  alembic\           Migration files — needed at runtime for upgrades
+  alembic.ini
+  unins000.exe       Inno Setup uninstaller
+
+%APPDATA%\SqueezyPay\
+  squeezypay.db      SQLite database
+  logs\              Log files
+```
+
+**CI:** `release.yml` workflow builds frontend + backend + installer, runs a backend binary integration test (API auth round-trip via `curl.exe`), runs an installer smoke test (silent install, verifies `backend.exe` placed and env vars written), then attaches the installer to the GitHub Release.
+
 ## CI
 
 GitHub Actions runs on push to `dev` and on pull requests to `master`:

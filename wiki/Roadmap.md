@@ -151,7 +151,7 @@ C:\Program Files\SqueezyPay\
 **What the installer does:**
 - Extracts binaries and static files to Program Files
 - Creates `%APPDATA%\SqueezyPay\` and subdirs
-- Generates `SQUEEZYPAY_ENCRYPTION_KEY` (Fernet) and `SQUEEZYPAY_SECRET_KEY`, writes to `HKCU\Environment`
+- Generates `SQUEEZYPAY_ENCRYPTION_KEY` (Fernet) and `SQUEEZYPAY_SECRET_KEY` by calling `backend.exe --generate-key` after files are installed (see key generation note below), writes to `HKCU\Environment`
 - Writes Plaid credentials to `HKCU\Environment` if provided
 - Runs `backend.exe --migrate` (Alembic upgrade head, headless, exits when done)
 - Optionally creates Task Scheduler entry via `schtasks /create`
@@ -161,6 +161,16 @@ C:\Program Files\SqueezyPay\
 **`backend.exe` modes:**
 - `backend.exe` — normal server (serves API + frontend static files on :8000)
 - `backend.exe --migrate` — runs Alembic upgrade head and exits; used by installer and future upgrade flow
+- `backend.exe --generate-key fernet <outfile>` — generates a Fernet key, writes to file, exits; used by installer
+- `backend.exe --generate-key secret <outfile>` — generates a 32-byte hex secret, writes to file, exits; used by installer
+
+**Key generation implementation note:**
+
+Keys are generated at `CurStepChanged(ssPostInstall)` — after all files have been extracted to `{app}` — by invoking `backend.exe --generate-key` via Inno Setup's `Exec()`. The key is written to a temp file, read back by Pascal using `LoadStringFromFile`, and written to `HKCU\Environment` via `RegWriteStringValue`. The temp file is deleted immediately after.
+
+Keys cannot be generated during `ssInstall` because `{app}\backend.exe` does not exist until the file extraction phase completes. They cannot be generated earlier via pure Pascal because Inno Setup's Pascal Script dialect (RemObjects Pascal Script) has no `Pointer` type and cannot safely use managed `AnsiString` buffers as raw DLL write targets — attempting to pass `var AnsiString` to `CryptGenRandom@advapi32.dll` causes an access violation at runtime due to managed string header corruption.
+
+Keys cannot be passed through `[Registry]` `{code:GetXxx}` accessor functions (the standard pattern for dynamic registry values) because the `[Registry]` section fires before `ssPostInstall` — at a point when the binary is not yet installed.
 
 **Upgrade path:**
 - User runs new installer over existing install
