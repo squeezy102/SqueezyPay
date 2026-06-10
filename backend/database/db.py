@@ -10,8 +10,11 @@ from models.models import Base
 
 def _resolve_db_path() -> Path:
     if getattr(sys, "frozen", False):
-        # Running as a PyInstaller bundle — store data in %APPDATA%\SqueezyPay
-        data_dir = Path(os.environ["APPDATA"]) / "SqueezyPay"
+        # Running as a PyInstaller bundle — store data in %APPDATA%\SqueezyPay.
+        # Fall back to a temp path when APPDATA is absent (e.g. --generate-key
+        # invoked by the installer before env vars are written to the registry).
+        appdata = os.environ.get("APPDATA") or os.environ.get("TEMP") or os.path.expanduser("~")
+        data_dir = Path(appdata) / "SqueezyPay"
     else:
         # Dev mode — keep the database next to the backend directory
         data_dir = Path(__file__).resolve().parent.parent

@@ -527,7 +527,7 @@ begin
     GeneratedEncryptionKey := GenerateFernetKey();
     GeneratedSecretKey     := GenerateSecretKey();
 
-    if GeneratedEncryptionKey = '' then
+    if (GeneratedEncryptionKey = '') and not WizardSilent() then
       MsgBox('Warning: encryption key generation failed. You will need to set ' +
              'SQUEEZYPAY_ENCRYPTION_KEY manually before starting the app. ' +
              'See the Configuration page in the wiki for instructions: ' +
