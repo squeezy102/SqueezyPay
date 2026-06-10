@@ -203,14 +203,17 @@ jobs:
           }
           Write-Host "Auth: configured."
 
-          # Login
-          $loginBody = "{`"passphrase`":`"$testPassphrase`"}"
+          # Login — serialize JSON with ConvertTo-Json (handles special chars safely),
+          # write to a temp file, and pass via curl -d @file to avoid shell-escaping issues
+          $loginBodyFile = "$env:TEMP\login_body.json"
+          $loginBodyObj  = @{ passphrase = $testPassphrase }
+          $loginBodyObj | ConvertTo-Json -Compress | Set-Content -Path $loginBodyFile -Encoding UTF8 -NoNewline
           $loginJson = & curl.exe -s -X POST http://localhost:8000/api/auth/login `
-            -H "Content-Type: application/json" -d $loginBody 2>$null
+            -H "Content-Type: application/json" -d "@$loginBodyFile" 2>$null
           Write-Host "Login response length: $($loginJson.Length)"
           if ($loginJson -notmatch '"access_token"') {
             Stop-Process -Id $backend.Id -Force
-            Write-Error "Login failed — no access_token in response: $loginJson"; exit 1
+            Write-Error "Login failed — no access_token in response (length=$($loginJson.Length))"; exit 1
           }
           $token = ($loginJson | ConvertFrom-Json).access_token
           if (-not $token) { Stop-Process -Id $backend.Id -Force; Write-Error "No token parsed"; exit 1 }
