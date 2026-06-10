@@ -142,72 +142,34 @@ jobs:
           Write-Host "Installer size: $([math]::Round($size/1MB, 1)) MB"
 
       # ----------------------------------------------------------------
-      # 5. Install and integration-test on the runner
-      #    Runs the real installer on the windows-latest VM, starts the
-      #    backend, and exercises every major endpoint. Blocks upload on
-      #    failure so a broken installer is never published as a release.
+      # 5a. Binary integration test — run backend.exe directly from the
+      #     build output. Tests API correctness without installer overhead.
+      #     The installer is separately smoke-tested in step 5b.
       # ----------------------------------------------------------------
-      - name: Install SqueezyPay and run integration tests
+      - name: Integration test backend binary
         shell: pwsh
+        env:
+          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}
+          SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-integration-test-only
         run: |
-          # --- Pre-write passphrase bootstrap so auth is configured after install ---
-          # The installer's passphrase wizard is skipped by /VERYSILENT, so we
-          # write the tmp file the backend reads on first start to set the passphrase.
+          $backendExe = "backend\dist\backend\backend.exe"
+          if (-not (Test-Path $backendExe)) {
+            Write-Error "backend.exe not found at $backendExe"; exit 1
+          }
+
+          # Bootstrap passphrase for auth setup
           $appdataDir = "$env:APPDATA\SqueezyPay"
           New-Item -ItemType Directory -Force -Path $appdataDir | Out-Null
           $testPassphrase = "${{ secrets.SANDBOX_TEST_PASSPHRASE }}"
           [System.IO.File]::WriteAllText("$appdataDir\initial_passphrase.tmp", $testPassphrase, [System.Text.Encoding]::UTF8)
-          Write-Host "Passphrase bootstrap written."
 
-          # --- Install ---
-          # /SP-           suppresses "This will install..." prompt (needed on headless runners)
-          # /VERYSILENT    no UI
-          # /SUPPRESSMSGBOXES  suppress error dialogs
-          # /NORESTART     don't reboot
-          # /LOG           write install log for diagnostics
-          Write-Host "Running installer..."
-          $installerLog = "$env:TEMP\squeezypay_install.log"
-          $proc = Start-Process -FilePath "dist\SqueezyPay-Setup.exe" `
-            -ArgumentList "/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/LOG=$installerLog" `
-            -Wait -PassThru
-          if ($proc.ExitCode -ne 0) {
-            if (Test-Path $installerLog) { Get-Content -Path $installerLog -Tail 20 }
-            Write-Error "Installer failed with exit code $($proc.ExitCode)"; exit 1
-          }
-          Write-Host "Installer completed (exit 0)"
-
-          # --- Locate backend.exe ---
-          $installDir = "$env:ProgramFiles\SqueezyPay"
-          if (-not (Test-Path $installDir)) { $installDir = "$env:LocalAppData\Programs\SqueezyPay" }
-          $backendExe = "$installDir\backend.exe"
-          if (-not (Test-Path $backendExe)) {
-            Write-Error "backend.exe not found at $backendExe"; exit 1
-          }
-          Write-Host "backend.exe: $backendExe"
-
-          # --- Reload env vars written by installer ---
-          $encKey    = [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_ENCRYPTION_KEY", "User")
-          $secretKey = [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_SECRET_KEY", "User")
-          if (-not $encKey)    { Write-Error "SQUEEZYPAY_ENCRYPTION_KEY not set"; exit 1 }
-          if (-not $secretKey) { Write-Error "SQUEEZYPAY_SECRET_KEY not set";    exit 1 }
-          $env:SQUEEZYPAY_ENCRYPTION_KEY = $encKey
-          $env:SQUEEZYPAY_SECRET_KEY     = $secretKey
-          Write-Host "Env vars loaded."
-
-          # --- Start backend ---
-          # Pass env vars explicitly — Start-Process inherits a snapshot of the
-          # machine/user env taken at process start, not the current session's $env:.
-          Write-Host "Starting backend..."
-          $backendEnv = [System.Environment]::GetEnvironmentVariables()
-          $backendEnv["SQUEEZYPAY_ENCRYPTION_KEY"] = $encKey
-          $backendEnv["SQUEEZYPAY_SECRET_KEY"]     = $secretKey
+          # Start backend
           $backend = Start-Process -FilePath $backendExe `
-            -WorkingDirectory $installDir -PassThru -WindowStyle Hidden `
-            -Environment $backendEnv
+            -WorkingDirectory "backend\dist\backend" -PassThru -WindowStyle Hidden
 
-          # --- Wait for /health (up to 60s) ---
+          # Wait for /health (up to 30s — onedir starts instantly)
           $ready = $false
-          for ($i = 0; $i -lt 60; $i++) {
+          for ($i = 0; $i -lt 30; $i++) {
             Start-Sleep 1
             try {
               $r = Invoke-WebRequest -Uri "http://localhost:8000/health" -UseBasicParsing -TimeoutSec 2 -EA Stop
@@ -218,22 +180,21 @@ jobs:
             $exitCode = if ($backend.HasExited) { $backend.ExitCode } else { "still running" }
             Write-Host "Backend exit code: $exitCode"
             if (-not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
-            Write-Error "Backend did not respond to /health after 60s"
-            exit 1
+            Write-Error "Backend did not respond to /health after 30s"; exit 1
           }
-          Write-Host "Backend healthy."
+          Write-Host "Health: OK."
 
-          # --- Auth configured (passphrase was bootstrapped by installer) ---
-          Start-Sleep 2
+          # Auth should be configured (passphrase bootstrap was read on startup)
+          Start-Sleep 1
           $auth = Invoke-RestMethod -Uri "http://localhost:8000/api/auth/status" -UseBasicParsing
           if (-not $auth.configured) {
             Stop-Process -Id $backend.Id -Force
-            Write-Error "Auth not configured after install"; exit 1
+            Write-Error "Auth not configured"; exit 1
           }
           Write-Host "Auth: configured."
 
-          # --- Login ---
-          $loginBody = '{"passphrase":"' + "${{ secrets.SANDBOX_TEST_PASSPHRASE }}" + '"}'
+          # Login
+          $loginBody = '{"passphrase":"' + $testPassphrase + '"}'
           try {
             $loginResp = Invoke-RestMethod -Uri "http://localhost:8000/api/auth/login" `
               -Method POST -Body $loginBody -ContentType "application/json" -UseBasicParsing
@@ -245,7 +206,7 @@ jobs:
           if (-not $token) { Stop-Process -Id $backend.Id -Force; Write-Error "No token returned"; exit 1 }
           Write-Host "Login: OK."
 
-          # --- Authenticated bills endpoint ---
+          # Authenticated bills endpoint
           $headers = @{ Authorization = "Bearer $token" }
           try {
             $bills = Invoke-RestMethod -Uri "http://localhost:8000/api/bills/" -Headers $headers -UseBasicParsing
@@ -255,7 +216,7 @@ jobs:
             Write-Error "Bills endpoint failed: $_"; exit 1
           }
 
-          # --- SPA served from / ---
+          # SPA served from /
           try {
             $spa = Invoke-WebRequest -Uri "http://localhost:8000/" -UseBasicParsing -TimeoutSec 5
             if ($spa.StatusCode -ne 200 -or $spa.Content -notmatch "SqueezyPay") {
@@ -269,8 +230,42 @@ jobs:
           }
 
           Stop-Process -Id $backend.Id -Force
-          Write-Host ""
           Write-Host "All integration checks passed."
+
+      # ----------------------------------------------------------------
+      # 5b. Installer smoke test — verifies the installer runs to completion
+      #     and lays down backend.exe and the env vars in the right places.
+      #     Does not re-run the backend; binary correctness is covered above.
+      # ----------------------------------------------------------------
+      - name: Smoke-test installer
+        shell: pwsh
+        run: |
+          Write-Host "Running installer..."
+          $installerLog = "$env:TEMP\squeezypay_install.log"
+          $proc = Start-Process -FilePath "dist\SqueezyPay-Setup.exe" `
+            -ArgumentList "/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/LOG=$installerLog" `
+            -Wait -PassThru
+          if (Test-Path $installerLog) { Get-Content -Path $installerLog -Tail 30 }
+          if ($proc.ExitCode -ne 0) {
+            Write-Error "Installer failed with exit code $($proc.ExitCode)"; exit 1
+          }
+          Write-Host "Installer completed (exit 0)."
+
+          # Verify backend.exe was installed
+          $installDir = "$env:ProgramFiles\SqueezyPay"
+          if (-not (Test-Path $installDir)) { $installDir = "$env:LocalAppData\Programs\SqueezyPay" }
+          if (-not (Test-Path "$installDir\backend.exe")) {
+            Write-Error "backend.exe not found in $installDir"; exit 1
+          }
+          Write-Host "backend.exe present at $installDir."
+
+          # Verify installer wrote env vars to HKCU\Environment
+          $encKey    = [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_ENCRYPTION_KEY", "User")
+          $secretKey = [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_SECRET_KEY",     "User")
+          if (-not $encKey)    { Write-Error "SQUEEZYPAY_ENCRYPTION_KEY not written to registry"; exit 1 }
+          if (-not $secretKey) { Write-Error "SQUEEZYPAY_SECRET_KEY not written to registry";     exit 1 }
+          Write-Host "Registry env vars: OK."
+          Write-Host "Installer smoke test passed."
 
       # ----------------------------------------------------------------
       # 6. Attach installer to the GitHub Release

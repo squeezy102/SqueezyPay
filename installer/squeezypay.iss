@@ -2,7 +2,7 @@
 ; Built with Inno Setup 6.x — https://jrsoftware.org/isinfo.php
 ;
 ; Prerequisites (must exist before running iscc):
-;   ..\backend\dist\backend.exe     (PyInstaller output)
+;   ..\backend\dist\backend\*       (PyInstaller onedir output)
 ;   ..\frontend\dist\*              (Vite build output)
 ;   ..\admin\dashboard.html
 ;   ..\admin\main.py
@@ -18,7 +18,7 @@
 ; AppVersion is injected by CI via /DAppVersion=<tag> (e.g. /DAppVersion=0.1.0-alpha.3).
 ; When building locally without that flag, fall back to reading the EXE version resource.
 #ifndef AppVersion
-  #define AppVersion GetVersionNumbersString("..\backend\dist\backend.exe")
+  #define AppVersion GetVersionNumbersString("..\backend\dist\backend\backend.exe")
 #endif
 #define AppPublisher "SqueezyPay"
 #define AppURL       "https://github.com/squeezy102/SqueezyPay"
