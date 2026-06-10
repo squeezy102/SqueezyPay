@@ -204,10 +204,14 @@ jobs:
           }
           Write-Host "Auth: configured."
 
-          # Login — serialize via ConvertTo-Json (handles special chars), write UTF-8
-          # no-BOM via WriteAllText, pass to curl via -d @file
+          # Login — write passphrase to a temp file and read it back via the backend's
+          # /api/auth/setup endpoint path. Use the bootstrap file itself as the source
+          # of truth: read it back and send its exact bytes in the JSON body.
+          # ConvertTo-Json escapes chars like & as &, which causes bcrypt mismatch.
+          # Instead escape only JSON-structural chars (" and \) and embed raw UTF-8.
           $loginBodyFile = "$env:TEMP\login_body.json"
-          $loginBodyJson = @{ passphrase = $testPassphrase } | ConvertTo-Json -Compress
+          $escapedPass = $testPassphrase -replace '\\', '\\' -replace '"', '\"'
+          $loginBodyJson = "{`"passphrase`":`"$escapedPass`"}"
           Write-Host "Login body length: $($loginBodyJson.Length), passphrase length: $($testPassphrase.Length)"
           [System.IO.File]::WriteAllText($loginBodyFile, $loginBodyJson, [System.Text.Encoding]::UTF8)
           $loginJson = & curl.exe -s -X POST http://localhost:8000/api/auth/login `
