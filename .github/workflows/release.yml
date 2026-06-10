@@ -152,7 +152,9 @@ jobs:
           SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}
           SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-integration-test-only
         run: |
-          $backendExe = "backend\dist\backend\backend.exe"
+          $repoRoot   = (Get-Location).Path
+          $backendExe = Join-Path $repoRoot "backend\dist\backend\backend.exe"
+          $workDir    = Join-Path $repoRoot "backend\dist\backend"
           if (-not (Test-Path $backendExe)) {
             Write-Error "backend.exe not found at $backendExe"; exit 1
           }
@@ -163,26 +165,34 @@ jobs:
           $testPassphrase = "${{ secrets.SANDBOX_TEST_PASSPHRASE }}"
           [System.IO.File]::WriteAllText("$appdataDir\initial_passphrase.tmp", $testPassphrase, [System.Text.Encoding]::UTF8)
 
-          # Start backend
+          # Start backend — redirect stdout/stderr to a log file so we can diagnose failures
+          $logFile = "$env:TEMP\backend_ci.log"
           $backend = Start-Process -FilePath $backendExe `
-            -WorkingDirectory "backend\dist\backend" -PassThru -WindowStyle Hidden
+            -WorkingDirectory $workDir -PassThru -WindowStyle Hidden `
+            -RedirectStandardOutput $logFile -RedirectStandardError "$env:TEMP\backend_ci_err.log"
 
-          # Wait for /health (up to 30s — onedir starts instantly)
+          # Wait for /health (up to 60s)
           $ready = $false
-          for ($i = 0; $i -lt 30; $i++) {
+          for ($i = 0; $i -lt 60; $i++) {
             Start-Sleep 1
             try {
               $r = Invoke-WebRequest -Uri "http://localhost:8000/health" -UseBasicParsing -TimeoutSec 2 -EA Stop
               if ($r.StatusCode -eq 200) { $ready = $true; break }
-            } catch {}
+            } catch {
+              if ($i % 10 -eq 9) { Write-Host "Still waiting for /health at ${i}s..." }
+            }
           }
           if (-not $ready) {
             $exitCode = if ($backend.HasExited) { $backend.ExitCode } else { "still running" }
             Write-Host "Backend exit code: $exitCode"
+            Write-Host "=== backend stdout ==="
+            if (Test-Path $logFile) { Get-Content $logFile }
+            Write-Host "=== backend stderr ==="
+            if (Test-Path "$env:TEMP\backend_ci_err.log") { Get-Content "$env:TEMP\backend_ci_err.log" }
             if (-not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
-            Write-Error "Backend did not respond to /health after 30s"; exit 1
+            Write-Error "Backend did not respond to /health after 60s"; exit 1
           }
-          Write-Host "Health: OK."
+          Write-Host "Health: OK. (${i}s)"
 
           # Auth should be configured (passphrase bootstrap was read on startup)
           Start-Sleep 1
