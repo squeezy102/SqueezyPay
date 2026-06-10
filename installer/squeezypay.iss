@@ -199,7 +199,7 @@ function CryptAcquireContext(var hProv: Cardinal; pszContainer: String;
   pszProvider: String; dwProvType: Cardinal; dwFlags: Cardinal): Boolean;
   external 'CryptAcquireContextW@advapi32.dll stdcall';
 function CryptGenRandom(hProv: Cardinal; dwLen: Cardinal;
-  pbBuffer: Pointer): Boolean;
+  var pbBuffer: AnsiString): Boolean;
   external 'CryptGenRandom@advapi32.dll stdcall';
 function CryptReleaseContext(hProv: Cardinal; dwFlags: Cardinal): Boolean;
   external 'CryptReleaseContext@advapi32.dll stdcall';
@@ -214,7 +214,7 @@ begin
   if not CryptAcquireContext(hProv, '', '', 1 {PROV_RSA_FULL}, $F0000000 {CRYPT_VERIFYCONTEXT}) then
     Exit;
   SetLength(Result, Count);
-  if not CryptGenRandom(hProv, Count, Pointer(Result)) then
+  if not CryptGenRandom(hProv, Count, Result) then
     Result := '';
   CryptReleaseContext(hProv, 0);
 end;
