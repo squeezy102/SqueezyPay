@@ -189,45 +189,94 @@ var
 
 
 // -----------------------------------------------------------------------
-// Key generation — Python one-liners executed via shell
+// Key generation — pure Pascal using Windows CryptGenRandom.
+// Avoids spawning backend.exe as a subprocess (which has no env vars
+// set at ssInstall time and may fail to import the Python runtime).
 // -----------------------------------------------------------------------
 
-function GenerateFernetKey(): String;
+// Windows CryptGenRandom via advapi32
+function CryptAcquireContext(var hProv: Cardinal; pszContainer: String;
+  pszProvider: String; dwProvType: Cardinal; dwFlags: Cardinal): Boolean;
+  external 'CryptAcquireContextW@advapi32.dll stdcall';
+function CryptGenRandom(hProv: Cardinal; dwLen: Cardinal;
+  pbBuffer: Pointer): Boolean;
+  external 'CryptGenRandom@advapi32.dll stdcall';
+function CryptReleaseContext(hProv: Cardinal; dwFlags: Cardinal): Boolean;
+  external 'CryptReleaseContext@advapi32.dll stdcall';
+
+// Generate cryptographically random bytes; returns empty string on failure.
+function GetRandomBytes(Count: Integer): AnsiString;
 var
-  TempFile: String;
-  ResultCode: Integer;
-  FileContent: AnsiString;
+  hProv: Cardinal;
+  I: Integer;
 begin
   Result := '';
-  TempFile := ExpandConstant('{tmp}\fernet_key.txt');
-  Exec(ExpandConstant('{app}\{#AppExeName}'),
-       '--generate-key fernet "' + TempFile + '"',
-       ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  if (ResultCode = 0) and FileExists(TempFile) then
-  begin
-    LoadStringFromFile(TempFile, FileContent);
-    Result := Trim(String(FileContent));
-  end;
-  DeleteFile(TempFile);
+  if not CryptAcquireContext(hProv, '', '', 1 {PROV_RSA_FULL}, $F0000000 {CRYPT_VERIFYCONTEXT}) then
+    Exit;
+  SetLength(Result, Count);
+  if not CryptGenRandom(hProv, Count, Pointer(Result)) then
+    Result := '';
+  CryptReleaseContext(hProv, 0);
 end;
 
-function GenerateSecretKey(): String;
+// URL-safe base64 encoding (no line breaks) matching Python's base64.urlsafe_b64encode.
+function Base64UrlEncode(const Data: AnsiString): String;
+const
+  Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 var
-  TempFile: String;
-  ResultCode: Integer;
-  FileContent: AnsiString;
+  I, Len, B0, B1, B2: Integer;
 begin
   Result := '';
-  TempFile := ExpandConstant('{tmp}\secret_key.txt');
-  Exec(ExpandConstant('{app}\{#AppExeName}'),
-       '--generate-key secret "' + TempFile + '"',
-       ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  if (ResultCode = 0) and FileExists(TempFile) then
+  Len := Length(Data);
+  I := 1;
+  while I <= Len do
   begin
-    LoadStringFromFile(TempFile, FileContent);
-    Result := Trim(String(FileContent));
+    B0 := Ord(Data[I]);
+    if I + 1 <= Len then B1 := Ord(Data[I+1]) else B1 := 0;
+    if I + 2 <= Len then B2 := Ord(Data[I+2]) else B2 := 0;
+    Result := Result + Alphabet[(B0 shr 2) + 1];
+    Result := Result + Alphabet[((B0 and 3) shl 4) or (B1 shr 4) + 1];
+    if I + 1 <= Len then
+      Result := Result + Alphabet[((B1 and 15) shl 2) or (B2 shr 6) + 1]
+    else
+      Result := Result + '=';
+    if I + 2 <= Len then
+      Result := Result + Alphabet[(B2 and 63) + 1]
+    else
+      Result := Result + '=';
+    I := I + 3;
   end;
-  DeleteFile(TempFile);
+end;
+
+// Fernet key = 32 random bytes, base64url-encoded with padding.
+function GenerateFernetKey(): String;
+var
+  Raw: AnsiString;
+begin
+  Raw := GetRandomBytes(32);
+  if Raw = '' then
+    Result := ''
+  else
+    Result := Base64UrlEncode(Raw);
+end;
+
+// Secret key = 64 random hex chars (32 bytes).
+function GenerateSecretKey(): String;
+const
+  HexChars = '0123456789abcdef';
+var
+  Raw: AnsiString;
+  I: Integer;
+  B: Integer;
+begin
+  Result := '';
+  Raw := GetRandomBytes(32);
+  if Raw = '' then Exit;
+  for I := 1 to Length(Raw) do
+  begin
+    B := Ord(Raw[I]);
+    Result := Result + HexChars[(B shr 4) + 1] + HexChars[(B and 15) + 1];
+  end;
 end;
 
 
@@ -522,8 +571,6 @@ var
 begin
   if CurStep = ssInstall then
   begin
-    // Generate keys now that backend.exe is on disk
-    WizardForm.StatusLabel.Caption := 'Generating encryption key...';
     GeneratedEncryptionKey := GenerateFernetKey();
     GeneratedSecretKey     := GenerateSecretKey();
 
