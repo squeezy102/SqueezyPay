@@ -221,11 +221,11 @@ end;
 
 // URL-safe base64 encoding (no line breaks) matching Python's base64.urlsafe_b64encode.
 function Base64UrlEncode(const Data: AnsiString): String;
-const
-  Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 var
+  Alphabet: String;
   I, Len, B0, B1, B2: Integer;
 begin
+  Alphabet := 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   Result := '';
   Len := Length(Data);
   I := 1;
@@ -262,13 +262,13 @@ end;
 
 // Secret key = 64 random hex chars (32 bytes).
 function GenerateSecretKey(): String;
-const
-  HexChars = '0123456789abcdef';
 var
+  HexChars: String;
   Raw: AnsiString;
   I: Integer;
   B: Integer;
 begin
+  HexChars := '0123456789abcdef';
   Result := '';
   Raw := GetRandomBytes(32);
   if Raw = '' then Exit;
