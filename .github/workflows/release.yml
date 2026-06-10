@@ -251,6 +251,7 @@ jobs:
 
           Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue
           Write-Host "All integration checks passed."
+          exit 0
 
       # ----------------------------------------------------------------
       # 5b. Installer smoke test — verifies the installer runs to completion
