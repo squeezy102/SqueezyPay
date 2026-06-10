@@ -165,8 +165,13 @@ jobs:
           $appdataDir = "$env:APPDATA\SqueezyPay"
           New-Item -ItemType Directory -Force -Path $appdataDir | Out-Null
           $testPassphrase = $env:SANDBOX_TEST_PASSPHRASE.Trim()
-          Write-Host "Passphrase length (bootstrap): $($testPassphrase.Length)"
+          $hexDump = ($testPassphrase.ToCharArray() | ForEach-Object { '{0:X2}' -f [int][char]$_ }) -join ' '
+          Write-Host "Passphrase length (bootstrap): $($testPassphrase.Length), hex: $hexDump"
           [System.IO.File]::WriteAllText("$appdataDir\initial_passphrase.tmp", $testPassphrase, [System.Text.Encoding]::UTF8)
+          # Read back and verify round-trip
+          $readBack = [System.IO.File]::ReadAllText("$appdataDir\initial_passphrase.tmp", [System.Text.Encoding]::UTF8)
+          $hexReadBack = ($readBack.ToCharArray() | ForEach-Object { '{0:X2}' -f [int][char]$_ }) -join ' '
+          Write-Host "Bootstrap file readback length: $($readBack.Length), hex: $hexReadBack"
 
           # Start backend — redirect stdout/stderr to log files for failure diagnosis
           $logFile    = "$env:TEMP\backend_ci.log"
@@ -215,10 +220,19 @@ jobs:
           $escapedPass = $testPassphrase -replace '\\', '\\' -replace '"', '\"'
           $loginBodyJson = "{`"passphrase`":`"$escapedPass`"}"
           Write-Host "Login body length: $($loginBodyJson.Length), passphrase length: $($testPassphrase.Length)"
+          $hexLogin = ($testPassphrase.ToCharArray() | ForEach-Object { '{0:X2}' -f [int][char]$_ }) -join ' '
+          Write-Host "Login passphrase hex: $hexLogin"
           [System.IO.File]::WriteAllText($loginBodyFile, $loginBodyJson, [System.Text.Encoding]::UTF8)
+          # Show the actual file content sent to curl
+          Write-Host "Login body content: $(Get-Content $loginBodyFile -Raw)"
           $loginJson = & curl.exe -s -X POST http://localhost:8000/api/auth/login `
             -H "Content-Type: application/json" -d "@$loginBodyFile" 2>$null
           Write-Host "Login response: $loginJson"
+          # Dump backend logs regardless of outcome so we can see what the server received
+          Write-Host "=== backend stdout at login ==="
+          if (Test-Path $logFile) { Get-Content $logFile | Select-Object -Last 30 }
+          Write-Host "=== backend stderr at login ==="
+          if (Test-Path $logErrFile) { Get-Content $logErrFile | Select-Object -Last 30 }
           if ($loginJson -notmatch '"access_token"') {
             Stop-Process -Id $backend.Id -Force
             Write-Error "Login failed — no access_token in response (length=$($loginJson.Length))"; exit 1
