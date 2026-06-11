@@ -53,7 +53,7 @@ export default function IncomeManagement() {
     mutationFn: async (source: Income): Promise<Income | null | void> =>
       source.active ? deactivateIncome(source.id) : reactivateIncome(source.id),
     onSuccess: (result, source) => {
-      if (!source.active && !result) {
+      if (source.active && !result) {
         setError("Reactivate failed — check backend logs.");
         return;
       }

@@ -89,6 +89,8 @@ export default function TransactionTable() {
         endDate:   filters.endDate   || undefined,
         limit:     PAGE_SIZE,
         offset:    page * PAGE_SIZE,
+        sortKey,
+        sortDir,
       }),
   });
 

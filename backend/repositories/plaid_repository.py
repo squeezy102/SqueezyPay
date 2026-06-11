@@ -163,7 +163,16 @@ class PlaidTransactionRepository:
         start_date: str | None = None,
         end_date: str | None = None,
         plaid_account_id: int | None = None,
+        sort_key: str = "date",
+        sort_dir: str = "desc",
     ) -> tuple[list[PlaidTransaction], int]:
+        _sort_cols = {
+            "date":   PlaidTransaction.date,
+            "name":   PlaidTransaction.name,
+            "amount": PlaidTransaction.amount,
+        }
+        col = _sort_cols.get(sort_key, PlaidTransaction.date)
+        order = col.desc() if sort_dir != "asc" else col.asc()
         q = db.query(PlaidTransaction)
         if plaid_account_id is not None:
             q = q.filter(PlaidTransaction.plaid_account_id == plaid_account_id)
@@ -172,7 +181,7 @@ class PlaidTransactionRepository:
         if end_date:
             q = q.filter(PlaidTransaction.date <= end_date)
         total = q.count()
-        transactions = q.order_by(PlaidTransaction.date.desc()).offset(offset).limit(limit).all()
+        transactions = q.order_by(order).offset(offset).limit(limit).all()
         return transactions, total
 
     @staticmethod

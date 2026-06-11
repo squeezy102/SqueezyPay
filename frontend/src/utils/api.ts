@@ -738,6 +738,8 @@ export interface PlaidTransactionParams {
   endDate?: string;
   limit?: number;
   offset?: number;
+  sortKey?: string;
+  sortDir?: string;
 }
 
 export async function getPlaidTransactions(params: PlaidTransactionParams = {}): Promise<{ transactions: PlaidTransaction[]; total: number }> {
@@ -748,6 +750,8 @@ export async function getPlaidTransactions(params: PlaidTransactionParams = {}):
     if (params.endDate)           qs.set("end_date", params.endDate);
     if (params.limit != null)     qs.set("limit", String(params.limit));
     if (params.offset != null)    qs.set("offset", String(params.offset));
+    if (params.sortKey)           qs.set("sort_key", params.sortKey);
+    if (params.sortDir)           qs.set("sort_dir", params.sortDir);
     const response = handle401(await fetch(`${API_BASE}/api/plaid/transactions?${qs}`, { headers: { ...authHeaders() } }));
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json() as { transactions: RawPlaidTransaction[]; total: number };

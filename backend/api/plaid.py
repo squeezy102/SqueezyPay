@@ -99,6 +99,8 @@ def get_transactions(
     end_date: str | None = None,
     limit: int = 50,
     offset: int = 0,
+    sort_key: str = "date",
+    sort_dir: str = "desc",
     db: Session = Depends(get_db),
 ):
     return PlaidService.get_transactions(
@@ -108,6 +110,8 @@ def get_transactions(
         end_date=end_date,
         limit=min(limit, 200),
         offset=offset,
+        sort_key=sort_key,
+        sort_dir=sort_dir,
     )
 
 

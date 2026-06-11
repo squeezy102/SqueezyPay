@@ -209,20 +209,28 @@ class PlaidService:
         raw_token = encryption_service.decrypt(item.access_token_enc)
         try:
             client = _get_plaid_client()
-            options = TransactionsGetRequestOptions(count=500, offset=0)
-            request = TransactionsGetRequest(
-                access_token=raw_token,
-                start_date=start,
-                end_date=end,
-                options=options,
-            )
-            response = client.transactions_get(request)
+            all_transactions = []
+            fetch_offset = 0
+            while True:
+                options = TransactionsGetRequestOptions(count=500, offset=fetch_offset)
+                request = TransactionsGetRequest(
+                    access_token=raw_token,
+                    start_date=start,
+                    end_date=end,
+                    options=options,
+                )
+                response = client.transactions_get(request)
+                page = response["transactions"]
+                all_transactions.extend(page)
+                if len(page) < 500:
+                    break
+                fetch_offset += len(page)
         finally:
             del raw_token
 
         added = 0
         updated = 0
-        for tx in response["transactions"]:
+        for tx in all_transactions:
             account = PlaidAccountRepository.get_by_plaid_account_id(db, tx["account_id"])
             if not account:
                 continue
@@ -282,6 +290,8 @@ class PlaidService:
         end_date: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        sort_key: str = "date",
+        sort_dir: str = "desc",
     ) -> dict:
         transactions, total = PlaidTransactionRepository.get_all(
             db,
@@ -290,6 +300,8 @@ class PlaidService:
             start_date=start_date,
             end_date=end_date,
             plaid_account_id=plaid_account_id,
+            sort_key=sort_key,
+            sort_dir=sort_dir,
         )
         return {
             "transactions": [PlaidService._tx_to_dict(t) for t in transactions],
