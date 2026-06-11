@@ -234,21 +234,23 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Date Paid</label>
+              <label htmlFor="log-payment-date" className="text-xs font-medium text-slate-700 dark:text-slate-300">Date Paid</label>
               <input
+                id="log-payment-date"
                 type="date"
                 {...register("paymentDate", { required: true })}
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Amount Paid</label>
+              <label htmlFor="log-payment-amount" className="text-xs font-medium text-slate-700 dark:text-slate-300">Amount Paid</label>
               <Controller
                 name="amountPaid"
                 control={control}
                 rules={{ validate: (v) => v > 0 || "Please enter the amount paid." }}
                 render={({ field }) => (
                   <MoneyInput
+                    id="log-payment-amount"
                     value={field.value}
                     onChange={field.onChange}
                     required
@@ -260,10 +262,11 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="log-payment-confirmation" className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Confirmation Number <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <input
+              id="log-payment-confirmation"
               type="text"
               {...register("confirmationNumber")}
               placeholder="Enter after paying"
@@ -272,13 +275,14 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="log-payment-method" className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Payment Method <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             {pmLoading ? (
               <div className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-400 dark:text-slate-500">Loading…</div>
             ) : paymentMethods.length > 0 ? (
               <select
+                id="log-payment-method"
                 {...register("paymentMethod")}
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
@@ -291,6 +295,7 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
               </select>
             ) : (
               <input
+                id="log-payment-method"
                 type="text"
                 {...register("paymentMethod")}
                 placeholder="e.g. Visa, Joint Checking"
@@ -300,10 +305,11 @@ export default function LogPaymentModal({ bill, onClose, onLogged }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="log-payment-notes" className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Notes <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <textarea
+              id="log-payment-notes"
               {...register("notes")}
               rows={2}
               placeholder="Anything worth noting"

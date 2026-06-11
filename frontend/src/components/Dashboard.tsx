@@ -5,6 +5,7 @@ import {
 } from "../utils/api";
 import { sortBillsByDueDate, getBillStatus, filterActionableBills } from "../utils/billUtils";
 import type { Bill, AppSettings, PlaidAccount, PlaidTransaction, Income } from "../types";
+import StalenessWarning from "./StalenessWarning";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -131,21 +132,24 @@ function AccountBalances({ accounts, pendingTxs }: { accounts: PlaidAccount[]; p
 
 // ── Spend Snapshot ────────────────────────────────────────────────────────────
 
-function SpendSnapshot({ last24Spend, monthlySpend }: { last24Spend: number; monthlySpend: number }) {
+function SpendSnapshot({ last24Spend, monthlySpend, lastSyncedAt }: { last24Spend: number; monthlySpend: number; lastSyncedAt: string | null | undefined }) {
   const todayLabel = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const thirtyDaysAgoLabel = new Date(daysAgo(30) + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <Card className="p-4">
-        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-0.5">Last 24 Hours</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{todayLabel}</p>
-        <p className="text-2xl font-bold text-slate-900 dark:text-white">{fmt(last24Spend)}</p>
-      </Card>
-      <Card className="p-4">
-        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-0.5">Last 30 Days</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{thirtyDaysAgoLabel} – {todayLabel}</p>
-        <p className="text-2xl font-bold text-slate-900 dark:text-white">{fmt(monthlySpend)}</p>
-      </Card>
+    <div className="flex flex-col gap-3">
+      <StalenessWarning lastSyncedAt={lastSyncedAt} />
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="p-4">
+          <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-0.5">Last 24 Hours</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{todayLabel}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{fmt(last24Spend)}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-0.5">Last 30 Days</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{thirtyDaysAgoLabel} – {todayLabel}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{fmt(monthlySpend)}</p>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -365,6 +369,14 @@ export default function Dashboard() {
 
   const hasPlaid = accounts.length > 0;
 
+  // Oldest balance sync across all accounts — drives staleness callout
+  const oldestSync = accounts.length === 0
+    ? null
+    : accounts
+        .map((a) => a.balanceSyncedAt)
+        .filter((s): s is string => !!s)
+        .sort()[0] ?? null;
+
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6">
       <h1 className="text-xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
@@ -373,7 +385,7 @@ export default function Dashboard() {
       {hasPlaid && (
         <section>
           <SectionHeading>Spending</SectionHeading>
-          <SpendSnapshot last24Spend={last24Spend} monthlySpend={monthlySpend} />
+          <SpendSnapshot last24Spend={last24Spend} monthlySpend={monthlySpend} lastSyncedAt={oldestSync} />
         </section>
       )}
 

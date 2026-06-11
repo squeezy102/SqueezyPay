@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlaidTransactions, getPlaidAccounts, assignPlaidTransactionCategory, getCategories } from "../utils/api";
 import type { PlaidTransaction, PlaidAccount, Category } from "../types";
+import StalenessWarning from "./StalenessWarning";
 
 type SortKey = "date" | "name" | "amount";
 type SortDir = "asc" | "desc";
@@ -97,6 +98,10 @@ export default function TransactionTable() {
 
   const accountMap = new Map(accounts.map((a) => [a.id, a]));
 
+  const oldestSync = accounts.length === 0
+    ? null
+    : accounts.map((a) => a.balanceSyncedAt).filter((s): s is string => !!s).sort()[0] ?? null;
+
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -113,6 +118,7 @@ export default function TransactionTable() {
 
   return (
     <div className="flex flex-col gap-4">
+      {accounts.length > 0 && <StalenessWarning lastSyncedAt={oldestSync} />}
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1">

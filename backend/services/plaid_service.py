@@ -1,5 +1,6 @@
 import os
 from datetime import date, timedelta
+from decimal import Decimal
 
 import plaid
 from plaid.api import plaid_api
@@ -234,7 +235,7 @@ class PlaidService:
 
             data = {
                 "transaction_id":        tx["transaction_id"],
-                "amount":                float(tx["amount"]),
+                "amount":                Decimal(str(tx["amount"])),
                 "date":                  str(tx["date"]),
                 "name":                  tx["name"],
                 "merchant_name":         tx.get("merchant_name"),
@@ -344,14 +345,14 @@ class PlaidService:
         for tx in spending:
             label = tx.plaid_category_primary or "Uncategorized"
             if label not in by_category:
-                by_category[label] = {"category": label, "amount": 0.0, "count": 0}
+                by_category[label] = {"category": label, "amount": Decimal("0"), "count": 0}
             by_category[label]["amount"] += tx.amount
             by_category[label]["count"] += 1
 
         by_category_list = sorted(by_category.values(), key=lambda x: x["amount"], reverse=True)
         for row in by_category_list:
-            row["pct"] = round((row["amount"] / total * 100) if total else 0, 1)
-            row["amount"] = round(row["amount"], 2)
+            row["pct"] = float(round((row["amount"] / total * 100) if total else 0, 1))
+            row["amount"] = float(round(row["amount"], 2))
 
         # by_account: join through ORM relationship on each transaction
         accounts_map: dict[int, str] = {}
@@ -366,18 +367,18 @@ class PlaidService:
                 accounts_map[tx.plaid_account_id] = label
             label = accounts_map[tx.plaid_account_id]
             if tx.plaid_account_id not in by_account:
-                by_account[tx.plaid_account_id] = {"account_name": label, "amount": 0.0}
+                by_account[tx.plaid_account_id] = {"account_name": label, "amount": Decimal("0")}
             by_account[tx.plaid_account_id]["amount"] += tx.amount
 
         by_account_list = sorted(by_account.values(), key=lambda x: x["amount"], reverse=True)
         for row in by_account_list:
-            row["pct"] = round((row["amount"] / total * 100) if total else 0, 1)
-            row["amount"] = round(row["amount"], 2)
+            row["pct"] = float(round((row["amount"] / total * 100) if total else 0, 1))
+            row["amount"] = float(round(row["amount"], 2))
 
         return {
             "period_start":    start_str,
             "period_end":      end_str,
-            "total_spending":  round(total, 2),
+            "total_spending":  float(round(total, 2)),
             "by_category":     by_category_list,
             "by_account":      by_account_list,
         }

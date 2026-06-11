@@ -41,7 +41,6 @@ _last_status: dict = {}
 # Environment helpers
 # ---------------------------------------------------------------------------
 
-# Duplicates admin/main.py:_load_user_env — consolidate into shared module in a future pass.
 def _load_user_env() -> dict:
     """Merge HKCU\\Environment into os.environ so child processes get user env vars."""
     env = dict(os.environ)
@@ -114,7 +113,7 @@ def _start_admin():
     env = {**_load_user_env(), "PYTHONUNBUFFERED": "1"}
     _admin_proc = subprocess.Popen(
         [str(VENV_PYTHON), "-m", "uvicorn", "main:app",
-         "--host", "0.0.0.0", "--port", str(ADMIN_PORT)],
+         "--host", "127.0.0.1", "--port", str(ADMIN_PORT)],
         cwd=str(ADMIN_DIR),
         env=env,
         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
@@ -341,6 +340,7 @@ def main():
 
     _tray.run()
 
+    # On quit: stop all services cleanly
     _api_stop("frontend")
     _api_stop("backend")
     _stop_admin()

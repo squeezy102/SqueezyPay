@@ -37,6 +37,17 @@ function logApiError(context: string, error: unknown): void {
   console.error(`[API] ${context}:`, error);
 }
 
+// ── Health ────────────────────────────────────────────────────────────────────
+
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ── Auth API ──────────────────────────────────────────────────────────────────
 
 export async function getAuthStatus(): Promise<AuthStatus> {
@@ -196,18 +207,6 @@ export async function getBills(): Promise<Bill[]> {
     return data.map(mapBill);
   } catch (error) {
     logApiError("Failed to fetch bills", error);
-    return [];
-  }
-}
-
-export async function getAllBills(): Promise<Bill[]> {
-  try {
-    const response = handle401(await fetch(`${API_BASE}/api/bills/`, { headers: { ...authHeaders() } }));
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    const data = await response.json() as RawBill[];
-    return data.map(mapBill);
-  } catch (error) {
-    logApiError("Failed to fetch all bills", error);
     return [];
   }
 }

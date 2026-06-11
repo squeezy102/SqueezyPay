@@ -2,7 +2,7 @@
 Tests for the /api/categories endpoints.
 
 Coverage:
-- GET /api/categories/                      - returns the 17 seeded categories
+- GET /api/categories/                      - returns the 20 seeded categories
 - POST /api/categories/                     - creates a new category, returns 201 with id + name
 - POST /api/categories/ (duplicate)        - second POST with same name returns 409
 - PUT /api/categories/{id}                 - renames a category successfully
@@ -32,20 +32,23 @@ _SEED_CATEGORIES = [
     "Personal Care",
     "Kids",
     "Miscellaneous",
+    "Income",
+    "Transfer",
+    "Bank Fees",
 ]
 
 
 @pytest.fixture()
 def seeded_client(client):
     """
-    The app's lifespan calls init_db(), which seeds the 17 default categories
+    The app's lifespan calls init_db(), which seeds the 20 default categories
     into the test database before any request is made.  This fixture simply
     aliases `client` and verifies the seed happened, so tests that need
     pre-populated categories can depend on it explicitly.
     """
     categories = client.get("/api/categories/").json()
-    assert len(categories) == 17, (
-        f"Expected 17 seeded categories, got {len(categories)}"
+    assert len(categories) == 20, (
+        f"Expected 20 seeded categories, got {len(categories)}"
     )
     return client
 
@@ -58,7 +61,7 @@ def test_get_categories(seeded_client):
     response = seeded_client.get("/api/categories/")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 17
+    assert len(data) == 20
     names = {item["name"] for item in data}
     assert names == set(_SEED_CATEGORIES)
 

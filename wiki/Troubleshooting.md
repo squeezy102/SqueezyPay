@@ -1,5 +1,33 @@
 # Troubleshooting
 
+## Installer issues
+
+### Backend won't start after installation — "SQUEEZYPAY_ENCRYPTION_KEY must be set"
+
+The installer generates and writes this key to `HKCU\Environment` automatically. If it's missing:
+
+1. **Log off and log back in.** User environment variables written to `HKCU\Environment` do not take effect in sessions that were open when the installer ran.
+2. Verify the key exists:
+   ```powershell
+   [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_ENCRYPTION_KEY", "User")
+   ```
+   If this returns nothing, key generation failed during installation. Regenerate manually:
+   ```powershell
+   cd "C:\Program Files\SqueezyPay"
+   .\backend.exe --generate-key fernet "$env:TEMP\enc.key"
+   $key = Get-Content "$env:TEMP\enc.key"
+   [System.Environment]::SetEnvironmentVariable("SQUEEZYPAY_ENCRYPTION_KEY", $key, "User")
+   Remove-Item "$env:TEMP\enc.key"
+   ```
+
+### Installer completed but SqueezyPay won't open / shows an error page
+
+1. Check the key is set (see above).
+2. Open Task Manager and look for `backend.exe`. If it is not running, launch it from the Start menu shortcut or the desktop shortcut.
+3. Check for errors at `%APPDATA%\SqueezyPay\logs\`.
+
+---
+
 ## Backend won't start
 
 ### "SQUEEZYPAY_ENCRYPTION_KEY must be set"
@@ -10,7 +38,9 @@ The encryption key is missing from the environment.
 2. Open **System Properties → Environment Variables → User variables** and verify `SQUEEZYPAY_ENCRYPTION_KEY` is present.
 3. Open a **new** terminal window and try again. Environment variable changes are not visible to already-running terminals.
 
-If you haven't generated a key yet:
+**Installed app:** See the "Installer issues" section above.
+
+**Dev setup:** Generate a key manually:
 ```powershell
 cd backend
 .\venv\Scripts\Activate.ps1
@@ -169,9 +199,10 @@ To reclaim space after deleting old records:
 cd backend
 .\venv\Scripts\Activate.ps1
 python -c "
+from sqlalchemy import text
 from database.db import engine
 with engine.connect() as conn:
-    conn.execute('VACUUM')
+    conn.execute(text('VACUUM'))
 print('VACUUM complete.')
 "
 ```

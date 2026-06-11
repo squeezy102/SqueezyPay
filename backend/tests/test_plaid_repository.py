@@ -282,3 +282,184 @@ class TestPlaidTransactionRepository:
 
     def test_get_by_id_missing(self, db):
         assert PlaidTransactionRepository.get_by_id(db, 9999) is None
+
+    def test_upsert_preserves_user_assigned_category(self, db):
+        """
+        Scenario: transaction already exists with a user-assigned category_id;
+                  a Plaid sync upsert carries a different category_id value
+        EP class: guard path — existing.category_id is not None; incoming tries to overwrite
+        Expected: the user-assigned category_id is NOT overwritten (guard at line 115 fires)
+        """
+        item = _make_item(db)
+        account = _make_account(db, item.id)
+        tx, _ = _make_tx(db, account.id)
+
+        # Assign a real category so existing.category_id is not None
+        cat = TransactionCategory(name="Dining")
+        db.add(cat)
+        db.commit()
+        db.refresh(cat)
+        PlaidTransactionRepository.assign_category(db, tx, cat.id)
+
+        # Create a second category that the sync would try to assign
+        cat2 = TransactionCategory(name="Auto")
+        db.add(cat2)
+        db.commit()
+        db.refresh(cat2)
+
+        # Upsert same transaction with a different category_id
+        updated, created = PlaidTransactionRepository.upsert(
+            db,
+            plaid_account_id=account.id,
+            data={
+                "transaction_id": "tx-001",
+                "amount": 12.50,
+                "date": "2026-06-01",
+                "name": "Coffee Shop",
+                "merchant_name": "Starbucks",
+                "plaid_category_primary": "TRANSPORTATION",
+                "plaid_category_detailed": "AUTO",
+                "category_id": cat2.id,
+                "payment_channel": "in store",
+                "pending": False,
+                "logo_url": None,
+                "iso_currency_code": "USD",
+            },
+        )
+        assert created is False
+        assert updated.category_id == cat.id  # original user-assigned category preserved
+
+    def test_upsert_null_category_stays_null_if_incoming_also_null(self, db):
+        """
+        Scenario: transaction exists with category_id=None; upsert incoming data
+                  also has category_id=None
+        EP class: guard boundary — existing.category_id is None so guard does NOT fire;
+                  both values are None so no change occurs
+        Expected: category_id remains None; no crash or unexpected assignment
+        """
+        item = _make_item(db)
+        account = _make_account(db, item.id)
+        tx, _ = _make_tx(db, account.id)  # created with category_id=None
+
+        updated, created = PlaidTransactionRepository.upsert(
+            db,
+            plaid_account_id=account.id,
+            data={
+                "transaction_id": "tx-001",
+                "amount": 12.50,
+                "date": "2026-06-01",
+                "name": "Coffee Shop",
+                "merchant_name": "Starbucks",
+                "plaid_category_primary": "FOOD_AND_DRINK",
+                "plaid_category_detailed": "COFFEE_SHOPS",
+                "category_id": None,
+                "payment_channel": "in store",
+                "pending": False,
+                "logo_url": None,
+                "iso_currency_code": "USD",
+            },
+        )
+        assert created is False
+        assert updated.category_id is None
+
+    def test_get_all_filters_by_start_date(self, db):
+        """
+        Scenario: two transactions on different dates; get_all filtered by start_date
+                  that falls between them
+        EP class: BVA — start_date equal to second transaction's date (inclusive boundary);
+                  first transaction is outside the window
+        Expected: only the later transaction is returned (total == 1)
+        """
+        item = _make_item(db)
+        account = _make_account(db, item.id)
+        # Earlier transaction
+        PlaidTransactionRepository.upsert(
+            db,
+            plaid_account_id=account.id,
+            data={
+                "transaction_id": "tx-early",
+                "amount": 5.0,
+                "date": "2026-01-01",
+                "name": "Old Purchase",
+                "merchant_name": None,
+                "plaid_category_primary": None,
+                "plaid_category_detailed": None,
+                "category_id": None,
+                "payment_channel": None,
+                "pending": False,
+                "logo_url": None,
+                "iso_currency_code": "USD",
+            },
+        )
+        # Later transaction
+        PlaidTransactionRepository.upsert(
+            db,
+            plaid_account_id=account.id,
+            data={
+                "transaction_id": "tx-late",
+                "amount": 10.0,
+                "date": "2026-06-01",
+                "name": "Recent Purchase",
+                "merchant_name": None,
+                "plaid_category_primary": None,
+                "plaid_category_detailed": None,
+                "category_id": None,
+                "payment_channel": None,
+                "pending": False,
+                "logo_url": None,
+                "iso_currency_code": "USD",
+            },
+        )
+        txs, total = PlaidTransactionRepository.get_all(db, start_date="2026-06-01")
+        assert total == 1
+        assert txs[0].transaction_id == "tx-late"
+
+    def test_get_all_filters_by_end_date(self, db):
+        """
+        Scenario: two transactions on different dates; get_all filtered by end_date
+                  that falls between them
+        EP class: BVA — end_date equal to first transaction's date (inclusive boundary);
+                  second transaction is outside the window
+        Expected: only the earlier transaction is returned (total == 1)
+        """
+        item = _make_item(db)
+        account = _make_account(db, item.id)
+        PlaidTransactionRepository.upsert(
+            db,
+            plaid_account_id=account.id,
+            data={
+                "transaction_id": "tx-early",
+                "amount": 5.0,
+                "date": "2026-01-01",
+                "name": "Old Purchase",
+                "merchant_name": None,
+                "plaid_category_primary": None,
+                "plaid_category_detailed": None,
+                "category_id": None,
+                "payment_channel": None,
+                "pending": False,
+                "logo_url": None,
+                "iso_currency_code": "USD",
+            },
+        )
+        PlaidTransactionRepository.upsert(
+            db,
+            plaid_account_id=account.id,
+            data={
+                "transaction_id": "tx-late",
+                "amount": 10.0,
+                "date": "2026-06-01",
+                "name": "Recent Purchase",
+                "merchant_name": None,
+                "plaid_category_primary": None,
+                "plaid_category_detailed": None,
+                "category_id": None,
+                "payment_channel": None,
+                "pending": False,
+                "logo_url": None,
+                "iso_currency_code": "USD",
+            },
+        )
+        txs, total = PlaidTransactionRepository.get_all(db, end_date="2026-01-01")
+        assert total == 1
+        assert txs[0].transaction_id == "tx-early"

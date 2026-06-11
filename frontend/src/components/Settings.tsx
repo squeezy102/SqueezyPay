@@ -86,11 +86,12 @@ function AlertThresholdsCard() {
         ) : (
           <>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="settings-due-soon-days" className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
                 Due Soon Warning
               </label>
               <div className="flex items-center gap-2">
                 <input
+                  id="settings-due-soon-days"
                   type="number"
                   min="1"
                   max="365"
@@ -104,12 +105,13 @@ function AlertThresholdsCard() {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="settings-large-payment-threshold" className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
                 Large Payment Alert
               </label>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500 dark:text-slate-400">Flag payments over $</span>
                 <input
+                  id="settings-large-payment-threshold"
                   type="number"
                   min="1"
                   required
@@ -437,10 +439,11 @@ function ChangePassphraseCard() {
 
       <form onSubmit={handleSubmit} autoComplete="off" className="px-5 py-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="settings-current-passphrase" className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
             Current Passphrase
           </label>
           <input
+            id="settings-current-passphrase"
             type="password"
             required
             value={current}
@@ -450,10 +453,11 @@ function ChangePassphraseCard() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="settings-new-passphrase" className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
             New Passphrase
           </label>
           <input
+            id="settings-new-passphrase"
             type="password"
             required
             value={next}
@@ -463,10 +467,11 @@ function ChangePassphraseCard() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="settings-confirm-passphrase" className="w-52 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
             Confirm New Passphrase
           </label>
           <input
+            id="settings-confirm-passphrase"
             type="password"
             required
             value={confirm}

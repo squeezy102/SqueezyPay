@@ -13,6 +13,8 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(bearer_sche
     secret = os.environ.get("SQUEEZYPAY_SECRET_KEY", "")
     if not credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    if not secret:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication unavailable")
     try:
         jwt.decode(credentials.credentials, secret, algorithms=[ALGORITHM])
     except jwt.ExpiredSignatureError:

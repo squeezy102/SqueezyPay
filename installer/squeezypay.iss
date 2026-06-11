@@ -2,7 +2,7 @@
 ; Built with Inno Setup 6.x — https://jrsoftware.org/isinfo.php
 ;
 ; Prerequisites (must exist before running iscc):
-;   ..\backend\dist\backend.exe     (PyInstaller output)
+;   ..\backend\dist\backend\*       (PyInstaller onedir output)
 ;   ..\frontend\dist\*              (Vite build output)
 ;   ..\admin\dashboard.html
 ;   ..\admin\main.py
@@ -18,7 +18,7 @@
 ; AppVersion is injected by CI via /DAppVersion=<tag> (e.g. /DAppVersion=0.1.0-alpha.3).
 ; When building locally without that flag, fall back to reading the EXE version resource.
 #ifndef AppVersion
-  #define AppVersion GetVersionNumbersString("..\backend\dist\backend.exe")
+  #define AppVersion GetVersionNumbersString("..\backend\dist\backend\backend.exe")
 #endif
 #define AppPublisher "SqueezyPay"
 #define AppURL       "https://github.com/squeezy102/SqueezyPay"
@@ -69,19 +69,8 @@ Name: "autostart";    Description: "Start {#AppName} automatically when Windows 
 Name: "desktopicon";  Description: "Create a desktop shortcut"; GroupDescription: "Options:"
 
 [Files]
-; Core — backend executable
-Source: "..\backend\dist\{#AppExeName}"; DestDir: "{app}"; Components: core; Flags: ignoreversion
-
-; Core — frontend static build
-Source: "..\frontend\dist\*"; DestDir: "{app}\frontend\dist"; Components: core; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; Core — admin dashboard
-Source: "..\admin\dashboard.html"; DestDir: "{app}\admin"; Components: core; Flags: ignoreversion
-Source: "..\admin\main.py";        DestDir: "{app}\admin"; Components: core; Flags: ignoreversion
-
-; Core — Alembic migrations (needed by --migrate at upgrade time)
-Source: "..\backend\alembic\*";   DestDir: "{app}\alembic";  Components: core; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\backend\alembic.ini"; DestDir: "{app}";          Components: core; Flags: ignoreversion
+; Core — backend (onedir bundle: exe + all dependency files)
+Source: "..\backend\dist\backend\*"; DestDir: "{app}"; Components: core; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Optional — Playwright Chromium browsers
 Source: "..\backend\playwright_browsers\*"; DestDir: "{app}\playwright_browsers"; Components: autofill; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -94,10 +83,10 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}";     Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Registry]
-; Write Plaid credentials if provided on the custom pages (populated by Pascal script below)
-; HKCU\Environment — Windows User environment variables, readable without admin rights
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_ENCRYPTION_KEY"; ValueData: "{code:GetEncryptionKey}"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_SECRET_KEY";     ValueData: "{code:GetSecretKey}";     Flags: uninsdeletevalue
+; Plaid credentials from custom wizard pages — written by Pascal accessor functions.
+; Encryption/secret keys are written from CurStepChanged(ssPostInstall) via RegWriteStringValue
+; after backend.exe generates them — they cannot be populated here because [Registry] fires
+; before ssPostInstall and the binary is not yet available at [Registry] evaluation time.
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_PLAID_CLIENTID"; ValueData: "{code:GetPlaidClientId}"; Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_PLAID_SECRET";   ValueData: "{code:GetPlaidSecret}";   Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "SQUEEZYPAY_PLAID_ENV";      ValueData: "production";              Flags: uninsdeletevalue
@@ -112,13 +101,69 @@ Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Description: "Launch {#App
 [Code]
 
 // -----------------------------------------------------------------------
+// WinAPI clipboard helpers (Inno Setup Pascal has no Clipboard object)
+// -----------------------------------------------------------------------
+
+function OpenClipboard(hWnd: HWND): BOOL;
+  external 'OpenClipboard@user32.dll stdcall';
+function EmptyClipboard(): BOOL;
+  external 'EmptyClipboard@user32.dll stdcall';
+function CloseClipboard(): BOOL;
+  external 'CloseClipboard@user32.dll stdcall';
+function GlobalAlloc(uFlags: UINT; dwBytes: DWORD): THandle;
+  external 'GlobalAlloc@kernel32.dll stdcall';
+function GlobalLock(hMem: THandle): DWORD;
+  external 'GlobalLock@kernel32.dll stdcall';
+function GlobalUnlock(hMem: THandle): BOOL;
+  external 'GlobalUnlock@kernel32.dll stdcall';
+function SetClipboardData(uFormat: UINT; hMem: THandle): THandle;
+  external 'SetClipboardData@user32.dll stdcall';
+procedure RtlMoveMemory(Dest: DWORD; const Source: AnsiString; Len: DWORD);
+  external 'RtlMoveMemory@kernel32.dll stdcall';
+
+const
+  CF_TEXT    = 1;
+  GMEM_FIXED = $0000;
+
+procedure SetTextToClipboard(const S: String);
+var
+  hMem: THandle;
+  pMem: DWORD;
+  Buf: AnsiString;
+begin
+  Buf := AnsiString(S) + #0;
+  hMem := GlobalAlloc(GMEM_FIXED, Length(Buf));
+  if hMem = 0 then Exit;
+  pMem := GlobalLock(hMem);
+  if pMem = 0 then Exit;
+  RtlMoveMemory(pMem, Buf, Length(Buf));
+  GlobalUnlock(hMem);
+  if OpenClipboard(0) then
+  begin
+    EmptyClipboard();
+    SetClipboardData(CF_TEXT, hMem);
+    CloseClipboard();
+  end;
+end;
+
+
+// -----------------------------------------------------------------------
 // Custom wizard pages
 // -----------------------------------------------------------------------
 
 var
-  // Security page
+  // Security page (pre-install: explains what is about to happen)
   SecurityPage: TWizardPage;
   SecurityLabel: TNewStaticText;
+
+  // Key reveal page (post-install: shows the generated key, gates Next on checkbox)
+  KeyRevealPage: TWizardPage;
+  KeyRevealIntro: TNewStaticText;
+  KeyRevealEdit: TNewEdit;
+  KeyRevealCopyBtn: TNewButton;
+  KeyRevealWarning: TNewStaticText;
+  KeyRevealCheck: TNewCheckBox;
+  KeyRevealError: TNewStaticText;
 
   // Plaid page
   PlaidPage: TWizardPage;
@@ -138,63 +183,9 @@ var
   PassphraseConfirmEdit: TNewEdit;
   PassphraseError: TNewStaticText;
 
-  // Generated values (held in memory, written to registry via [Registry] section)
-  GeneratedEncryptionKey: String;
-  GeneratedSecretKey: String;
-
-
-// -----------------------------------------------------------------------
-// Key generation — Python one-liners executed via shell
-// -----------------------------------------------------------------------
-
-function GenerateFernetKey(): String;
-var
-  TempFile: String;
-  ResultCode: Integer;
-  FileContent: AnsiString;
-begin
-  Result := '';
-  TempFile := ExpandConstant('{tmp}\fernet_key.txt');
-  Exec(ExpandConstant('{app}\{#AppExeName}'),
-       '--generate-key fernet "' + TempFile + '"',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  if (ResultCode = 0) and FileExists(TempFile) then
-  begin
-    LoadStringFromFile(TempFile, FileContent);
-    Result := Trim(String(FileContent));
-  end;
-  DeleteFile(TempFile);
-end;
-
-function GenerateSecretKey(): String;
-var
-  TempFile: String;
-  ResultCode: Integer;
-  FileContent: AnsiString;
-begin
-  Result := '';
-  TempFile := ExpandConstant('{tmp}\secret_key.txt');
-  Exec(ExpandConstant('{app}\{#AppExeName}'),
-       '--generate-key secret "' + TempFile + '"',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  if (ResultCode = 0) and FileExists(TempFile) then
-  begin
-    LoadStringFromFile(TempFile, FileContent);
-    Result := Trim(String(FileContent));
-  end;
-  DeleteFile(TempFile);
-end;
-
-
 // -----------------------------------------------------------------------
 // Accessor functions used by [Registry] ValueData entries
 // -----------------------------------------------------------------------
-
-function GetEncryptionKey(Param: String): String;
-begin Result := GeneratedEncryptionKey; end;
-
-function GetSecretKey(Param: String): String;
-begin Result := GeneratedSecretKey; end;
 
 function GetPlaidClientId(Param: String): String;
 begin Result := PlaidClientIdEdit.Text; end;
@@ -204,12 +195,23 @@ begin Result := PlaidSecretEdit.Text; end;
 
 
 // -----------------------------------------------------------------------
+// Clipboard helper for the Copy button on the key reveal page
+// -----------------------------------------------------------------------
+
+procedure CopyKeyToClipboard(Sender: TObject);
+begin
+  SetTextToClipboard(KeyRevealEdit.Text);
+  KeyRevealCopyBtn.Caption := 'Copied!';
+end;
+
+
+// -----------------------------------------------------------------------
 // Page creation
 // -----------------------------------------------------------------------
 
 procedure InitializeWizard();
 begin
-  // --- Security page ---
+  // --- Security page (pre-install explanation) ---
   SecurityPage := CreateCustomPage(wpSelectComponents,
     'Security Setup',
     'SqueezyPay will generate a unique encryption key for your installation.');
@@ -222,13 +224,80 @@ begin
   SecurityLabel.AutoSize := True;
   SecurityLabel.WordWrap := True;
   SecurityLabel.Caption :=
-    'SqueezyPay encrypts sensitive data (stored credentials and bank tokens) ' +
-    'using a key unique to your installation. This key will be generated ' +
-    'automatically and stored securely on your PC.' + #13#10 + #13#10 +
-    'You do not need to write anything down or enter anything here. ' +
-    'If you ever uninstall and reinstall SqueezyPay, a new key will be ' +
-    'generated — your previous data will not be recoverable, so back up ' +
-    '%APPDATA%\SqueezyPay\squeezypay.db before uninstalling.';
+    'SqueezyPay encrypts all stored credentials and bank tokens using a key ' +
+    'unique to your installation. The key will be generated automatically ' +
+    'during setup and stored on this PC.' + #13#10 + #13#10 +
+    'After the key is generated, the installer will show it to you. ' +
+    'You must save it before continuing — a password manager, a printed note ' +
+    'kept somewhere safe, or an encrypted USB drive are all good options.' + #13#10 + #13#10 +
+    'If this key is ever lost, all encrypted data stored by SqueezyPay ' +
+    'becomes permanently unrecoverable. There is no reset or recovery option.';
+
+  // --- Key reveal page (post-install: shown after key is generated) ---
+  // Inserted after wpInstalling so it appears once the key exists.
+  // The key text is populated in CurStepChanged(ssPostInstall).
+  KeyRevealPage := CreateCustomPage(wpInstalling,
+    'Save Your Encryption Key',
+    'Your encryption key has been generated. You must save it before continuing.');
+
+  KeyRevealIntro := TNewStaticText.Create(KeyRevealPage);
+  KeyRevealIntro.Parent   := KeyRevealPage.Surface;
+  KeyRevealIntro.Left     := 0;
+  KeyRevealIntro.Top      := 0;
+  KeyRevealIntro.Width    := KeyRevealPage.SurfaceWidth;
+  KeyRevealIntro.AutoSize := True;
+  KeyRevealIntro.WordWrap := True;
+  KeyRevealIntro.Caption  :=
+    'This is your encryption key. It is already stored on this PC, but if you ' +
+    'ever need to reinstall Windows, move to a new machine, or restore from a backup, ' +
+    'you will need this key to access your data.';
+
+  KeyRevealEdit := TNewEdit.Create(KeyRevealPage);
+  KeyRevealEdit.Parent    := KeyRevealPage.Surface;
+  KeyRevealEdit.Left      := 0;
+  KeyRevealEdit.Top       := KeyRevealIntro.Top + KeyRevealIntro.Height + 10;
+  KeyRevealEdit.Width     := KeyRevealPage.SurfaceWidth - 90;
+  KeyRevealEdit.ReadOnly  := True;
+  KeyRevealEdit.Text      := '(generating...)';
+  KeyRevealEdit.Font.Name := 'Courier New';
+  KeyRevealEdit.Font.Size := 8;
+
+  KeyRevealCopyBtn := TNewButton.Create(KeyRevealPage);
+  KeyRevealCopyBtn.Parent  := KeyRevealPage.Surface;
+  KeyRevealCopyBtn.Caption := 'Copy';
+  KeyRevealCopyBtn.Left    := KeyRevealEdit.Left + KeyRevealEdit.Width + 8;
+  KeyRevealCopyBtn.Top     := KeyRevealEdit.Top;
+  KeyRevealCopyBtn.Width   := 75;
+  KeyRevealCopyBtn.Height  := KeyRevealEdit.Height;
+  KeyRevealCopyBtn.OnClick := @CopyKeyToClipboard;
+
+  KeyRevealWarning := TNewStaticText.Create(KeyRevealPage);
+  KeyRevealWarning.Parent   := KeyRevealPage.Surface;
+  KeyRevealWarning.Left     := 0;
+  KeyRevealWarning.Top      := KeyRevealEdit.Top + KeyRevealEdit.Height + 12;
+  KeyRevealWarning.Width    := KeyRevealPage.SurfaceWidth;
+  KeyRevealWarning.AutoSize := True;
+  KeyRevealWarning.WordWrap := True;
+  KeyRevealWarning.Font.Style := [fsBold];
+  KeyRevealWarning.Caption  :=
+    'Save this key now. Once you click Next, it will not be shown again. ' +
+    'If this key is lost, your stored credentials and bank tokens cannot be recovered.';
+
+  KeyRevealCheck := TNewCheckBox.Create(KeyRevealPage);
+  KeyRevealCheck.Parent   := KeyRevealPage.Surface;
+  KeyRevealCheck.Left     := 0;
+  KeyRevealCheck.Top      := KeyRevealWarning.Top + KeyRevealWarning.Height + 12;
+  KeyRevealCheck.Width    := KeyRevealPage.SurfaceWidth;
+  KeyRevealCheck.Caption  := 'I have saved my encryption key in a safe place';
+
+  KeyRevealError := TNewStaticText.Create(KeyRevealPage);
+  KeyRevealError.Parent     := KeyRevealPage.Surface;
+  KeyRevealError.Left       := 0;
+  KeyRevealError.Top        := KeyRevealCheck.Top + KeyRevealCheck.Height + 6;
+  KeyRevealError.Width      := KeyRevealPage.SurfaceWidth;
+  KeyRevealError.AutoSize   := True;
+  KeyRevealError.Font.Color := clRed;
+  KeyRevealError.Caption    := '';
 
   // --- Plaid page ---
   PlaidPage := CreateCustomPage(SecurityPage.ID,
@@ -352,6 +421,22 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
 
+  // In silent mode the wizard auto-advances through all pages.
+  // Validation is UI-only — the passphrase bootstrap file is written by
+  // the CI step (or a future unattended-install script) before the
+  // installer runs, so there is nothing to validate here.
+  if WizardSilent() then Exit;
+
+  if CurPageID = KeyRevealPage.ID then
+  begin
+    KeyRevealError.Caption := '';
+    if not KeyRevealCheck.Checked then
+    begin
+      KeyRevealError.Caption := 'You must confirm that you have saved your encryption key before continuing.';
+      Result := False;
+    end;
+  end;
+
   if CurPageID = PassphrasePage.ID then
   begin
     PassphraseError.Caption := '';
@@ -371,38 +456,77 @@ end;
 
 
 // -----------------------------------------------------------------------
-// Key generation — runs after files are extracted (wpInstalling)
-// and before [Registry] entries are written
+// Post-install: generate keys via backend.exe, write to HKCU\Environment
 // -----------------------------------------------------------------------
+// Keys are generated here (ssPostInstall) rather than ssInstall because
+// {app}\backend.exe is not yet present during ssInstall. By ssPostInstall
+// all files have been extracted so the binary is callable.
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
+  BackendExe: String;
+  EncKeyFile: String;
+  SecKeyFile: String;
+  EncKey: String;
+  SecKey: String;
+  RawEncKey: AnsiString;
+  RawSecKey: AnsiString;
   TaskXml: String;
   TaskFile: String;
   ResultCode: Integer;
 begin
-  if CurStep = ssInstall then
-  begin
-    // Generate keys now that backend.exe is on disk
-    WizardForm.StatusLabel.Caption := 'Generating encryption key...';
-    GeneratedEncryptionKey := GenerateFernetKey();
-    GeneratedSecretKey     := GenerateSecretKey();
-
-    if GeneratedEncryptionKey = '' then
-      MsgBox('Warning: encryption key generation failed. You will need to set ' +
-             'SQUEEZYPAY_ENCRYPTION_KEY manually before starting the app. ' +
-             'See docs/configuration.md for instructions.', mbError, MB_OK);
-  end;
-
   if CurStep = ssPostInstall then
   begin
+    BackendExe := ExpandConstant('{app}\{#AppExeName}');
+    EncKeyFile := ExpandConstant('{tmp}\squeezypay_enc.key');
+    SecKeyFile := ExpandConstant('{tmp}\squeezypay_sec.key');
+
+    // Generate keys using the installed binary — it has cryptography available.
+    Exec(BackendExe, '--generate-key fernet "' + EncKeyFile + '"',
+         ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(BackendExe, '--generate-key secret "' + SecKeyFile + '"',
+         ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+    // LoadStringFromFile requires AnsiString; promote to String after loading.
+    if FileExists(EncKeyFile) then
+    begin
+      LoadStringFromFile(EncKeyFile, RawEncKey);
+      EncKey := Trim(String(RawEncKey));
+      DeleteFile(EncKeyFile);
+    end;
+    if FileExists(SecKeyFile) then
+    begin
+      LoadStringFromFile(SecKeyFile, RawSecKey);
+      SecKey := Trim(String(RawSecKey));
+      DeleteFile(SecKeyFile);
+    end;
+
+    if EncKey <> '' then
+      RegWriteStringValue(HKCU, 'Environment', 'SQUEEZYPAY_ENCRYPTION_KEY', EncKey)
+    else if not WizardSilent() then
+      MsgBox('Warning: encryption key generation failed. You will need to set ' +
+             'SQUEEZYPAY_ENCRYPTION_KEY manually before starting the app. ' +
+             'See the Configuration page in the wiki for instructions: ' +
+             'https://github.com/squeezy102/SqueezyPay/wiki/Configuration', mbError, MB_OK);
+
+    if SecKey <> '' then
+      RegWriteStringValue(HKCU, 'Environment', 'SQUEEZYPAY_SECRET_KEY', SecKey);
+
+    // Populate the key reveal page (shown next, after wpInstalling).
+    if EncKey <> '' then
+      KeyRevealEdit.Text := EncKey
+    else
+      KeyRevealEdit.Text := '(key generation failed — see Configuration wiki page)';
+
     // Write the passphrase to a temp file for the backend to hash on first start.
     // The backend reads and deletes this file on startup — it is never stored as plaintext.
-    SaveStringToFile(
-      ExpandConstant('{userappdata}\SqueezyPay\initial_passphrase.tmp'),
-      PassphraseEdit.Text,
-      False
-    );
+    // In silent mode the file is pre-written by the calling script; skip to avoid overwriting it.
+    if not WizardSilent() then
+      SaveStringToFile(
+        ExpandConstant('{userappdata}\SqueezyPay\initial_passphrase.tmp'),
+        PassphraseEdit.Text,
+        False
+      );
 
     // Optional: register Task Scheduler entry for auto-start
     if IsTaskSelected('autostart') then
@@ -413,6 +537,7 @@ begin
         '<Triggers><LogonTrigger><Enabled>true</Enabled></LogonTrigger></Triggers>' +
         '<Actions><Exec>' +
         '<Command>"' + ExpandConstant('{app}\{#AppExeName}') + '"</Command>' +
+        '<Arguments>--tray</Arguments>' +
         '<WorkingDirectory>' + ExpandConstant('{app}') + '</WorkingDirectory>' +
         '</Exec></Actions>' +
         '<Settings><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>' +
@@ -442,5 +567,8 @@ begin
   begin
     Exec('schtasks.exe', '/Delete /TN "SqueezyPay" /F',
          '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Remove keys written by CurStepChanged(ssPostInstall) — not tracked by [Registry]
+    RegDeleteValue(HKCU, 'Environment', 'SQUEEZYPAY_ENCRYPTION_KEY');
+    RegDeleteValue(HKCU, 'Environment', 'SQUEEZYPAY_SECRET_KEY');
   end;
 end;

@@ -8,11 +8,12 @@ export default defineConfig({
     host: true,
   },
   test: {
-    environment: 'node',
+    environment: 'jsdom',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      include: ['src/utils/**'],
+      include: ['src/**'],
+      exclude: ['src/**/*.test.*', 'src/main.tsx'],
     },
   },
 })
