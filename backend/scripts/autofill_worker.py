@@ -5,7 +5,7 @@ and verifies success. If the first attempt fails and the user has not yet
 interacted with the page, tries once more. Abandons silently if the user
 has begun manual entry or if both attempts fail.
 """
-import base64
+import json
 import sys
 import threading
 
@@ -81,12 +81,13 @@ def attempt_fill(page, username: str, password: str):
 
 
 def main():
-    if len(sys.argv) != 4:
+    try:
+        data = json.loads(sys.stdin.read())
+        url      = data["url"]
+        username = data["username"]
+        password = data["password"]
+    except Exception:
         sys.exit(1)
-
-    url      = base64.b64decode(sys.argv[1]).decode()
-    username = base64.b64decode(sys.argv[2]).decode()
-    password = base64.b64decode(sys.argv[3]).decode()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)

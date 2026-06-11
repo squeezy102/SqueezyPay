@@ -127,10 +127,11 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
 
           {/* Source Name */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label htmlFor="income-form-source-name" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Source Name <span className="text-red-500">*</span>
             </label>
             <input
+              id="income-form-source-name"
               type="text"
               placeholder="e.g. Main Job, Freelance, Side Business"
               className={fieldClass(errors.sourceName?.message)}
@@ -142,7 +143,7 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
           {/* Amount + Frequency row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label htmlFor="income-form-amount" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Amount <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -150,6 +151,7 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
                   $
                 </span>
                 <input
+                  id="income-form-amount"
                   type="number"
                   min="0.01"
                   step="0.01"
@@ -165,10 +167,11 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label htmlFor="income-form-frequency" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Frequency <span className="text-red-500">*</span>
               </label>
               <select
+                id="income-form-frequency"
                 className={fieldClass(errors.frequency?.message)}
                 {...register("frequency", { required: "Required" })}
               >
@@ -182,10 +185,11 @@ export default function IncomeFormModal({ income, onSave, onClose }: Props) {
 
           {/* Next Expected Date */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label htmlFor="income-form-next-date" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Next Expected Date <span className="text-red-500">*</span>
             </label>
             <input
+              id="income-form-next-date"
               type="date"
               className={fieldClass(errors.nextExpectedDate?.message)}
               {...register("nextExpectedDate", { required: "Required" })}

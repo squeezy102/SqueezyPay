@@ -7,6 +7,7 @@
 #
 # Runtime flags:
 #   backend.exe              — start server, open browser, serve frontend
+#   backend.exe --tray       — start system tray icon (auto-start entry point)
 #   backend.exe --migrate    — run Alembic upgrade head and exit
 #   backend.exe --generate-key fernet <outfile>
 #   backend.exe --generate-key secret  <outfile>
@@ -30,6 +31,8 @@ a = Analysis(
         # Admin dashboard
         (str(repo_root / "admin" / "dashboard.html"), "admin"),
         (str(repo_root / "admin" / "main.py"),        "admin"),
+        # Tray icon — bundled so backend.exe --tray works without Python installed
+        (str(repo_root / "scripts" / "tray.py"),      "scripts"),
     ],
     hiddenimports=[
         # FastAPI / Starlette internals not always auto-detected
@@ -100,6 +103,14 @@ a = Analysis(
         "webbrowser",
         "threading",
         "logging.handlers",
+        # Tray icon dependencies (backend.exe --tray mode)
+        "pystray",
+        "PIL",
+        "PIL.Image",
+        "PIL.ImageDraw",
+        "psutil",
+        "requests",
+        "winreg",
     ],
     hookspath=[],
     hooksconfig={},
@@ -112,17 +123,18 @@ a = Analysis(
 
 pyz = PYZ(a.pure)
 
+# --onedir mode: EXE is a small launcher; all binaries and data sit alongside it.
+# Cold-start is instant — no extraction to a temp dir on every run.
+# The installer packages the whole dist/backend/ directory.
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
     name="backend",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True,   # console=True so log output is visible when run manually
@@ -132,4 +144,14 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="backend",
 )

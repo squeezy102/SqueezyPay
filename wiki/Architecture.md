@@ -137,6 +137,16 @@ SqueezyPay supports exactly one connected financial institution at a time. This 
 
 **Forking guidance:** If you want multi-institution support, remove the guard block in `backend/services/plaid_service.py` (`exchange_public_token`, lines that check `PlaidItemRepository.get_all`) and update `Accounts.tsx` to always render a connect option. You will also need to add institution context to every query and view that currently assumes a single institution.
 
+## Backend disconnection resilience
+
+The frontend polls `GET /health` every 15 seconds via `useBackendHealth` (a custom React hook in `frontend/src/hooks/useBackendHealth.ts`). If the health check fails or returns non-200, an amber `OfflineBanner` appears at the top of the viewport. The banner auto-dismisses when the backend comes back and immediately invalidates all TanStack Query cache so data is refreshed.
+
+Design constraints:
+- Polling uses `AbortController` with a 5-second timeout; a hung backend never blocks the UI thread
+- The banner does not appear until after the first poll completes — `AuthGate` already handles the initial-load failure case
+- Mutations (POST/PUT/DELETE) remain fire-and-forget; disconnection detection is purely informational with no silent replay of financial data
+- Recovery triggers `queryClient.invalidateQueries()` — all active queries refetch
+
 ## CSV / OFX import
 
 Not yet implemented. Planned as a supplemental ingestion path for the single connected institution — see [roadmap.md](roadmap.md).
@@ -154,6 +164,29 @@ The admin dashboard is a developer/operator tool, not a user-facing feature. It 
 Single-user, household passphrase model. On login, the backend validates the bcrypt-hashed passphrase and returns a JWT. All protected routes require `Authorization: Bearer <token>`. The JWT is stored in `localStorage` and expires after a configurable interval (default: 24 hours).
 
 There are no individual user accounts. The household shares one passphrase.
+
+## Installer
+
+`installer/squeezypay.iss` — Inno Setup 6 script. Compiled by `installer/build.yml` (GitHub Actions, Windows runner) on every version tag push. Output: `dist/SqueezyPay-Setup.exe`, attached to the GitHub Release.
+
+**Key generation:** Keys are generated at `CurStepChanged(ssPostInstall)` by invoking `backend.exe --generate-key` (a CLI mode in `backend/main.py`). This happens after all files are extracted to `{app}`, so the binary is available. Keys are written to temp files, read back by the Inno Setup Pascal script, written to `HKCU\Environment` via `RegWriteStringValue`, and the temp files are deleted. See the [Roadmap](Roadmap#key-generation-implementation-note) for the rationale behind this approach.
+
+**Install layout:**
+```
+C:\Program Files\SqueezyPay\
+  backend.exe        PyInstaller onedir bundle — FastAPI + uvicorn + all deps
+  _internal\         PyInstaller support files
+  frontend\          Vite static build — served by backend.exe
+  alembic\           Migration files — needed at runtime for upgrades
+  alembic.ini
+  unins000.exe       Inno Setup uninstaller
+
+%APPDATA%\SqueezyPay\
+  squeezypay.db      SQLite database
+  logs\              Log files
+```
+
+**CI:** `release.yml` workflow builds frontend + backend + installer, runs a backend binary integration test (API auth round-trip via `curl.exe`), runs an installer smoke test (silent install, verifies `backend.exe` placed and env vars written), then attaches the installer to the GitHub Release.
 
 ## CI
 

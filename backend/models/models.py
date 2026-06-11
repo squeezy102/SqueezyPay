@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -126,8 +126,8 @@ class PlaidAccount(Base):
     type = Column(String(50), nullable=False)
     subtype = Column(String(50), nullable=True)
     mask = Column(String(10), nullable=True)
-    current_balance = Column(Float, nullable=True)
-    available_balance = Column(Float, nullable=True)
+    current_balance = Column(Numeric(precision=12, scale=2), nullable=True)
+    available_balance = Column(Numeric(precision=12, scale=2), nullable=True)
     balance_synced_at = Column(DateTime, nullable=True)
 
     item = relationship("PlaidItem", back_populates="accounts")
@@ -141,7 +141,7 @@ class PlaidTransaction(Base):
     id = Column(Integer, primary_key=True)
     plaid_account_id = Column(Integer, ForeignKey("plaid_accounts.id"), nullable=False)
     transaction_id = Column(String(255), nullable=False)
-    amount = Column(Float, nullable=False)
+    amount = Column(Numeric(precision=12, scale=2), nullable=False)
     date = Column(String(10), nullable=False)
     name = Column(String(500), nullable=False)
     merchant_name = Column(String(255), nullable=True)

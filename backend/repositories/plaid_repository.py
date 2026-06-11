@@ -108,8 +108,13 @@ class PlaidTransactionRepository:
         )
         if existing:
             for key, value in data.items():
-                if key != "transaction_id":
-                    setattr(existing, key, value)
+                if key == "transaction_id":
+                    continue
+                # Preserve user-set category assignments; only auto-assign when
+                # the user has not explicitly chosen a category.
+                if key == "category_id" and existing.category_id is not None:
+                    continue
+                setattr(existing, key, value)
             db.commit()
             db.refresh(existing)
             return existing, False

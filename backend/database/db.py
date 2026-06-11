@@ -10,8 +10,17 @@ from models.models import Base
 
 def _resolve_db_path() -> Path:
     if getattr(sys, "frozen", False):
-        # Running as a PyInstaller bundle — store data in %APPDATA%\SqueezyPay
-        data_dir = Path(os.environ["APPDATA"]) / "SqueezyPay"
+        # Running as a PyInstaller bundle — store data in %APPDATA%\SqueezyPay.
+        # Fall back gracefully when APPDATA is absent (e.g. --generate-key or
+        # --migrate invoked by the installer before env vars reach the process).
+        appdata = (
+            os.environ.get("APPDATA")
+            or os.environ.get("LOCALAPPDATA")
+            or os.environ.get("TEMP")
+            or os.environ.get("TMP")
+            or str(Path(sys.executable).parent)  # next to the EXE
+        )
+        data_dir = Path(appdata) / "SqueezyPay"
     else:
         # Dev mode — keep the database next to the backend directory
         data_dir = Path(__file__).resolve().parent.parent
@@ -83,6 +92,9 @@ def _seed_default_categories():
                 "Personal Care",
                 "Kids",
                 "Miscellaneous",
+                "Income",
+                "Transfer",
+                "Bank Fees",
             ]
             for cat_name in categories:
                 db.add(TransactionCategory(name=cat_name))

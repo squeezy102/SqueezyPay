@@ -175,36 +175,38 @@ export default function SpendingBlame({ onNavigate }: SpendingBlameProps) {
             {/* Category donut */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">By Category</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    dataKey="value"
-                    paddingAngle={2}
-                  >
-                    {pieData.map((_, index) => (
-                      <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name) => [formatCurrency(Number(value)), String(name)]}
-                    contentStyle={{
-                      borderRadius: "0.75rem",
-                      border: "1px solid #e2e8f0",
-                      fontSize: "0.75rem",
-                    }}
-                  />
-                  <Legend
-                    iconType="circle"
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: "0.75rem" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div role="img" aria-label="Spending by category donut chart">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      dataKey="value"
+                      paddingAngle={2}
+                    >
+                      {pieData.map((_, index) => (
+                        <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name) => [formatCurrency(Number(value)), String(name)]}
+                      contentStyle={{
+                        borderRadius: "0.75rem",
+                        border: "1px solid #e2e8f0",
+                        fontSize: "0.75rem",
+                      }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: "0.75rem" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Account bar */}
@@ -213,31 +215,33 @@ export default function SpendingBlame({ onNavigate }: SpendingBlameProps) {
               {barData.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-8">No account data</p>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 20, top: 4, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                    <XAxis
-                      type="number"
-                      tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`}
-                      tick={{ fontSize: 11 }}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      width={120}
-                      tick={{ fontSize: 11 }}
-                    />
-                    <Tooltip
-                      formatter={(value) => [formatCurrency(Number(value)), "Spending"]}
-                      contentStyle={{ borderRadius: "0.75rem", border: "1px solid #e2e8f0", fontSize: "0.75rem" }}
-                    />
-                    <Bar dataKey="amount" radius={[0, 6, 6, 0]}>
-                      {barData.map((_, index) => (
-                        <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div role="img" aria-label="Spending by account bar chart">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 20, top: 4, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                      <XAxis
+                        type="number"
+                        tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={120}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <Tooltip
+                        formatter={(value) => [formatCurrency(Number(value)), "Spending"]}
+                        contentStyle={{ borderRadius: "0.75rem", border: "1px solid #e2e8f0", fontSize: "0.75rem" }}
+                      />
+                      <Bar dataKey="amount" radius={[0, 6, 6, 0]}>
+                        {barData.map((_, index) => (
+                          <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               )}
             </div>
           </div>

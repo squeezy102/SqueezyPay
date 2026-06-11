@@ -107,10 +107,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
 
           {/* Name */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label htmlFor="bill-form-name" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Biller Name <span className="text-red-500">*</span>
             </label>
             <input
+              id="bill-form-name"
               type="text"
               placeholder="e.g. Example Electric Co"
               className={fieldClass(errors.name?.message)}
@@ -121,10 +122,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
 
           {/* Category */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label htmlFor="bill-form-category" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Category <span className="text-red-500">*</span>
             </label>
             <select
+              id="bill-form-category"
               className={fieldClass(errors.category?.message)}
               {...register("category", { required: "Required" })}
             >
@@ -137,10 +139,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
 
           {/* Payment URL */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label htmlFor="bill-form-url" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Payment URL <span className="text-red-500">*</span>
             </label>
             <input
+              id="bill-form-url"
               type="url"
               placeholder="https://..."
               className={fieldClass(errors.url?.message)}
@@ -152,7 +155,7 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
           {/* Amount + Day row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label htmlFor="bill-form-expected-amount" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Expected Amount
               </label>
               <Controller
@@ -160,6 +163,7 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
                 control={control}
                 render={({ field }) => (
                   <MoneyInput
+                    id="bill-form-expected-amount"
                     value={field.value}
                     onChange={field.onChange}
                   />
@@ -167,10 +171,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label htmlFor="bill-form-day-of-month" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Due Day of Month <span className="text-red-500">*</span>
               </label>
               <input
+                id="bill-form-day-of-month"
                 type="number"
                 min={1}
                 max={31}
@@ -214,10 +219,11 @@ export default function BillFormModal({ bill, onSave, onClose }: Props) {
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label htmlFor="bill-form-notes" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Notes
             </label>
             <textarea
+              id="bill-form-notes"
               placeholder="Optional notes..."
               rows={2}
               className={`${fieldClass(undefined)} resize-none`}

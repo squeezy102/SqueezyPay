@@ -14,6 +14,7 @@ import Accounts from "./components/Accounts";
 import SpendingBlame from "./components/SpendingBlame";
 import Transactions from "./components/Transactions";
 import BugReportModal from "./components/BugReportModal";
+import { OfflineBanner } from "./components/OfflineBanner";
 
 function AppShell() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -21,6 +22,7 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors">
+      <OfflineBanner />
       <Sidebar active={activeTab} onChange={setActiveTab} />
       <MobileTopBar active={activeTab} onChange={setActiveTab} />
 

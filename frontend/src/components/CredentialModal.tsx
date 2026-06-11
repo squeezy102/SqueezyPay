@@ -51,8 +51,9 @@ function CredentialForm({ bill, existingId, initialUsername, initialPassword, on
       {error && <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-3 py-2 rounded-lg">{error}</p>}
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Username / Email</label>
+        <label htmlFor="credential-username" className="text-xs font-medium text-slate-600 dark:text-slate-400">Username / Email</label>
         <input
+          id="credential-username"
           autoFocus
           type="text"
           autoComplete="off"
@@ -63,9 +64,10 @@ function CredentialForm({ bill, existingId, initialUsername, initialPassword, on
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Password</label>
+        <label htmlFor="credential-password" className="text-xs font-medium text-slate-600 dark:text-slate-400">Password</label>
         <div className="relative">
           <input
+            id="credential-password"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             value={password}

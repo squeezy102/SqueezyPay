@@ -25,11 +25,13 @@ After setting a variable, open a new terminal window to pick it up in `os.enviro
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SQUEEZYPAY_ENCRYPTION_KEY` | Yes | — | Fernet key for encrypting biller passwords and Plaid access tokens. Generate with `python backend/scripts/generate_key.py`. |
+| `SQUEEZYPAY_ENCRYPTION_KEY` | Yes | — | Fernet key for encrypting biller passwords and Plaid access tokens. Generated automatically by the installer. |
 
 The key is a base64-encoded 32-byte value. It must be generated once and stored permanently. **If the key is lost, all encrypted data is unrecoverable.** Back it up outside the machine.
 
-To generate a key:
+**Installer:** The key is generated automatically during installation and written to `HKCU\Environment`. You do not need to do anything. The installer shows you the key on a dedicated screen so you can record it before continuing.
+
+**Dev setup (running from source):** Generate and store the key manually:
 ```powershell
 cd backend
 .\venv\Scripts\Activate.ps1
@@ -52,19 +54,21 @@ If Plaid credentials are not set, the app starts normally but the Accounts tab s
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SQUEEZYPAY_HOST` | No | `0.0.0.0` | Host the backend binds to. `0.0.0.0` makes it reachable on the local network. |
-| `SQUEEZYPAY_PORT` | No | `8000` | Port the backend listens on. |
+| `SQUEEZYPAY_HOST` | No | `0.0.0.0` | **Not currently implemented.** Host is hardcoded to `0.0.0.0` in `backend/main.py`. Documented for future use. |
+| `SQUEEZYPAY_PORT` | No | `8000` | **Not currently implemented.** Port is hardcoded to `8000` in `backend/main.py`. Documented for future use. |
 
 ### JWT authentication
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SQUEEZYPAY_SECRET_KEY` | Yes | — | Secret used to sign JWT session tokens. Generate a random string (minimum 32 characters). |
-| `SQUEEZYPAY_JWT_EXPIRE_MINUTES` | No | `1440` | Session token lifetime in minutes (default: 24 hours). |
+| `SQUEEZYPAY_SECRET_KEY` | Yes | — | Secret used to sign JWT session tokens. Generated automatically by the installer. |
+| `SQUEEZYPAY_JWT_EXPIRE_MINUTES` | No | `1440` | **Not currently implemented.** Token expiry is hardcoded to 12 hours in `backend/services/auth_service.py`. Documented for future use. |
 
-To generate a secret key:
+**Installer:** Generated automatically and written to `HKCU\Environment`. No action required.
+
+**Dev setup (running from source):** Generate and store manually:
 ```powershell
-python -c "import secrets; print(secrets.token_hex(32))"
+[System.Environment]::SetEnvironmentVariable("SQUEEZYPAY_SECRET_KEY", (python -c "import secrets; print(secrets.token_hex(32))"), "User")
 ```
 
 ## In-app settings

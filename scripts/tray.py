@@ -113,7 +113,7 @@ def _start_admin():
     env = {**_load_user_env(), "PYTHONUNBUFFERED": "1"}
     _admin_proc = subprocess.Popen(
         [str(VENV_PYTHON), "-m", "uvicorn", "main:app",
-         "--host", "0.0.0.0", "--port", str(ADMIN_PORT)],
+         "--host", "127.0.0.1", "--port", str(ADMIN_PORT)],
         cwd=str(ADMIN_DIR),
         env=env,
         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,

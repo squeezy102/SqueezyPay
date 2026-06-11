@@ -41,6 +41,7 @@ All core phases through Phase 2 are complete. Active work is Phase 2+ extensions
 - Bills hub refactor — unified `Bills` tab with Overview, Pay Bills, Payment History, Manage Billers sub-views
 - Biller autofill — `POST /api/bills/{id}/autofill` launches Playwright worker; fills username + password fields on biller site (**known limitation:** always opens a new browser window, cannot open a tab in an existing window)
 - Credential vault UI — `CredentialModal` for create/edit; credentials auto-displayed in payment modal with Copy buttons
+- Backend disconnection resilience — `useBackendHealth` polls `GET /health` every 15s + on `window.online`; amber `OfflineBanner` appears when backend is unreachable; auto-dismisses on recovery and invalidates all TanStack Query cache
 
 ### Phase 2+ backlog
 
@@ -50,8 +51,8 @@ Features in scope for this phase but not yet built.
 |---|---|---|
 | Scheduled balance sync | High | APScheduler job; configurable interval, 4h minimum per Plaid guidelines |
 | Scheduled daily transaction sync | High | Replaces manual-only flow |
-| CSV/OFX import | High | Supplemental ingestion for the single connected institution |
-| Transaction deduplication | Required with CSV/OFX | Match on date + amount + merchant |
+| CSV/OFX import | Backlogged | No current demand. Plaid covers the single connected institution. Architecture keeps this path open — see design note below. |
+| Transaction deduplication | Backlogged | Required if CSV/OFX import is ever activated. |
 | Per-cardholder transaction ownership tagging | Medium | See design note below |
 | Blame graph — drill down to transactions | Medium | Click category → see transactions |
 | Recurring transaction detection | Medium | Auto-suggest bills from Plaid data |
@@ -63,6 +64,12 @@ Features in scope for this phase but not yet built.
 | Plaid webhook receiver | Requires public URL or tunnel (ngrok, Cloudflare Tunnel) |
 | Spend and deposit notifications | SendGrid + SMS gateway already scaffolded |
 | Windows installer | See design note below |
+
+### Design note — CSV/OFX import
+
+Not being built. The current user base uses Plaid with Navy Federal Credit Union, which covers all transaction data needs. No demand exists for supplemental file import.
+
+The architecture is intentionally kept open for it: the single-institution model, the deduplication-ready transaction schema (unique on `transaction_id`), and the `plaid_transactions` table structure are all compatible with a future file-import path. If this is ever needed, the entry point is a new `POST /api/import/upload` endpoint that parses OFX/CSV, deduplicates against existing transactions on `(date, amount, merchant_name)`, and inserts via `PlaidTransactionRepository.upsert`. No structural changes required.
 
 ---
 
@@ -85,7 +92,7 @@ Features in scope for this phase but not yet built.
 |---|---|
 | LLM-assisted insights panel | High |
 | Year-over-year spending comparison | Medium |
-| Auto-start on Windows login | High |
+| ~~Auto-start on Windows login~~ | ~~High~~ **Done** — Task "SqueezyPay" registered by installer (`backend.exe --tray`) and `scripts/register-autostart.ps1` (dev); tray manages all three services |
 | Streamlined installer script | Medium |
 | Update-available badge in admin dashboard | Medium |
 | Export data to CSV | Low |
@@ -144,7 +151,7 @@ C:\Program Files\SqueezyPay\
 **What the installer does:**
 - Extracts binaries and static files to Program Files
 - Creates `%APPDATA%\SqueezyPay\` and subdirs
-- Generates `SQUEEZYPAY_ENCRYPTION_KEY` (Fernet) and `SQUEEZYPAY_SECRET_KEY`, writes to `HKCU\Environment`
+- Generates `SQUEEZYPAY_ENCRYPTION_KEY` (Fernet) and `SQUEEZYPAY_SECRET_KEY` by calling `backend.exe --generate-key` after files are installed (see key generation note below), writes to `HKCU\Environment`
 - Writes Plaid credentials to `HKCU\Environment` if provided
 - Runs `backend.exe --migrate` (Alembic upgrade head, headless, exits when done)
 - Optionally creates Task Scheduler entry via `schtasks /create`
@@ -154,6 +161,16 @@ C:\Program Files\SqueezyPay\
 **`backend.exe` modes:**
 - `backend.exe` — normal server (serves API + frontend static files on :8000)
 - `backend.exe --migrate` — runs Alembic upgrade head and exits; used by installer and future upgrade flow
+- `backend.exe --generate-key fernet <outfile>` — generates a Fernet key, writes to file, exits; used by installer
+- `backend.exe --generate-key secret <outfile>` — generates a 32-byte hex secret, writes to file, exits; used by installer
+
+**Key generation implementation note:**
+
+Keys are generated at `CurStepChanged(ssPostInstall)` — after all files have been extracted to `{app}` — by invoking `backend.exe --generate-key` via Inno Setup's `Exec()`. The key is written to a temp file, read back by Pascal using `LoadStringFromFile`, and written to `HKCU\Environment` via `RegWriteStringValue`. The temp file is deleted immediately after.
+
+Keys cannot be generated during `ssInstall` because `{app}\backend.exe` does not exist until the file extraction phase completes. They cannot be generated earlier via pure Pascal because Inno Setup's Pascal Script dialect (RemObjects Pascal Script) has no `Pointer` type and cannot safely use managed `AnsiString` buffers as raw DLL write targets — attempting to pass `var AnsiString` to `CryptGenRandom@advapi32.dll` causes an access violation at runtime due to managed string header corruption.
+
+Keys cannot be passed through `[Registry]` `{code:GetXxx}` accessor functions (the standard pattern for dynamic registry values) because the `[Registry]` section fires before `ssPostInstall` — at a point when the binary is not yet installed.
 
 **Upgrade path:**
 - User runs new installer over existing install
@@ -216,6 +233,18 @@ Webhook-based sync (immediate on Plaid SYNC_UPDATES_AVAILABLE events) requires a
 SqueezyPay is designed to run on a home LAN and be accessible from any device on that network. The main backend (`:8000`) and frontend being reachable by any LAN device is the intended behavior — not a security finding.
 
 Audit findings that cite "LAN accessibility" as a risk should be read narrowly: the concern applies only to unauthenticated **control-plane** surfaces (e.g., the admin server's start/stop/log API), not to the main application. Findings that recommend restricting access to the application UI or API have been scoped down accordingly. See [v0.1.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/6) issue comments for per-issue scope clarifications.
+
+---
+
+## Permanent non-goals
+
+These will never be implemented. They are not deferred — they are explicitly out of scope by design.
+
+| Item | Reason |
+|---|---|
+| Code signing the Windows installer | SqueezyPay is a free, self-hosted, open-source household tool. The cost of a code signing certificate is not justified. Users will see the Windows SmartScreen "Windows protected your PC" prompt and are expected to click **More info → Run anyway**. This is a known, accepted behavior, not a bug. |
+| Cloud hosting or telemetry | Fundamentally against the product's self-hosted, no-external-dependency design. |
+| Multi-institution Plaid support | Single-institution constraint is intentional product scope. |
 
 ---
 

@@ -204,8 +204,9 @@ export default function BugReportModal({ currentTab, onClose }: Props) {
                 Tell us what went wrong. The more detail the better — but no pressure.
               </p>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">One-line summary <span className="text-red-400">*</span></label>
+                <label htmlFor="bug-report-brief" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">One-line summary <span className="text-red-400">*</span></label>
                 <input
+                  id="bug-report-brief"
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
                   placeholder="e.g. App crashed when I saved a bill"
                   value={brief}
@@ -214,8 +215,9 @@ export default function BugReportModal({ currentTab, onClose }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">What happened?</label>
+                <label htmlFor="bug-report-what-happened" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">What happened?</label>
                 <textarea
+                  id="bug-report-what-happened"
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
                   rows={3}
                   placeholder="Describe the unexpected behavior"
@@ -224,8 +226,9 @@ export default function BugReportModal({ currentTab, onClose }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">What broke or looked wrong?</label>
+                <label htmlFor="bug-report-what-broke" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">What broke or looked wrong?</label>
                 <textarea
+                  id="bug-report-what-broke"
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
                   rows={3}
                   placeholder="Error message, blank screen, wrong data, etc."
@@ -234,8 +237,9 @@ export default function BugReportModal({ currentTab, onClose }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">What were you doing when it happened?</label>
+                <label htmlFor="bug-report-steps" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">What were you doing when it happened?</label>
                 <textarea
+                  id="bug-report-steps"
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
                   rows={3}
                   placeholder="Step-by-step if you can remember"

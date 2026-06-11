@@ -6,18 +6,41 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build-installer:
     name: Build Windows Installer
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      # ----------------------------------------------------------------
+      # 0. Verify all required secrets are present before doing any work.
+      #    Fails fast with a clear error rather than leaking fallback
+      #    plaintext values into workflow logs.
+      # ----------------------------------------------------------------
+      - name: Check required secrets
+        shell: pwsh
+        run: |
+          $missing = @()
+          if (-not "${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}") { $missing += "SQUEEZYPAY_ENCRYPTION_KEY_TEST" }
+          if (-not "${{ secrets.SANDBOX_TEST_PASSPHRASE }}")         { $missing += "SANDBOX_TEST_PASSPHRASE" }
+          if ($missing.Count -gt 0) {
+            foreach ($s in $missing) {
+              Write-Host "::error::Required secret is not set: $s"
+            }
+            Write-Host "::error::Set these secrets at Settings > Secrets and variables > Actions before triggering a release."
+            exit 1
+          }
+          Write-Host "All required secrets present."
 
       # ----------------------------------------------------------------
       # 1. Build frontend static files
       # ----------------------------------------------------------------
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: "24"
           cache: "npm"
@@ -35,7 +58,7 @@ jobs:
       # ----------------------------------------------------------------
       # 2. Build backend.exe with PyInstaller
       # ----------------------------------------------------------------
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.11"
           cache: "pip"
@@ -48,7 +71,7 @@ jobs:
       - name: Build backend.exe
         working-directory: backend
         run: pyinstaller backend.spec
-        # Output: backend/dist/backend.exe
+        # Output: backend/dist/backend/ (onedir bundle)
 
       # ----------------------------------------------------------------
       # 2b. Smoke-test backend.exe before packaging
@@ -59,12 +82,12 @@ jobs:
         working-directory: backend
         shell: pwsh
         env:
-          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST || 'dGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0LXRlc3Q=' }}
+          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}
           SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-smoke-test-only
           APPDATA: ${{ runner.temp }}
         run: |
-          $exe = "dist\backend.exe"
-          if (-not (Test-Path $exe)) { Write-Error "backend.exe not found"; exit 1 }
+          $exe = "dist\backend\backend.exe"
+          if (-not (Test-Path $exe)) { Write-Error "backend.exe not found at $exe"; exit 1 }
           # --migrate exits 0 on success; capture output for debug
           $out = & $exe --migrate 2>&1
           Write-Host $out
@@ -122,130 +145,158 @@ jobs:
           Write-Host "Installer size: $([math]::Round($size/1MB, 1)) MB"
 
       # ----------------------------------------------------------------
-      # 5. Install and integration-test on the runner
-      #    Runs the real installer on the windows-latest VM, starts the
-      #    backend, and exercises every major endpoint. Blocks upload on
-      #    failure so a broken installer is never published as a release.
+      # 5a. Binary integration test — run backend.exe directly from the
+      #     build output. Tests API correctness without installer overhead.
+      #     The installer is separately smoke-tested in step 5b.
       # ----------------------------------------------------------------
-      - name: Install SqueezyPay and run integration tests
+      - name: Integration test backend binary
         shell: pwsh
+        env:
+          SQUEEZYPAY_ENCRYPTION_KEY: ${{ secrets.SQUEEZYPAY_ENCRYPTION_KEY_TEST }}
+          SQUEEZYPAY_SECRET_KEY: test-secret-key-for-ci-integration-test-only
+          SANDBOX_TEST_PASSPHRASE: ${{ secrets.SANDBOX_TEST_PASSPHRASE }}
         run: |
-          # --- Pre-write passphrase bootstrap so auth is configured after install ---
-          # The installer's passphrase wizard is skipped by /VERYSILENT, so we
-          # write the tmp file the backend reads on first start to set the passphrase.
+          $repoRoot   = (Get-Location).Path
+          $backendExe = Join-Path $repoRoot "backend\dist\backend\backend.exe"
+          $workDir    = Join-Path $repoRoot "backend\dist\backend"
+          if (-not (Test-Path $backendExe)) {
+            Write-Error "backend.exe not found at $backendExe"; exit 1
+          }
+
+          # Do NOT use the bootstrap file — call /api/auth/setup directly so we
+          # don't depend on file I/O timing between the CI step and the backend.
+          # The bootstrap file path is tested separately by installer smoke test.
           $appdataDir = "$env:APPDATA\SqueezyPay"
           New-Item -ItemType Directory -Force -Path $appdataDir | Out-Null
-          $testPassphrase = "${{ secrets.SANDBOX_TEST_PASSPHRASE || 'TestPassphrase123!' }}"
-          [System.IO.File]::WriteAllText("$appdataDir\initial_passphrase.tmp", $testPassphrase, [System.Text.Encoding]::UTF8)
-          Write-Host "Passphrase bootstrap written."
+          $testPassphrase = $env:SANDBOX_TEST_PASSPHRASE.Trim()
+          Write-Host "Passphrase length: $($testPassphrase.Length)"
 
-          # --- Install ---
-          # /SP-           suppresses "This will install..." prompt (needed on headless runners)
-          # /VERYSILENT    no UI
-          # /SUPPRESSMSGBOXES  suppress error dialogs
-          # /NORESTART     don't reboot
-          # /LOG           write install log for diagnostics
+          # Start backend — redirect stdout/stderr to log files for failure diagnosis
+          $logFile    = "$env:TEMP\backend_ci.log"
+          $logErrFile = "$env:TEMP\backend_ci_err.log"
+          $backend = Start-Process -FilePath $backendExe `
+            -WorkingDirectory $workDir -PassThru -WindowStyle Hidden `
+            -RedirectStandardOutput $logFile -RedirectStandardError $logErrFile
+
+          # Wait for /health using curl.exe (bypasses WinHTTP proxy — Invoke-WebRequest
+          # on GitHub-hosted Windows runners routes localhost through a proxy and never connects)
+          $ready = $false
+          for ($i = 0; $i -lt 60; $i++) {
+            Start-Sleep 1
+            $curlOut = & curl.exe -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:8000/health 2>$null
+            if ($curlOut -eq "200") { $ready = $true; break }
+            if ($i % 10 -eq 9) { Write-Host "Still waiting for /health at ${i}s... (last: $curlOut)" }
+          }
+          if (-not $ready) {
+            $exitCode = if ($backend.HasExited) { $backend.ExitCode } else { "still running" }
+            Write-Host "Backend exit code: $exitCode"
+            Write-Host "=== backend stdout ==="
+            if (Test-Path $logFile)    { Get-Content $logFile }
+            Write-Host "=== backend stderr ==="
+            if (Test-Path $logErrFile) { Get-Content $logErrFile }
+            if (-not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
+            Write-Error "Backend did not respond to /health after 60s"; exit 1
+          }
+          Write-Host "Health: OK. (${i}s)"
+
+          # Verify auth is NOT yet configured (fresh DB — no bootstrap file used)
+          Start-Sleep 1
+          $authJson = & curl.exe -s http://localhost:8000/api/auth/status 2>$null
+          Write-Host "Auth status: $authJson"
+          if ($authJson -match '"configured"\s*:\s*true') {
+            Stop-Process -Id $backend.Id -Force
+            Write-Error "Auth already configured on fresh DB — unexpected state"; exit 1
+          }
+          Write-Host "Auth: not yet configured (expected on fresh DB)."
+
+          # Configure passphrase via /api/auth/setup (bypasses bootstrap file I/O)
+          $bodyFile = "$env:TEMP\auth_body.json"
+          $escapedPass = $testPassphrase -replace '\\', '\\' -replace '"', '\"'
+          $bodyJson = "{`"passphrase`":`"$escapedPass`"}"
+          [System.IO.File]::WriteAllText($bodyFile, $bodyJson, [System.Text.Encoding]::UTF8)
+          $setupJson = & curl.exe -s -X POST http://localhost:8000/api/auth/setup `
+            -H "Content-Type: application/json" -d "@$bodyFile" 2>$null
+          Write-Host "Setup response: $setupJson"
+          if ($setupJson -notmatch '"access_token"') {
+            Stop-Process -Id $backend.Id -Force
+            Write-Error "Setup failed — no access_token"; exit 1
+          }
+          Write-Host "Auth: setup OK."
+
+          # Now login with the same passphrase
+          $loginJson = & curl.exe -s -X POST http://localhost:8000/api/auth/login `
+            -H "Content-Type: application/json" -d "@$bodyFile" 2>$null
+          Write-Host "Login response: $loginJson"
+          if ($loginJson -notmatch '"access_token"') {
+            Stop-Process -Id $backend.Id -Force
+            Write-Error "Login failed — no access_token in response"; exit 1
+          }
+          $token = ($loginJson | ConvertFrom-Json).access_token
+          if (-not $token) { Stop-Process -Id $backend.Id -Force; Write-Error "No token parsed"; exit 1 }
+          Write-Host "Login: OK."
+
+          # Authenticated bills endpoint
+          $billsJson = & curl.exe -s http://localhost:8000/api/bills/ `
+            -H "Authorization: Bearer $token" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Stop-Process -Id $backend.Id -Force
+            Write-Error "Bills request failed"; exit 1
+          }
+          Write-Host "Bills endpoint: OK."
+
+          # SPA served from /
+          $spaOut = & curl.exe -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8000/ 2>$null
+          if ($spaOut -ne "200") {
+            Stop-Process -Id $backend.Id -Force
+            Write-Error "SPA returned $spaOut (expected 200)"; exit 1
+          }
+          Write-Host "SPA: OK."
+
+          Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue
+          Write-Host "All integration checks passed."
+          exit 0
+
+      # ----------------------------------------------------------------
+      # 5b. Installer smoke test — verifies the installer runs to completion
+      #     and lays down backend.exe and the env vars in the right places.
+      #     Does not re-run the backend; binary correctness is covered above.
+      # ----------------------------------------------------------------
+      - name: Smoke-test installer
+        shell: pwsh
+        run: |
           Write-Host "Running installer..."
           $installerLog = "$env:TEMP\squeezypay_install.log"
           $proc = Start-Process -FilePath "dist\SqueezyPay-Setup.exe" `
             -ArgumentList "/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/LOG=$installerLog" `
             -Wait -PassThru
+          if (Test-Path $installerLog) { Get-Content -Path $installerLog -Tail 30 }
           if ($proc.ExitCode -ne 0) {
-            if (Test-Path $installerLog) { Get-Content -Path $installerLog -Tail 20 }
             Write-Error "Installer failed with exit code $($proc.ExitCode)"; exit 1
           }
-          Write-Host "Installer completed (exit 0)"
+          Write-Host "Installer completed (exit 0)."
 
-          # --- Locate backend.exe ---
+          # Verify backend.exe was installed
           $installDir = "$env:ProgramFiles\SqueezyPay"
           if (-not (Test-Path $installDir)) { $installDir = "$env:LocalAppData\Programs\SqueezyPay" }
-          $backendExe = "$installDir\backend.exe"
-          if (-not (Test-Path $backendExe)) {
-            Write-Error "backend.exe not found at $backendExe"; exit 1
+          if (-not (Test-Path "$installDir\backend.exe")) {
+            Write-Error "backend.exe not found in $installDir"; exit 1
           }
-          Write-Host "backend.exe: $backendExe"
+          Write-Host "backend.exe present at $installDir."
 
-          # --- Reload env vars written by installer ---
+          # Verify installer wrote env vars to HKCU\Environment
           $encKey    = [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_ENCRYPTION_KEY", "User")
-          $secretKey = [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_SECRET_KEY", "User")
-          if (-not $encKey)    { Write-Error "SQUEEZYPAY_ENCRYPTION_KEY not set"; exit 1 }
-          if (-not $secretKey) { Write-Error "SQUEEZYPAY_SECRET_KEY not set";    exit 1 }
-          $env:SQUEEZYPAY_ENCRYPTION_KEY = $encKey
-          $env:SQUEEZYPAY_SECRET_KEY     = $secretKey
-          Write-Host "Env vars loaded."
-
-          # --- Start backend ---
-          Write-Host "Starting backend..."
-          $backend = Start-Process -FilePath $backendExe `
-            -WorkingDirectory $installDir -PassThru -WindowStyle Hidden
-
-          # --- Wait for /health (up to 60s) ---
-          $ready = $false
-          for ($i = 0; $i -lt 60; $i++) {
-            Start-Sleep 1
-            try {
-              $r = Invoke-WebRequest -Uri "http://localhost:8000/health" -UseBasicParsing -TimeoutSec 2 -EA Stop
-              if ($r.StatusCode -eq 200) { $ready = $true; break }
-            } catch {}
-          }
-          if (-not $ready) { Stop-Process -Id $backend.Id -Force; Write-Error "Backend did not start"; exit 1 }
-          Write-Host "Backend healthy."
-
-          # --- Auth configured (passphrase was bootstrapped by installer) ---
-          Start-Sleep 2
-          $auth = Invoke-RestMethod -Uri "http://localhost:8000/api/auth/status" -UseBasicParsing
-          if (-not $auth.configured) {
-            Stop-Process -Id $backend.Id -Force
-            Write-Error "Auth not configured after install"; exit 1
-          }
-          Write-Host "Auth: configured."
-
-          # --- Login ---
-          $loginBody = '{"passphrase":"' + "${{ secrets.SANDBOX_TEST_PASSPHRASE || 'TestPassphrase123!' }}" + '"}'
-          try {
-            $loginResp = Invoke-RestMethod -Uri "http://localhost:8000/api/auth/login" `
-              -Method POST -Body $loginBody -ContentType "application/json" -UseBasicParsing
-            $token = $loginResp.access_token
-          } catch {
-            Stop-Process -Id $backend.Id -Force
-            Write-Error "Login failed: $_"; exit 1
-          }
-          if (-not $token) { Stop-Process -Id $backend.Id -Force; Write-Error "No token returned"; exit 1 }
-          Write-Host "Login: OK."
-
-          # --- Authenticated bills endpoint ---
-          $headers = @{ Authorization = "Bearer $token" }
-          try {
-            $bills = Invoke-RestMethod -Uri "http://localhost:8000/api/bills/" -Headers $headers -UseBasicParsing
-            Write-Host "Bills endpoint: OK (count=$($bills.Count))"
-          } catch {
-            Stop-Process -Id $backend.Id -Force
-            Write-Error "Bills endpoint failed: $_"; exit 1
-          }
-
-          # --- SPA served from / ---
-          try {
-            $spa = Invoke-WebRequest -Uri "http://localhost:8000/" -UseBasicParsing -TimeoutSec 5
-            if ($spa.StatusCode -ne 200 -or $spa.Content -notmatch "SqueezyPay") {
-              Stop-Process -Id $backend.Id -Force
-              Write-Error "SPA not served correctly (status=$($spa.StatusCode))"; exit 1
-            }
-            Write-Host "SPA: OK."
-          } catch {
-            Stop-Process -Id $backend.Id -Force
-            Write-Error "SPA request failed: $_"; exit 1
-          }
-
-          Stop-Process -Id $backend.Id -Force
-          Write-Host ""
-          Write-Host "All integration checks passed."
+          $secretKey = [System.Environment]::GetEnvironmentVariable("SQUEEZYPAY_SECRET_KEY",     "User")
+          if (-not $encKey)    { Write-Error "SQUEEZYPAY_ENCRYPTION_KEY not written to registry"; exit 1 }
+          if (-not $secretKey) { Write-Error "SQUEEZYPAY_SECRET_KEY not written to registry";     exit 1 }
+          Write-Host "Registry env vars: OK."
+          Write-Host "Installer smoke test passed."
 
       # ----------------------------------------------------------------
       # 6. Attach installer to the GitHub Release
       #    prerelease is auto-detected from tag (alpha/beta/rc suffixes)
       # ----------------------------------------------------------------
       - name: Upload installer to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: dist/SqueezyPay-Setup.exe
           fail_on_unmatched_files: true

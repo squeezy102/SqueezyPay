@@ -45,6 +45,7 @@ htmlcov/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/.auth/
 
 # AI session context — local only, never published
 SqueezyContext/

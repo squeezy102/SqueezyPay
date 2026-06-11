@@ -12,6 +12,15 @@ import {
   getMonthlyTotal,
   logPayment,
   createIncome,
+  createBill,
+  updateBill,
+  deleteBill,
+  changePassphrase,
+  saveCredential,
+  createPlaidLinkToken,
+  getPlaidTransactions,
+  getPlaidBlame,
+  checkHealth,
 } from "./api";
 
 // ── Fetch mock helper ─────────────────────────────────────────────────────────
@@ -36,6 +45,8 @@ describe("api.ts", () => {
 
   afterEach(() => {
     dispatchSpy.mockRestore();
+    vi.restoreAllMocks();
+    globalThis.fetch = undefined as unknown as typeof fetch;
   });
 
   // ── authHeaders ─────────────────────────────────────────────────────────────
@@ -311,5 +322,425 @@ expect(unauthorizedCalls).toHaveLength(0);
       const result = await updateCategory(5, "Utilities");
       expect(result).toMatchObject({ id: 5, name: "Utilities" });
     });
+  });
+});
+
+// ── createBill ────────────────────────────────────────────────────────────────
+
+describe("createBill", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  const rawBill = {
+    id: 10,
+    name: "Water",
+    category: "Utilities",
+    day_of_month: 5,
+    expected_amount: 55.0,
+    url: "https://water.example.com",
+    recurring: true,
+    notes: null,
+  };
+
+  it("sends snake_case body to the API", async () => {
+    /**
+     * Scenario: createBill is called with a camelCase BillPayload
+     * EP class: valid input — body serialisation check
+     * Expected: fetch body contains snake_case keys (expected_amount, day_of_month)
+     */
+    mockFetch(200, rawBill);
+    await createBill({
+      name: "Water",
+      category: "Utilities",
+      url: "https://water.example.com",
+      expectedAmount: 55.0,
+      dayOfMonth: 5,
+      recurring: true,
+    });
+    const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      name: "Water",
+      category: "Utilities",
+      expected_amount: 55.0,
+      day_of_month: 5,
+      recurring: true,
+    });
+  });
+
+  it("returns mapped Bill on success", async () => {
+    /**
+     * Scenario: API returns a valid RawBill on 200
+     * EP class: success path — mapping from snake_case to camelCase
+     * Expected: returned Bill has camelCase fields including amountLabel
+     */
+    mockFetch(200, rawBill);
+    const bill = await createBill({
+      name: "Water",
+      category: "Utilities",
+      url: "https://water.example.com",
+      expectedAmount: 55.0,
+      dayOfMonth: 5,
+      recurring: true,
+    });
+    expect(bill).toMatchObject({
+      id: 10,
+      name: "Water",
+      category: "Utilities",
+      dayOfMonth: 5,
+      expectedAmount: 55.0,
+      url: "https://water.example.com",
+      recurring: true,
+      notes: null,
+    });
+    expect(bill?.amountLabel).toBe("$55.00");
+  });
+
+  it("returns null on API error", async () => {
+    /**
+     * Scenario: API returns 500
+     * EP class: error path — non-2xx status triggers catch
+     * Expected: null returned (no throw)
+     */
+    mockFetch(500, {});
+    const bill = await createBill({
+      name: "Water",
+      category: "Utilities",
+      url: "",
+      dayOfMonth: 5,
+      recurring: true,
+    });
+    expect(bill).toBeNull();
+  });
+});
+
+// ── updateBill ────────────────────────────────────────────────────────────────
+
+describe("updateBill", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  const rawBill = {
+    id: 10,
+    name: "Water Updated",
+    category: "Utilities",
+    day_of_month: 7,
+    expected_amount: 60.0,
+    url: "https://water.example.com",
+    recurring: true,
+    notes: "new notes",
+  };
+
+  it("sends snake_case body with correct method PUT", async () => {
+    /**
+     * Scenario: updateBill is called with billId and updated payload
+     * EP class: valid input — HTTP method and body serialisation check
+     * Expected: fetch uses PUT method and body contains snake_case keys
+     */
+    mockFetch(200, rawBill);
+    await updateBill(10, {
+      name: "Water Updated",
+      category: "Utilities",
+      url: "https://water.example.com",
+      expectedAmount: 60.0,
+      dayOfMonth: 7,
+      recurring: true,
+      notes: "new notes",
+    });
+    const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("PUT");
+    expect(url).toContain("/api/bills/10");
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      name: "Water Updated",
+      day_of_month: 7,
+      expected_amount: 60.0,
+    });
+  });
+
+  it("returns null on API error", async () => {
+    /**
+     * Scenario: API returns 404 during update
+     * EP class: error path — non-2xx triggers catch, null returned
+     * Expected: null returned (no throw)
+     */
+    mockFetch(404, {});
+    const result = await updateBill(99, {
+      name: "Ghost",
+      category: "None",
+      url: "",
+      dayOfMonth: 1,
+      recurring: false,
+    });
+    expect(result).toBeNull();
+  });
+});
+
+// ── deleteBill ────────────────────────────────────────────────────────────────
+
+describe("deleteBill", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  it("returns true on 204", async () => {
+    /**
+     * Scenario: server responds 204 No Content after successful deletion
+     * EP class: success path — 204 is ok=true in mock; function returns true
+     * Expected: true returned
+     */
+    mockFetch(204, null);
+    const result = await deleteBill(10);
+    expect(result).toBe(true);
+  });
+
+  it("returns false on API error", async () => {
+    /**
+     * Scenario: server responds 500 during delete
+     * EP class: error path — non-2xx triggers catch, false returned
+     * Expected: false returned (no throw)
+     */
+    mockFetch(500, {});
+    const result = await deleteBill(10);
+    expect(result).toBe(false);
+  });
+});
+
+// ── changePassphrase ──────────────────────────────────────────────────────────
+
+describe("changePassphrase", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  it("throws with message 'Current passphrase is incorrect.' on 401", async () => {
+    /**
+     * Scenario: wrong current passphrase results in 401 from the server
+     * EP class: authentication failure — 401 maps to specific error message
+     * Expected: Error thrown with message "Current passphrase is incorrect."
+     */
+    mockFetch(401, {});
+    await expect(changePassphrase("wrongpass", "newpass"))
+      .rejects.toThrow("Current passphrase is incorrect.");
+  });
+
+  it("does not throw on 200", async () => {
+    /**
+     * Scenario: correct passphrase submitted, server returns 200
+     * EP class: success path — no exception, function resolves void
+     * Expected: promise resolves without throwing
+     */
+    mockFetch(200, {});
+    await expect(changePassphrase("correctpass", "newpass"))
+      .resolves.toBeUndefined();
+  });
+});
+
+// ── saveCredential ────────────────────────────────────────────────────────────
+
+describe("saveCredential (PUT branch)", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  const credentialResponse = { id: 5, bill_id: 1, username: "user1" };
+
+  it("uses PUT when existingId is provided", async () => {
+    /**
+     * Scenario: existingId is a non-null number — updating an existing credential
+     * EP class: update path — existingId truthy → PUT to /api/credentials/{id}
+     * Expected: fetch called with PUT method and URL containing the existingId
+     */
+    mockFetch(200, credentialResponse);
+    await saveCredential(1, "user1", "pass1", 5);
+    const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("PUT");
+    expect(url).toContain("/api/credentials/5");
+  });
+
+  it("uses POST when existingId is null", async () => {
+    /**
+     * Scenario: existingId is null — creating a new credential
+     * EP class: create path — existingId null → POST to /api/credentials/
+     * Expected: fetch called with POST method and body contains bill_id
+     */
+    mockFetch(200, credentialResponse);
+    await saveCredential(1, "user1", "pass1", null);
+    const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("POST");
+    expect(url).toContain("/api/credentials/");
+    const body = JSON.parse(init.body as string);
+    expect(body.bill_id).toBe(1);
+  });
+});
+
+// ── createPlaidLinkToken ──────────────────────────────────────────────────────
+
+describe("createPlaidLinkToken", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  it("returns link_token string on success", async () => {
+    /**
+     * Scenario: Plaid link token endpoint returns a valid token
+     * EP class: success path — response ok, data.link_token extracted and returned
+     * Expected: resolved string equals the link_token value from the response body
+     */
+    mockFetch(200, { link_token: "link-sandbox-abc123" });
+    const token = await createPlaidLinkToken();
+    expect(token).toBe("link-sandbox-abc123");
+  });
+
+  it("throws with error detail from body on non-ok response", async () => {
+    /**
+     * Scenario: Plaid endpoint returns 400 with a detail field in the JSON body
+     * EP class: error path — non-ok status reads body.detail as error message
+     * Expected: Error thrown with message matching body.detail
+     */
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: () => Promise.resolve({ detail: "Plaid credentials not configured" }),
+    } as unknown as Response);
+    await expect(createPlaidLinkToken())
+      .rejects.toThrow("Plaid credentials not configured");
+  });
+});
+
+// ── getPlaidTransactions ──────────────────────────────────────────────────────
+
+describe("getPlaidTransactions", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  it("sends accountId as account_id query param", async () => {
+    /**
+     * Scenario: params.accountId is provided and must be forwarded as account_id
+     * EP class: query parameter serialisation — accountId → account_id in URL
+     * Expected: fetch URL contains "account_id=3"
+     */
+    mockFetch(200, { transactions: [], total: 0 });
+    await getPlaidTransactions({ accountId: 3 });
+    const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("account_id=3");
+  });
+
+  it("returns empty transactions array on error", async () => {
+    /**
+     * Scenario: API returns 500 during transaction fetch
+     * EP class: error path — exception caught, safe default returned
+     * Expected: { transactions: [], total: 0 } returned without throwing
+     */
+    mockFetch(500, {});
+    const result = await getPlaidTransactions({ accountId: 3 });
+    expect(result).toEqual({ transactions: [], total: 0 });
+  });
+});
+
+// ── checkHealth ───────────────────────────────────────────────────────────────
+
+describe("checkHealth", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  it("returns true when fetch responds 200", async () => {
+    /**
+     * Scenario: backend is healthy and returns HTTP 200
+     * EP class: valid/success — response.ok is true
+     * Expected: checkHealth resolves to true
+     */
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+    } as unknown as Response);
+    const result = await checkHealth();
+    expect(result).toBe(true);
+  });
+
+  it("returns false when fetch responds 503", async () => {
+    /**
+     * Scenario: backend is unavailable and returns HTTP 503
+     * EP class: invalid/error — response.ok is false for non-2xx
+     * Expected: checkHealth resolves to false
+     */
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+    } as unknown as Response);
+    const result = await checkHealth();
+    expect(result).toBe(false);
+  });
+
+  it("returns false when fetch throws a network error", async () => {
+    /**
+     * Scenario: network is unreachable and fetch rejects with TypeError
+     * EP class: invalid/boundary — exception in fetch, no response at all
+     * Expected: checkHealth resolves to false (no unhandled rejection)
+     */
+    globalThis.fetch = vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    const result = await checkHealth();
+    expect(result).toBe(false);
+  });
+});
+
+// ── mapBlameData (via getPlaidBlame) ──────────────────────────────────────────
+
+describe("mapBlameData (via getPlaidBlame)", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    sessionStorage.clear();
+    dispatchSpy = vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
+  });
+  afterEach(() => { dispatchSpy.mockRestore(); });
+
+  it("maps snake_case blame response to camelCase", async () => {
+    /**
+     * Scenario: getPlaidBlame returns a valid RawBlameData object from the server
+     * EP class: success path — snake_case mapping for period_start, total_spending
+     * Expected: returned BlameData has camelCase fields periodStart and totalSpending
+     */
+    const rawBlame = {
+      period_start: "2026-05-01",
+      period_end: "2026-05-31",
+      total_spending: 1234.56,
+      by_category: [{ category: "Food", amount: 400.0, count: 10, pct: 32.4 }],
+      by_account: [{ account_name: "Checking", amount: 1234.56, pct: 100.0 }],
+    };
+    mockFetch(200, rawBlame);
+    const result = await getPlaidBlame(30);
+    expect(result).toMatchObject({
+      periodStart: "2026-05-01",
+      periodEnd: "2026-05-31",
+      totalSpending: 1234.56,
+    });
+    expect(result.byCategory[0].category).toBe("Food");
+    // byAccount is passed through as-is from the API (no sub-mapping)
+    expect(result.byAccount[0].account_name).toBe("Checking");
   });
 });
