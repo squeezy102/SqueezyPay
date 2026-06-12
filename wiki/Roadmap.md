@@ -15,8 +15,7 @@ All core phases through Phase 2 are complete. Active work is Phase 2+ extensions
 | Phase 2 — Bank Integration | — | Complete |
 | v0.1 — Installer & Distribution | [v0.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/1) | In progress |
 | v0.1.1 — Audit Remediation | [v0.1.1 milestone](https://github.com/squeezy102/SqueezyPay/milestone/6) | Next up |
-| v0.2 — Scheduled Sync & CSV Import | [v0.2 milestone](https://github.com/squeezy102/SqueezyPay/milestone/2) | Not started |
-| v0.3 — Per-Cardholder Attribution | [v0.3 milestone](https://github.com/squeezy102/SqueezyPay/milestone/3) | Not started |
+| v0.2 — Scheduled Sync | [v0.2 milestone](https://github.com/squeezy102/SqueezyPay/milestone/2) | Not started |
 | v0.4 — Budget & Projections | [v0.4 milestone](https://github.com/squeezy102/SqueezyPay/milestone/4) | Not started |
 | v1.0 — Polish & LLM Insights | [v1.0 milestone](https://github.com/squeezy102/SqueezyPay/milestone/5) | Not started |
 
@@ -51,8 +50,8 @@ Features in scope for this phase but not yet built.
 |---|---|---|
 | Scheduled balance sync | High | APScheduler job; configurable interval, 4h minimum per Plaid guidelines |
 | Scheduled daily transaction sync | High | Replaces manual-only flow |
-| CSV/OFX import | Backlogged | No current demand. Plaid covers the single connected institution. Architecture keeps this path open — see design note below. |
-| Transaction deduplication | Backlogged | Required if CSV/OFX import is ever activated. |
+| ~~CSV/OFX import~~ | ~~Backlogged~~ | **Permanently out of scope** — see non-goals below. Architecture is fork-friendly; see implementation note. |
+| ~~Transaction deduplication~~ | ~~Backlogged~~ | Only relevant if CSV/OFX import is implemented by a fork. |
 | ~~Per-cardholder transaction ownership tagging~~ | ~~Medium~~ | **Permanently out of scope** — Plaid does not expose card-level attribution on shared accounts |
 | Blame graph — drill down to transactions | Medium | Click category → see transactions |
 | Recurring transaction detection | Medium | Auto-suggest bills from Plaid data |
@@ -65,11 +64,15 @@ Features in scope for this phase but not yet built.
 | Spend and deposit notifications | SendGrid + SMS gateway already scaffolded |
 | Windows installer | See design note below |
 
-### Design note — CSV/OFX import
+### CSV/OFX import — fork implementation guide
 
-Not being built. The current user base uses Plaid with Navy Federal Credit Union, which covers all transaction data needs. No demand exists for supplemental file import.
+Not built and not planned. Plaid covers all current transaction data needs.
 
-The architecture is intentionally kept open for it: the single-institution model, the deduplication-ready transaction schema (unique on `transaction_id`), and the `plaid_transactions` table structure are all compatible with a future file-import path. If this is ever needed, the entry point is a new `POST /api/import/upload` endpoint that parses OFX/CSV, deduplicates against existing transactions on `(date, amount, merchant_name)`, and inserts via `PlaidTransactionRepository.upsert`. No structural changes required.
+The architecture is intentionally fork-friendly: the transaction schema deduplicates on `transaction_id`, and the `plaid_transactions` table structure is compatible with file-import data. For anyone who wants to implement this:
+
+- Entry point: `POST /api/import/upload` — parse OFX/CSV, deduplicate against existing transactions on `(date, amount, merchant_name)`, insert via `PlaidTransactionRepository.upsert`
+- No schema changes required
+- Recommended libraries: `ofxtools` (OFX), `python-magic` (file type validation), `defusedxml` (safe XML parsing)
 
 ---
 
@@ -182,10 +185,6 @@ Keys cannot be passed through `[Registry]` `{code:GetXxx}` accessor functions (t
 
 ## Design decisions pending
 
-### ~~Per-cardholder spend breakdown~~
-
-**Permanently out of scope.** Plaid does not expose which physical card initiated a transaction — both cards on a shared account map to the same `plaid_account_id`, making card-level attribution impossible via the API. This will not be implemented. Users who need this can fork the repo and implement it themselves.
-
 ### LLM insights panel
 
 Users supply their own API key for their LLM of choice (Claude, OpenAI, etc.). Design questions:
@@ -225,6 +224,7 @@ These will never be implemented. They are not deferred — they are explicitly o
 |---|---|
 | Code signing the Windows installer | SqueezyPay is a free, self-hosted, open-source household tool. The cost of a code signing certificate is not justified. Users will see the Windows SmartScreen "Windows protected your PC" prompt and are expected to click **More info → Run anyway**. This is a known, accepted behavior, not a bug. |
 | Per-cardholder transaction attribution | Plaid does not expose card-level data on shared accounts — both cards map to the same `plaid_account_id`. Not implementable within the current architecture. Users who need this should fork and implement it themselves. |
+| CSV/OFX transaction import | No demand. Plaid covers all current needs. The architecture is fork-friendly — see the implementation guide above. |
 | Cloud hosting or telemetry | Fundamentally against the product's self-hosted, no-external-dependency design. |
 | Multi-institution Plaid support | Single-institution constraint is intentional product scope. |
 
