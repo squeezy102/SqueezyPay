@@ -53,7 +53,7 @@ Features in scope for this phase but not yet built.
 | Scheduled daily transaction sync | High | Replaces manual-only flow |
 | CSV/OFX import | Backlogged | No current demand. Plaid covers the single connected institution. Architecture keeps this path open — see design note below. |
 | Transaction deduplication | Backlogged | Required if CSV/OFX import is ever activated. |
-| Per-cardholder transaction ownership tagging | Medium | See design note below |
+| ~~Per-cardholder transaction ownership tagging~~ | ~~Medium~~ | **Permanently out of scope** — Plaid does not expose card-level attribution on shared accounts |
 | Blame graph — drill down to transactions | Medium | Click category → see transactions |
 | Recurring transaction detection | Medium | Auto-suggest bills from Plaid data |
 
@@ -182,28 +182,9 @@ Keys cannot be passed through `[Registry]` `{code:GetXxx}` accessor functions (t
 
 ## Design decisions pending
 
-### Per-cardholder spend breakdown
+### ~~Per-cardholder spend breakdown~~
 
-The household has two debit cards (primary + partner) on one shared checking account. The goal is to see what each person spent and where, enabling an honest per-person spending conversation.
-
-**The constraint:** Plaid does not expose which physical card initiated a transaction. Both cards map to the same `plaid_account_id`. Card-level attribution is not available from the API.
-
-**Options being considered:**
-
-**Option A — Manual owner tagging (recommended)**
-Add a nullable `owner` enum column (`me` / `partner` / `joint`) to `plaid_transactions`. Surface as a one-tap toggle in the transaction table. The blame view gains an owner dimension.
-
-Pros: Fast to build, accurate (user-verified), no guessing.
-Cons: Requires manual effort per transaction. Needs a bulk-tagging flow for the backlog.
-
-Design questions to settle:
-- What does the owner toggle look like in the transaction table?
-- How should the blame view present the owner breakdown?
-- Should manual tags survive a re-sync? (Yes — sync must not clobber manual owner assignments.)
-- Should there be a bulk-tag mode for categorizing the backlog?
-
-**Option B — Separate accounts per person** (not currently applicable)
-Would only work if each person had their own separate Plaid account (separate checking accounts). In the current setup (shared account, two cards), both last fours map to the same `plaid_account_id`, so this provides no differentiation.
+**Permanently out of scope.** Plaid does not expose which physical card initiated a transaction — both cards on a shared account map to the same `plaid_account_id`, making card-level attribution impossible via the API. This will not be implemented. Users who need this can fork the repo and implement it themselves.
 
 ### LLM insights panel
 
@@ -243,6 +224,7 @@ These will never be implemented. They are not deferred — they are explicitly o
 | Item | Reason |
 |---|---|
 | Code signing the Windows installer | SqueezyPay is a free, self-hosted, open-source household tool. The cost of a code signing certificate is not justified. Users will see the Windows SmartScreen "Windows protected your PC" prompt and are expected to click **More info → Run anyway**. This is a known, accepted behavior, not a bug. |
+| Per-cardholder transaction attribution | Plaid does not expose card-level data on shared accounts — both cards map to the same `plaid_account_id`. Not implementable within the current architecture. Users who need this should fork and implement it themselves. |
 | Cloud hosting or telemetry | Fundamentally against the product's self-hosted, no-external-dependency design. |
 | Multi-institution Plaid support | Single-institution constraint is intentional product scope. |
 
